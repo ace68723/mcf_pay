@@ -21,14 +21,15 @@ class Controller {
             ],
             'amount'=>['converter'=>function($x){return $x+0;}],
         ];
-        // the following loop checks the correctness of the above meta setting. in case of typos, e.g. set 'checkers' instead of 'checker'
+        // the following loop checks the correctness of the above meta setting.
+        // in case of typos, e.g. set 'checkers' instead of 'checker'
         // You may comment it in production.
         foreach($this->consts['REQUEST_PARAS'] as $item) {
             foreach($item as $key=>$value) {
                 if (!in_array($key, ['checker', 'must_fill', 'default_value','converter',]))
-                    throw new \Exception("ERROR SETTING IN USING THIS SNIPPET");
+                    throw new \Exception("ERROR SETTING IN THIS SNIPPET");
                 if (in_array($key, ['checker','converter']) && !is_callable($value))
-                    throw new \Exception("ERROR SETTING IN USING THIS SNIPPET");
+                    throw new \Exception("ERROR SETTING IN THIS SNIPPET");
             }
         }
     }
@@ -39,9 +40,11 @@ class Controller {
             $la_paras = get_object_vars($la_paras);
         }
         */
+        $para_count = 0;
         foreach ($this->consts['REQUEST_PARAS'] as $key=>$item) {
             $rename = $item['rename'] ?? $key;
             if (array_key_exists($key, $la_paras)) {
+                $para_count += 1;
                 if (isset($item['checker']) && !$item['checker']($la_paras[$key]))
                     return false;
                     //throw new \Exception("INVALID_PARAMETER");
@@ -52,18 +55,21 @@ class Controller {
                 //throw new \Exception("MISSING_PARAMETER:".$key);
             }
         }
-        if (count($la_paras) > count($this->consts['REQUEST_PARAS'])) {
+        if (count($la_paras) > $para_count) {
             return false;
             //throw new \Exception("INVALID_PARAMETER");
+            //throw new \Exception("HAS_UNDEFINED_PARAMETER");
         }
         return true;
     }
 
     public function preprocess_parameters($la_paras) {
         $ret = array();
+        $para_count = 0;
         foreach ($this->consts['REQUEST_PARAS'] as $key=>$item) {
             $rename = $item['rename'] ?? $key;
             if (array_key_exists($key, $la_paras)) {
+                $para_count += 1;
                 if (isset($item['checker']) && !$item['checker']($la_paras[$key]))
                     throw new \Exception("INVALID_PARAMETER");
                 $value = $la_paras[$key];
@@ -77,17 +83,20 @@ class Controller {
                 $ret[$rename] = (isset($item['converter'])) ? $item['converter']($value) : $value;
             }
         }
+        if (count($la_paras) > $para_count) {
+            throw new \Exception("HAS_UNDEFINED_PARAMETER");
+        }
         return $ret;
     }
 
     public function test_snippet() {
         assert(false === $this->check_parameters(['id'=>'1'])); //string '1' is not int...
-        assert(false === $this->check_parameters(['id'=>'1', 2, 3, 4, 5,])); //too many parameters
-        assert(true === $this->check_parameters(['id'=>1, 2, 3, 4,])); //now is OK
-        assert(false === $this->check_parameters(['id'=>1, 'message'=>'too long message 12345678901234567890', 3, 4,])); 
-        assert(true === $this->check_parameters(['id'=>1, 'message'=>'short message ', 3, 4,])); 
-        var_dump($this->preprocess_parameters(['id'=>1, 'message'=>'short message ', 3, 4,])); 
-        var_dump($this->preprocess_parameters(['id'=>1, 'message'=>'short message ', 'datetime'=>"20171114", 4,])); 
+        assert(true === $this->check_parameters(['id'=>1])); //now is OK
+        assert(false === $this->check_parameters(['id'=>'1', 'foo'=>2,])); //undefined parameters
+        assert(false === $this->check_parameters(['id'=>1, 'message'=>'too long message 12345678901234567890',])); 
+        assert(true === $this->check_parameters(['id'=>1, 'message'=>'short message ',])); 
+        var_dump($this->preprocess_parameters(['id'=>1, 'message'=>'short message ',])); 
+        var_dump($this->preprocess_parameters(['id'=>1, 'message'=>'short message ', 'datetime'=>"20171114",])); 
     }
 }
 

@@ -64,8 +64,8 @@ class AliService{
         return $ret;
     }
 
-    public function create_order($la_paras){
-        $vendor_ali_info = $this->get_account_info($la_paras['account_id']??null);
+    public function create_order($la_paras, $account_id){
+        $vendor_ali_info = $this->get_account_info($account_id);
         $input = $this->create_request_common($la_paras);
         $input['service'] = "alipay.acquire.precreate";
         $input['notify_url'] = $this->consts['NOTIFY_URL'];
@@ -103,8 +103,8 @@ class AliService{
         return parse_xml_check_err_throw($result);
     }
 
-    public function query_charge_single($la_paras){
-        $vendor_ali_info = $this->get_account_info($la_paras['account_id']??null);
+    public function query_charge_single($la_paras, $account_id){
+        $vendor_ali_info = $this->get_account_info($account_id);
         $input = $this->create_request_common($la_paras);
         $input['service'] = "alipay.acquire.overseas.query";
         $input['partner_trans_id'] = $la_paras['out_trade_no'];
@@ -118,9 +118,9 @@ class AliService{
             throw new \Exception($errmsg, 2);
         return parse_xml_check_err_throw($result);
     }
-    public function query_refund_single($la_paras){
+    public function query_refund_single($la_paras, $account_id){
         throw new \Exception("Not Supported.", 2);
-        $vendor_ali_info = $this->get_account_info($la_paras['account_id']??null);
+        $vendor_ali_info = $this->get_account_info($account_id);
         $input = $this->create_request_common($la_paras);
         $input['service'] = "alipay.acquire.overseas.query";
         if (!empty($la_paras['refund_id']))
@@ -137,8 +137,8 @@ class AliService{
         return parse_xml_check_err_throw($result);
     }
 
-    public function create_refund($la_paras){
-        $vendor_ali_info = $this->get_account_info($la_paras['account_id']??null);
+    public function create_refund($la_paras, $account_id){
+        $vendor_ali_info = $this->get_account_info($account_id);
         $input = $this->create_request_common($la_paras);
         $input['service'] = "alipay.acquire.overseas.spot.refund";
         $input['partner_trans_id'] = $la_paras['out_trade_no'];
@@ -160,12 +160,12 @@ class AliService{
     public function handle_notify($needSignOutput) {
     }
 
-    public function vendor_txn_to_rtt_txn($ali_txn, $side_info) {
+    public function vendor_txn_to_rtt_txn($ali_txn, $account_id) {
         $ret = array();
         $attr_map = [
             ['ref_id', 'out_trade_no'], 
             ['is_refund', null, false],
-            ['account_id', null, $side_info['account_id']],
+            ['account_id', null, $account_id],
             ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
             ['vendor_txn_id', 'alipay_trans_id'],
             ['vendor_txn_time', 'alipay_pay_time', function ($dtstr) {

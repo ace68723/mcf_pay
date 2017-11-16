@@ -47,8 +47,8 @@ class WxService
         return $ret;
     }
 
-    public function create_order($la_paras){
-        $vendor_wx_info = $this->get_account_info($la_paras['account_id']??null);
+    public function create_order($la_paras, $account_id){
+        $vendor_wx_info = $this->get_account_info($account_id);
         $sub_mch_id = $vendor_wx_info->sub_mch_id;
         $input = new \WxPayUnifiedOrder();
         $input->SetBody(mb_strcut($la_paras["description"] ?? "Description Missing", 0, 128));
@@ -78,8 +78,8 @@ class WxService
         return array("out_trade_no"=>$la_paras['_out_trade_no'], "code_url"=>$result["code_url"]);
     }
 
-    public function query_charge_single($la_paras) {
-        $vendor_wx_info = $this->get_account_info($la_paras['account_id']??null);
+    public function query_charge_single($la_paras, $account_id) {
+        $vendor_wx_info = $this->get_account_info($account_id);
         if (empty($la_paras['out_trade_no']))
             throw new \Exception("Out_trade_no Missing", 1);
 		$input = new \WxPayOrderQuery();
@@ -92,8 +92,8 @@ class WxService
 		return $result;
 	}
 
-    public function query_refund_single($la_paras) {
-        $vendor_wx_info = $this->get_account_info($la_paras['account_id']??null);
+    public function query_refund_single($la_paras, $account_id) {
+        $vendor_wx_info = $this->get_account_info($account_id);
         if (empty($la_paras['refund_id']))
             throw new \Exception("Refund_id Missing", 1);
 	    $input = new \WxPayRefundQuery();
@@ -106,8 +106,8 @@ class WxService
 		return $result;
 	}
 
-    public function create_refund($la_paras) {
-        $vendor_wx_info = $this->get_account_info($la_paras['account_id']??null);
+    public function create_refund($la_paras, $account_id) {
+        $vendor_wx_info = $this->get_account_info($account_id);
         if (empty($la_paras['out_trade_no']))
             throw new \Exception("Out_trade_no Missing", 1);
         if (!empty($la_paras['total_fee_currency']) 
@@ -130,12 +130,12 @@ class WxService
 		return $result;
 	}
 
-    public function vendor_txn_to_rtt_txn($wx_txn, $side_info) {
+    public function vendor_txn_to_rtt_txn($wx_txn, $account_id) {
         $ret = array();
         $attr_map = [
             ['ref_id', 'out_trade_no'], 
             ['is_refund', null, false],
-            ['account_id', null, $side_info['account_id']], //TODO check this with sub_mch_id
+            ['account_id', null, $account_id], //TODO check this with sub_mch_id
             ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
             ['vendor_txn_id', 'transaction_id'],
             ['vendor_txn_time', 'time_end', function ($dtstr) { 
