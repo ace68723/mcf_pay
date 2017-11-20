@@ -71,9 +71,9 @@ class WxService
             throw  new \Exception("WRONG SCENARIO!", 1);
         $input->SetTrade_type("NATIVE");
         $input->SetProduct_id(date("YmdHis"));
-        Log::info("Send to WxPay server:".json_encode($input->getValues()));
+        Log::info("Send to WxPay server:".json_encode($input->getValues(), JSON_UNESCAPED_UNICODE));
 		$result = \WxPayApi::unifiedOrder($input, 10);
-        Log::info("Received from WxPay server:".json_encode($result));
+        Log::info("Received from WxPay server:".json_encode($result, JSON_UNESCAPED_UNICODE));
         checkErrToThrow($result);
         return array("out_trade_no"=>$la_paras['_out_trade_no'], "code_url"=>$result["code_url"]);
     }
@@ -85,9 +85,9 @@ class WxService
 		$input = new \WxPayOrderQuery();
 		$input->SetOut_trade_no($la_paras['out_trade_no']);
         $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
-        Log::DEBUG("query_txn_single_wx:sending:" . json_encode($input->GetValues()));
+        Log::DEBUG("query_txn_single_wx:sending:" . json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
 		$result = \WxPayApi::orderQuery($input);
-		Log::DEBUG("query_txn_single_wx:received:" . json_encode($result));
+		Log::DEBUG("query_txn_single_wx:received:" . json_encode($result, JSON_UNESCAPED_UNICODE));
         checkErrToThrow($result);
 		return $result;
 	}
@@ -99,9 +99,9 @@ class WxService
 	    $input = new \WxPayRefundQuery();
 		$input->SetOut_refund_no($la_paras['refund_id']);
         $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
-        Log::DEBUG("query_refund_single_wx:sending:" . json_encode($input->GetValues()));
+        Log::DEBUG("query_refund_single_wx:sending:" . json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
 		$result = \WxPayApi::refundQuery($input);
-		Log::DEBUG("query_refund_single_wx:received:" . json_encode($result));
+		Log::DEBUG("query_refund_single_wx:received:" . json_encode($result, JSON_UNESCAPED_UNICODE));
         checkErrToThrow($result);
 		return $result;
 	}
@@ -122,9 +122,9 @@ class WxService
         $input->SetOut_refund_no($la_paras['_refund_id']);
         $input->SetOp_user_id(\WxPayConfig::MCHID);
         $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
-        Log::DEBUG("create_refund_wx:sending:" . json_encode($input->GetValues()));
+        Log::DEBUG("create_refund_wx:sending:" . json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
 		$result = \WxPayApi::refund($input);
-		Log::DEBUG("create_refund_wx:received:" . json_encode($result));
+		Log::DEBUG("create_refund_wx:received:" . json_encode($result), JSON_UNESCAPED_UNICODE);
         return $result;
         checkErrToThrow($result);
 		return $result;
@@ -187,7 +187,7 @@ class Notify extends \WxPayNotify
 		$input->SetTransaction_id($transaction_id);
         $input->SetSub_mch_id($sub_mch_id);
 		$result = \WxPayApi::orderQuery($input);
-		Log::DEBUG("query:" . json_encode($result));
+		Log::DEBUG("query:" . json_encode($result, JSON_UNESCAPED_UNICODE));
 		if(array_key_exists("return_code", $result)
 			&& array_key_exists("result_code", $result)
 			&& $result["return_code"] == "SUCCESS"
@@ -200,7 +200,7 @@ class Notify extends \WxPayNotify
 
 	public function NotifyProcess($data, &$msg)
     {
-		Log::DEBUG("call back:" . json_encode($data));
+		Log::DEBUG("call back:" . json_encode($data, JSON_UNESCAPED_UNICODE));
 		$notfiyOutput = array();
 		
 		if(!array_key_exists("transaction_id", $data) || !array_key_exists("sub_mch_id", $data)){

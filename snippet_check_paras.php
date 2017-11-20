@@ -8,10 +8,10 @@ class Controller {
         };
         $this->consts = array();
         $this->consts['REQUEST_PARAS'] = [
-            'id'=>['checker'=>'is_int', 'must_fill'=>true,],
+            'id'=>['checker'=>'is_int', 'required'=>true,],
             'message'=>[
                 'checker'=>$is_str_max_len(20),
-                'must_fill'=>false,
+                'required'=>false,
                 'default_value'=>'msg missing',
             ],
             'datetime'=>[
@@ -24,9 +24,10 @@ class Controller {
         // the following loop checks the correctness of the above meta setting.
         // in case of typos, e.g. set 'checkers' instead of 'checker'
         // You may comment it in production.
+        // To support multiple api with the same controller, TODO: modify the checking codes.
         foreach($this->consts['REQUEST_PARAS'] as $item) {
             foreach($item as $key=>$value) {
-                if (!in_array($key, ['checker', 'must_fill', 'default_value','converter',]))
+                if (!in_array($key, ['checker', 'required', 'default_value','converter',]))
                     throw new \Exception("ERROR SETTING IN THIS SNIPPET");
                 if (in_array($key, ['checker','converter']) && !is_callable($value))
                     throw new \Exception("ERROR SETTING IN THIS SNIPPET");
@@ -34,14 +35,22 @@ class Controller {
         }
     }
 
-    public function check_parameters($la_paras) {
+    public function check_parameters($input, $api_name=null) {
         /*
-        if (is_object($la_paras)) {
+        if (is_object($la_paras)) 
             $la_paras = get_object_vars($la_paras);
-        }
+        elseif (instanceof(Request, $input)
+            $la_paras = $request->json()->all();
+        else
+            $la_paras = $input;
         */
+        $la_paras = $input;
+        $api_paras_def =  empty($api_name) ? $this->consts['REQUEST_PARAS'] : 
+            $this->consts['REQUEST_PARAS'][$api_name];
+        if (empty($api_paras_def))
+            throw new \Exception('EMPTY_API_DEFINITION for '.$api_name);
         $para_count = 0;
-        foreach ($this->consts['REQUEST_PARAS'] as $key=>$item) {
+        foreach ($api_paras_def as $key=>$item) {
             $rename = $item['rename'] ?? $key;
             if (array_key_exists($key, $la_paras)) {
                 $para_count += 1;
@@ -49,7 +58,7 @@ class Controller {
                     return false;
                     //throw new \Exception("INVALID_PARAMETER");
             }
-            elseif (!empty($item['must_fill'])) {
+            elseif (!empty($item['required'])) {
                 return false;
                 //throw new \Exception("INVALID_PARAMETER");
                 //throw new \Exception("MISSING_PARAMETER:".$key);
@@ -63,10 +72,23 @@ class Controller {
         return true;
     }
 
-    public function preprocess_parameters($la_paras) {
+    public function preprocess_parameters($input, $api_name=null) {
+        /*
+        if (is_object($la_paras)) 
+            $la_paras = get_object_vars($la_paras);
+        elseif (instanceof(Request, $input)
+            $la_paras = $request->json()->all();
+        else
+            $la_paras = $input;
+        */
+        $la_paras = $input;
+        $api_paras_def =  empty($api_name) ? $this->consts['REQUEST_PARAS'] : 
+            $this->consts['REQUEST_PARAS'][$api_name];
+        if (empty($api_paras_def))
+            throw new \Exception('EMPTY_API_DEFINITION for '.$api_name);
         $ret = array();
         $para_count = 0;
-        foreach ($this->consts['REQUEST_PARAS'] as $key=>$item) {
+        foreach ($api_paras_def as $key=>$item) {
             $rename = $item['rename'] ?? $key;
             if (array_key_exists($key, $la_paras)) {
                 $para_count += 1;
@@ -75,7 +97,7 @@ class Controller {
                 $value = $la_paras[$key];
                 $ret[$rename] = (isset($item['converter'])) ? $item['converter']($value) : $value;
             }
-            elseif (!empty($item['must_fill'])) {
+            elseif (!empty($item['required'])) {
                 throw new \Exception("INVALID_PARAMETER");
             }
             elseif (array_key_exists('default_value', $item)) {

@@ -3,6 +3,11 @@
 * 	配置账号信息
 */
 
+// @modified xunrui@chanmao.ca
+define('WxPayConfig_APPID', env('CHANNEL_WX_APPID'));
+define('WxPayConfig_MCHID', env('CHANNEL_WX_MCHID'));
+define('WxPayConfig_KEY', env('CHANNEL_WX_KEY'));
+
 class WxPayConfig
 {
 	//=======【基本信息设置】=====================================
@@ -29,11 +34,6 @@ class WxPayConfig
     //const KEY = '8934e7d15453e97507ef794cf7b0519d';
 	//const APPSECRET = '7813490da6f1265e4901ffb80afaa36f';
      
-    // @modified xunrui@chanmao.ca
-    const APPID = env('CHANNEL_WX_APPID');
-    const MCHID = env('CHANNEL_WX_MCHID');
-    const KEY = env('CHANNEL_WX_KEY');
-
     const GATEWAY_URL = "";
 
 	

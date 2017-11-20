@@ -16,6 +16,7 @@ require_once __DIR__."/WxPay.Exception.php";
 class WxPayDataBase
 {
 	protected $values = array();
+
 	
 	/**
 	* 设置签名，详见签名生成算法
@@ -115,7 +116,7 @@ class WxPayDataBase
 		ksort($this->values);
 		$string = $this->ToUrlParams();
 		//签名步骤二：在string后加入KEY
-		$string = $string . "&key=".WxPayConfig::KEY;
+		$string = $string . "&key=".WxPayConfig_KEY;
 		//签名步骤三：MD5加密
 		$string = md5($string);
 		//签名步骤四：所有字符转为大写

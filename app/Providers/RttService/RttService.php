@@ -11,36 +11,9 @@ class RttService{
     public function __construct()
     {
         $this->consts = array();
-        $this->consts['OUT_TRADE_NO_PREFIX'] = "MCF";
+        $this->consts['OUR_NAME'] = "MCF";
         $this->consts['CHANNELS'] = array('WX'=>0x1, 'ALI'=>0x2,);
 
-        $this->consts['REQUEST_PARAS'] = [
-            'account_id'=>[],
-            'vendor_channel'=>[],
-            'total_fee_in_cent'=>[],
-            'total_fee_currency'=>[],
-            'scenario'=>[],
-            'description'=>[],
-            'timestamp'=>[],
-            'expire_time_sec'=>[],
-            'passback_data'=>[],
-            'extend_params'=>[],
-            'query_type'=>[],
-            'out_trade_no'=>[],
-            'vendor_txn_id'=>[],
-            'refund_id'=>[],
-            'refund_no'=>[],
-            'refund_fee_in_cent'=>[],
-            'refund_fee_currency'=>[],
-        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
-        foreach($this->consts['REQUEST_PARAS'] as $item) {
-            foreach($item as $key=>$value) {
-                if (!in_array($key, ['checker', 'must_fill', 'default_value','converter',]))
-                    throw new \Exception("ERROR SETTING IN USING THIS SNIPPET");
-                if (in_array($key, ['checker','converter']) && !is_callable($value))
-                    throw new \Exception("ERROR SETTING IN USING THIS SNIPPET");
-            }
-        }
     }
 
     public function resolve_channel_sp($account_id, $channel) {
@@ -63,18 +36,6 @@ class RttService{
             DB::table('account_base')->where('account_id','=',$account_id)->first();
     }
 
-    public function parse_parameters(Request $request) {
-        $la_res = array();
-        $jsonObj = $request->json();
-        foreach ($this->consts['REQUEST_PARAS'] as $key=>$item) {
-            if ($jsonObj->has($key)){
-                $la_res[$key] = $jsonObj->get($key);
-            }
-        }
-        Log::DEBUG("parsed:".json_encode($la_res));
-        return $la_res;
-    }
-
     public function generate_txn_ref_id($la_paras, $account_ref_id, $type, $max_length=32) {
         // default max_length 32 is because wxpay's out trade no is of string(32)
         if ($type == 'ORDER') {
@@ -85,7 +46,7 @@ class RttService{
             if (empty($account_ref_id))
                 throw new \Exception(__FUNCTION__.": account_ref_id missing", 1);
             $account_ref_id = substr($account_ref_id, 0, 6);
-            $ref_id = $this->consts['OUT_TRADE_NO_PREFIX'].$vendor_channel.
+            $ref_id = $this->consts['OUR_NAME'].$vendor_channel.
                 $account_ref_id.date("YmdHis").bin2hex(random_bytes(2));
             if (strlen($ref_id) > $max_length)
                 throw new \Exception(__FUNCTION__.": exceeds max_length", 1);

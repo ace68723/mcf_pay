@@ -43,14 +43,15 @@ class AuthServiceProvider extends ServiceProvider
                 ->where('account_key', '=', $request->input('account_key'))->first();
             if (empty($secInfo) || empty($secInfo->account_secret))
                 return null;
-            /*
+
             //IMPORTANT TODO comment this *****************
-            if (env('APP_DEBUG', false))
-                return ($secInfo->account_id == $request->input['account_id']) ? 
-                    new GenericUser(['account_id'=>$secInfo->account_id]) : null;
-            //********************************
-            return new GenericUser(['account_id'=>$secInfo->account_id]);
+            /*
+            if (env('APP_DEBUG', false)) {
+                return new GenericUser(['account_id'=>$secInfo->account_id]);
+            }
              */
+            //********************************
+
             $input_paras = $request->json()->all();
 		    ksort($input_paras);
             $string = "";
@@ -60,7 +61,7 @@ class AuthServiceProvider extends ServiceProvider
                 }
             }
 		    $string = trim($string, "&");
-            Log::DEBUG("string to check sign before attach key:". $string);
+            Log::DEBUG("string to check sign before attach key:". utf8_decode($string));
 		    $string = md5($string."&key=".$secInfo->account_secret);
             Log::DEBUG("md5 result:". $string);
             if (strtoupper($string) != strtoupper($request->input('sign')))

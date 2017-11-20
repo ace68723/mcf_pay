@@ -20,7 +20,7 @@ class Vendor_wx_Seeder extends Seeder
         DB::table('vendor_wx')->insert([
             'account_id'=>3, 
             'rate'=>150,
-            'sub_mch_id'=>'50775702',
+            'sub_mch_id'=>'52142393',
         ]);
     }
 }
