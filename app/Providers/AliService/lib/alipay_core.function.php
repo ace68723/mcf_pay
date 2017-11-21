@@ -13,14 +13,29 @@
  * convert xml to array
  * @author xunrui
  */
-function xml_to_array($xml) {	
+function parse_xml_response($xml) {	
     if(!$xml){
         return array();
     }
     //将XML转为array
     //禁止引用外部xml实体
     libxml_disable_entity_loader(true);
-    return json_decode(json_encode(simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA)), true);		
+    $xml_ele = simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA);
+    /*
+    foreach($xml_ele->children() as $a){
+        if ($a->getName() == "response") {
+            foreach($a->children() as $subchild) {
+                if ($subchild->getName() == "alipay") {
+                    $sign_str = $subchild->asXML();
+                    break;
+                }
+            }
+            break;
+        }
+    }
+     */
+    $ret = json_decode(json_encode($xml_ele), true);
+    return  $ret;
 }
 
 /**

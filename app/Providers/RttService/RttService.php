@@ -84,4 +84,8 @@ class RttService{
         }
     }
 
+    public function download_bills($start_date, $end_date) {
+        Log::DEBUG("in ".__FUNCTION__);
+    }
+
 }

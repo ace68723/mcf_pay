@@ -16,14 +16,16 @@ function sec_to_short_str($sec) {
     return $sec."s";
 }
 
-function parse_xml_check_err_throw($result) {
-    $result = xml_to_array($result);
+function parse_xml_check_err_throw($xmlstr, $key) {
+    $result = parse_xml_response($xmlstr);
     if (!isset($result["is_success"]) || ($result["is_success"] != "T"))
         throw new \Exception($result["error"]??"Error msg missing!", 2);
     if (!isset($result["response"]) || !isset($result["response"]["alipay"]))
         throw new \Exception("Malformed Response From AliPay Server", 2);
-    //$verify_sign = checkSign(); //TODO
     $response = $result["response"]["alipay"];
+    $sign_str = getSignString($response);
+    if (md5Sign($sign_str, $key) != $result["sign"])
+        throw new \Exception("vendor response sign error", 2);
     if (!isset($response["result_code"]) || ($response["result_code"] != "SUCCESS"))
         throw new \Exception($response["detail_error_code"] ??
                         $response["error"] ?? "Error msg missing!", 3);
@@ -100,7 +102,7 @@ class AliService{
         Log::info("Received from AliPay server:".$result."\nErrmsg:".$errmsg);
         if ($result === false)
             throw new \Exception($errmsg, 2);
-        return parse_xml_check_err_throw($result);
+        return parse_xml_check_err_throw($result, $this->consts['KEY']);
     }
 
     public function query_charge_single($la_paras, $account_id){
@@ -116,7 +118,7 @@ class AliService{
         Log::info("Received from AliPay server:".$result."\nErrmsg:".$errmsg);
         if ($result === false)
             throw new \Exception($errmsg, 2);
-        return parse_xml_check_err_throw($result);
+        return parse_xml_check_err_throw($result, $this->consts['KEY']);
     }
     public function query_refund_single($la_paras, $account_id){
         throw new \Exception("Not Supported.", 2);
@@ -134,7 +136,7 @@ class AliService{
         Log::info("Received from AliPay server:".$result."\nErrmsg:".$errmsg);
         if ($result === false)
             throw new \Exception($errmsg, 2);
-        return parse_xml_check_err_throw($result);
+        return parse_xml_check_err_throw($result, $this->consts['KEY']);
     }
 
     public function create_refund($la_paras, $account_id){
@@ -154,7 +156,7 @@ class AliService{
         Log::info("Received from AliPay server:".$result."\nErrmsg:".$errmsg);
         if ($result === false)
             throw new \Exception($errmsg, 2);
-        return parse_xml_check_err_throw($result);
+        return parse_xml_check_err_throw($result, $this->consts['KEY']);
     }
 
     public function handle_notify($needSignOutput) {

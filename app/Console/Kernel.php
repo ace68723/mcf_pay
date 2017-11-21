@@ -25,5 +25,9 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         //
+        $schedule->call(function () {
+            $sp = app()->make('rtt_service');
+            $sp->download_bills("20170911","20171011");
+        })->everyMinute();
     }
 }
