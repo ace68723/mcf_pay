@@ -43,9 +43,6 @@ class OrderController extends Controller
                 return is_int($x) && $x>=$larger_or_equal && $x<=$lesser_or_equal; 
             };
         };
-        $sub_str_max_len = function ($maxlen) {
-            return function ($x) use ($maxlen) { return substr($x, 0, $maxlen); };
-        };
 
         $this->consts['REQUEST_PARAS'] = [];
         $this->consts['IGNORED_REQ_PARAS'] = [
@@ -53,7 +50,7 @@ class OrderController extends Controller
         ];
         $this->consts['REQUEST_PARAS']['create_order'] = [
             'vendor_channel'=>[
-                'checker'=>$is_str_max_len(8),
+                'checker'=>['is_string', 8],
                 'required'=>true,
             ],
             'total_fee_in_cent'=>[
@@ -61,16 +58,16 @@ class OrderController extends Controller
                 'required'=>true,
             ],
             'total_fee_currency'=>[
-                'checker'=>$is_str_max_len(16),
+                'checker'=>['is_string', 16],
                 'required'=>true,
             ],
             'scenario'=>[
-                'checker'=>$is_str_max_len(16),
+                'checker'=>['is_string', 16],
                 'required'=>true,
             ],
             'description'=>[
-                'checker'=>$is_str_max_len(128),
-                'required'=>false,
+                'checker'=>['is_string', 128],
+            //    'required'=>false,
                 'default_value'=>" Supported by ". $this->sp_rtt->consts['OUR_NAME'],
             ],
             'timestamp'=>[
@@ -82,7 +79,7 @@ class OrderController extends Controller
                 'required'=>false,
             ],
             'passback_data'=>[
-                'checker'=>$is_str_max_len(256),
+                'checker'=>['is_string', 256],
                 'required'=>false,
             ],
             'extend_params'=>[
@@ -94,30 +91,30 @@ class OrderController extends Controller
 
         $this->consts['REQUEST_PARAS']['query_txn_single'] = [
             'vendor_channel'=>[
-                'checker'=>$is_str_max_len(8),
+                'checker'=>['is_string', 8],
                 'required'=>true,
             ],
             'query_type'=>[
-                'checker'=>$is_str_max_len(16),
+                'checker'=>['is_string', 16],
                 'required'=>true,
             ],
             'out_trade_no'=>[
-                'checker'=>$is_str_max_len(64),
+                'checker'=>['is_string', 64],
                 'required'=>true,
             ],
             'vendor_txn_id'=>[
-                'checker'=>$is_str_max_len(64),
+                'checker'=>['is_string', 64],
                 'required'=>false,
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
         $this->consts['REQUEST_PARAS']['create_refund'] = [
             'vendor_channel'=>[
-                'checker'=>$is_str_max_len(8),
+                'checker'=>['is_string', 8],
                 'required'=>true,
             ],
             'refund_no'=>[
-                'checker'=>$is_int_in_range(1,5),
+                'checker'=>['is_int', [1,5]],
                 'required'=>true,
             ],
             'refund_fee_in_cent'=>[
@@ -125,61 +122,25 @@ class OrderController extends Controller
                 'required'=>true,
             ],
             'refund_fee_currency'=>[
-                'checker'=>$is_str_max_len(16),
+                'checker'=>['is_string', 16],
+                'required'=>true,
+            ],
+            'total_fee_in_cent'=>[
+                'checker'=>'is_int',
+                'required'=>true,
+            ],
+            'total_fee_currency'=>[
+                'checker'=>['is_string', 16],
+                'required'=>true,
+            ],
+            'out_trade_no'=>[
+                'checker'=>['is_string', 64],
                 'required'=>true,
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
-
-        foreach($this->consts['REQUEST_PARAS'] as $api_paras_def) {
-            foreach($api_paras_def as $para_key=>$item) {
-                if (substr($para_key, 0, 1) == "_")
-                    throw new \Exception("ERROR SETTING IN API SCHEMA");
-                if (in_array($para_key, $this->consts['IGNORED_REQ_PARAS'])) 
-                    throw new \Exception("ERROR SETTING IN API SCHEMA");
-                foreach($item as $key=>$value) {
-                    if (!in_array($key, ['checker', 'required', 'default_value','converter',]))
-                        throw new \Exception("ERROR SETTING IN API SCHEMA");
-                    if (in_array($key, ['checker','converter']) && !is_callable($value))
-                        throw new \Exception("ERROR SETTING IN API SCHEMA");
-                }
-            }
-        }
+        if (!$this->check_api_def())
+            throw new \Exception("ERROR SETTING IN API SCHEMA");
     }
-
-    public function parse_parameters(Request $request, $api_name) {
-        $api_paras_def =  empty($api_name) ? $this->consts['REQUEST_PARAS'] : 
-            $this->consts['REQUEST_PARAS'][$api_name];
-        if (empty($api_paras_def))
-            throw new \Exception('EMPTY_API_DEFINITION for '.$api_name);
-        $ret = array();
-        $la_paras = $request->json()->all();
-        $para_count = 0;
-        foreach ($api_paras_def as $key=>$item) {
-            $rename = $item['rename'] ?? $key;
-            if (array_key_exists($key, $la_paras)) {
-                $para_count += 1;
-                if (isset($item['checker']) && !$item['checker']($la_paras[$key]))
-                    throw new \Exception("INVALID_PARAMETER"." check failed:".$key);
-                $value = $la_paras[$key];
-                $ret[$rename] = (isset($item['converter'])) ? $item['converter']($value) : $value;
-            }
-            elseif (!empty($item['required'])) {
-                throw new \Exception("INVALID_PARAMETER"." missing required:".$key);
-            }
-            elseif (array_key_exists('default_value', $item)) {
-                $value = $item['default_value'];
-                $ret[$rename] = (isset($item['converter'])) ? $item['converter']($value) : $value;
-            }
-        }
-        foreach ($this->consts['IGNORED_REQ_PARAS'] as $ign_para) 
-            $para_count += array_key_exists($ign_para, $la_paras) ? 1:0;
-        if (count($la_paras) > $para_count) {
-            throw new \Exception("HAS_UNDEFINED_PARAMETER");
-        }
-        Log::DEBUG("parsed:".json_encode($ret));
-        return $ret;
-    }
-
 
     public function create_order(Request $request)
     {

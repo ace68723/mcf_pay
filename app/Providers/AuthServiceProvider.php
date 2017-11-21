@@ -45,11 +45,9 @@ class AuthServiceProvider extends ServiceProvider
                 return null;
 
             //IMPORTANT TODO comment this *****************
-            /*
             if (env('APP_DEBUG', false)) {
                 return new GenericUser(['account_id'=>$secInfo->account_id]);
             }
-             */
             //********************************
 
             $input_paras = $request->json()->all();

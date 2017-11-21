@@ -18,6 +18,7 @@ $router->get('/', function () use ($router) {
 $router->post('/create_order/', ['middleware'=>'auth', 'uses'=>'OrderController@create_order']);
 $router->post('/create_refund/', ['middleware'=>'auth', 'uses'=>'OrderController@create_refund']);
 $router->post('/query_txn_single/', ['middleware'=>'auth', 'uses'=>'OrderController@query_txn_single']);
+$router->get('/show_base_api/', ['uses'=>'OrderController@api_doc_md']);
 
 $router->post('/notify/wx/', ['uses'=>'OrderController@handle_notify_wx']);
 $router->post('/notify/ali/', ['uses'=>'OrderController@handle_notify_ali']);

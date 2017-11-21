@@ -2,9 +2,150 @@
 
 namespace App\Http\Controllers;
 
+use Log;
+use Illuminate\Http\Request;
 use Laravel\Lumen\Routing\Controller as BaseController;
 
 class Controller extends BaseController
 {
     //
+    public function __construct()
+    {
+        parent::__construct();
+    }
+    public function check_api_def()
+    {
+        $hasIgnorePara = !empty($this->consts['IGNORED_REQ_PARAS']);
+        if (empty($this->consts['REQUEST_PARAS']))
+            return false;
+        foreach($this->consts['REQUEST_PARAS'] as $api_name=>$api_paras_def) {
+            foreach($api_paras_def as $para_key=>$item) {
+                if (substr($para_key, 0, 1) == "_")
+                    return false;
+                if (in_array($para_key, $this->consts['IGNORED_REQ_PARAS'])) 
+                    return false;
+                foreach($item as $key=>$value) {
+                    if (!in_array($key, ['checker', 'required', 'default_value','converter']))
+                        return false;
+                    if (in_array($key, ['checker','converter'])) {
+                        $tocheck = is_array($value) ? ($value[0]??null) : $value;
+                        if (!is_callable($tocheck)) {
+                            //throw new \Exception("invalid setting:".$api_name.":".$para_key,1);
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    public function api_doc_md() {
+        $output = "";
+        foreach($this->consts['REQUEST_PARAS'] as $api_spec_name=>$api_spec) {
+            $output .= "##".$api_spec_name."\n\n";
+            $output .= "|  Tables  |       说明       | 默认值  |\n";
+            $output .= "| :------: | :------------: | :--: |\n";
+            $output .= "|   URL    | /".$api_spec_name."/ |      |\n";
+            $output .= <<<doc
+| HTTP请求方式 |      POST      |      |
+|  是否需要登录  |       否        |      |
+|  授权访问限制  |     MD5签名      |      |
+|  授权范围()  |      单次请求      |      |
+|   支持格式   |  JSON (utf-8)  |      |
+
+表头参数:
+
+| Tables       | 类型及其范围 | 说明               | 默认值  |
+| ------------ | ------ | ---------------- | ---- |
+| Content-Type | string | application/json |      |
+
+
+Body参数:
+
+| Tables             | 类型及其范围      | 必填   | 说明                            | 默认值/样例           |
+| ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
+
+doc;
+            foreach($api_spec as $para_name=>$para_spec) {
+                $type_str = $para_spec['checker'] ?? null;
+                if (is_array($type_str))
+                    $type_str = $type_str[0] ?? null;
+                if (!is_string($type_str)) {
+                    $type_str = "customized";
+                }
+                if (substr($type_str, 0, 3) == "is_")
+                    $type_str = substr($type_str, 3);
+                $checker_para = is_array($para_spec['checker'])? ($para_spec['checker'][1]??null) :null;
+                if (!empty($checker_para)) {
+                    if (is_array($checker_para))
+                        $type_str .= "(". implode(",",$checker_para) .")";
+                    else
+                        $type_str .= "(". $checker_para .")";
+                }
+                $required_str = !empty($para_spec['required']) ? "是" : "否";
+                $output .= "| ". $para_name . " | ". $type_str . " | " . $required_str;
+                $output .= " | ----------------------------- | ---------------- | ";
+                $output .= "\n";
+            }
+            $output .= "\n";
+        }
+        return response($output)->header('Content-Type', 'text/markdown; charset=utf-8');
+    }
+
+    public function parse_parameters(Request $request, $api_name) {
+        $api_paras_def =  empty($api_name) ? $this->consts['REQUEST_PARAS'] : 
+            $this->consts['REQUEST_PARAS'][$api_name];
+        if (empty($api_paras_def))
+            throw new \Exception('EMPTY_API_DEFINITION for '.$api_name);
+        $ret = array();
+        $la_paras = $request->json()->all();
+        $para_count = 0;
+        function resolve_func_and_call($func_spec, $value) {
+            $b_extra_para = is_array($func_spec) && count($func_spec)>=2;
+            $func = is_array($func_spec)? $func_spec[0]: $func_spec;
+            if ($b_extra_para && $func == 'is_int') {
+                $value = is_int($value) && $value>=$func_spec[1][0] && $value<=$func_spec[1][1];
+            }
+            elseif ($b_extra_para && $func == 'is_string') {
+                $value = is_string($value) && strlen($value)<=$func_spec[1];
+            }
+            else 
+                $value = $b_extra_para ? $func($value, $func_spec[1]):$func($value);
+            return $value;
+        }
+        foreach ($api_paras_def as $key=>$item) {
+            $rename = $item['rename'] ?? $key;
+            if (array_key_exists($key, $la_paras)) {
+                $para_count += 1;
+                if (isset($item['checker'])) {
+                    if (!resolve_func_and_call($item['checker'], $la_paras[$key]))
+                        throw new \Exception("INVALID_PARAMETER"." check failed:".$key);
+                }
+                $value = $la_paras[$key];
+                if (isset($item['converter'])) {
+                    $value = resolve_func_and_call($item['converter'], $value);
+                }
+                $ret[$rename] = $value;
+            }
+            elseif (!empty($item['required'])) {
+                throw new \Exception("INVALID_PARAMETER"." missing required:".$key);
+            }
+            elseif (array_key_exists('default_value', $item)) {
+                $value = $item['default_value'];
+                if (isset($item['converter'])) {
+                    $value = resolve_func_and_call($item['converter'], $value);
+                }
+                $ret[$rename] = $value;
+            }
+        }
+        foreach ($this->consts['IGNORED_REQ_PARAS'] as $ign_para) 
+            $para_count += array_key_exists($ign_para, $la_paras) ? 1:0;
+        if (count($la_paras) > $para_count) {
+            throw new \Exception("HAS_UNDEFINED_PARAMETER");
+        }
+        Log::DEBUG("parsed:".json_encode($ret));
+        return $ret;
+    }
 }
+
