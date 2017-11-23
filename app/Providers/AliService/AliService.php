@@ -19,16 +19,16 @@ function sec_to_short_str($sec) {
 function parse_xml_check_err_throw($xmlstr, $key) {
     $result = parse_xml_response($xmlstr);
     if (!isset($result["is_success"]) || ($result["is_success"] != "T"))
-        throw new \Exception($result["error"]??"Error msg missing!", 2);
+        throw new RttException('AL_ERROR_VALIDATION', $result["error"]??"Error msg missing!");
     if (!isset($result["response"]) || !isset($result["response"]["alipay"]))
-        throw new \Exception("Malformed Response From AliPay Server", 2);
+        throw new RttException('AL_ERROR_VALIDATION', "Malformed Response From AliPay Server");
     $response = $result["response"]["alipay"];
     $sign_str = getSignString($response);
     if (md5Sign($sign_str, $key) != $result["sign"])
-        throw new \Exception("vendor response sign error", 2);
+        throw new RttException('AL_ERROR_VALIDATION', "vendor response sign error");
     if (!isset($response["result_code"]) || ($response["result_code"] != "SUCCESS"))
-        throw new \Exception($response["detail_error_code"] ??
-                        $response["error"] ?? "Error msg missing!", 3);
+        throw new RttException('AL_ERROR_BIZ', $response["detail_error_code"] ??
+                        $response["error"] ?? "Error msg missing!");
     return $response;
 }
 
@@ -55,6 +55,7 @@ class AliService{
         );
         $this->consts['STATE_MAP'] = array( //vendor to rtt 
             'TRADE_SUCCESS'=>'SUCCESS',
+            'TRADE_CLOSED'=>'CLOSED',
         );
     }
 
@@ -62,7 +63,7 @@ class AliService{
         $ret = empty($account_id) ? null: 
             DB::table('vendor_ali')->where('account_id','=',$account_id)->first();
         if ($b_emptyAsException && empty($ret))
-            throw new \Exception("Missing Vendor Ali Entry", 1);
+            throw new RttException('SYSTEM_ERROR', "Missing Vendor Ali Entry");
         return $ret;
     }
 
@@ -78,7 +79,7 @@ class AliService{
         $scenario = $la_paras['scenario'] ?? null;
         $scenario = $this->consts['SCENARIO_MAP'][$scenario] ?? null;
         if (empty($scenario) || $scenario != 'OVERSEAS_MBARCODE_PAY')
-            throw  new \Exception("WRONG SCENARIO!", 1);
+            throw  new RttException('SYSTEM_ERROR', "WRONG SCENARIO!");
         $input['product_code'] = 'OVERSEAS_MBARCODE_PAY';
         $input['total_fee'] = number_format(($la_paras["total_fee_in_cent"])/100, 2, ".", "");
         //$input['seller_id'] = $this->consts['PARTNER_ID'];
@@ -101,7 +102,7 @@ class AliService{
         $result = getHttpResponseGET($url, null, $errmsg);
         Log::info("Received from AliPay server:".$result."\nErrmsg:".$errmsg);
         if ($result === false)
-            throw new \Exception($errmsg, 2);
+            throw new RttException('AL_ERROR_VALIDATION', $errmsg);
         return parse_xml_check_err_throw($result, $this->consts['KEY']);
     }
 
@@ -117,11 +118,11 @@ class AliService{
         $result = getHttpResponseGET($url, null, $errmsg);
         Log::info("Received from AliPay server:".$result."\nErrmsg:".$errmsg);
         if ($result === false)
-            throw new \Exception($errmsg, 2);
+            throw new RttException('AL_ERROR_VALIDATION', $errmsg);
         return parse_xml_check_err_throw($result, $this->consts['KEY']);
     }
     public function query_refund_single($la_paras, $account_id){
-        throw new \Exception("Not Supported.", 2);
+        throw new RttException('SYSTEM_ERROR', __FUNCTION__.": Function Not Supported.");
         $vendor_ali_info = $this->get_account_info($account_id);
         $input = $this->create_request_common($la_paras);
         $input['service'] = "alipay.acquire.overseas.query";
@@ -135,7 +136,7 @@ class AliService{
         $result = getHttpResponseGET($url, null, $errmsg);
         Log::info("Received from AliPay server:".$result."\nErrmsg:".$errmsg);
         if ($result === false)
-            throw new \Exception($errmsg, 2);
+            throw new RttException('AL_ERROR_VALIDATION', $errmsg);
         return parse_xml_check_err_throw($result, $this->consts['KEY']);
     }
 

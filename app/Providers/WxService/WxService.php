@@ -7,13 +7,14 @@ require_once __DIR__.'/lib/WxPay.Notify.php';
 use Log;
 //use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Exceptions\RttException;
 
 function checkErrToThrow($result)
 {
     if (!isset($result["return_code"]) || ($result["return_code"] != "SUCCESS"))
-        throw new \Exception($result["return_msg"]??"Error msg missing!", 2);
+        throw new RttException('WX_ERROR_VALIDATION', $result["return_msg"]??"Error msg missing!");
     if (!isset($result["result_code"]) || ($result["result_code"] != "SUCCESS"))
-        throw new \Exception($result["err_code"]??"Error msg missing!", 3);
+        throw new RttException('WX_ERROR_BIZ', $result["err_code"]??"Error msg missing!");
 }
 
 class WxService
@@ -42,7 +43,7 @@ class WxService
         $ret = empty($account_id) ? null: 
             DB::table('vendor_wx')->where('account_id','=',$account_id)->first();
         if ($b_emptyAsException && empty($ret)) {
-            throw new \Exception("Missing Vendor Wx Entry", 1);
+            throw new RttException('SYSTEM_ERROR', "Missing Vendor Wx Entry");
         }
         return $ret;
     }
@@ -68,7 +69,7 @@ class WxService
         $scenario = $la_paras['scenario'] ?? null;
         $scenario = $this->consts['SCENARIO_MAP'][$scenario] ?? null;
         if (empty($scenario) || $scenario != 'NATIVE')
-            throw  new \Exception("WRONG SCENARIO!", 1);
+            throw  new RttException('SYSTEM_ERROR', "WRONG SCENARIO!");
         $input->SetTrade_type("NATIVE");
         $input->SetProduct_id(date("YmdHis"));
         Log::info("Send to WxPay server:".json_encode($input->getValues(), JSON_UNESCAPED_UNICODE));
@@ -81,7 +82,7 @@ class WxService
     public function query_charge_single($la_paras, $account_id) {
         $vendor_wx_info = $this->get_account_info($account_id);
         if (empty($la_paras['out_trade_no']))
-            throw new \Exception("Out_trade_no Missing", 1);
+            throw new RttException('SYSTEM_ERROR', "Out_trade_no Missing");
 		$input = new \WxPayOrderQuery();
 		$input->SetOut_trade_no($la_paras['out_trade_no']);
         $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
@@ -95,7 +96,7 @@ class WxService
     public function query_refund_single($la_paras, $account_id) {
         $vendor_wx_info = $this->get_account_info($account_id);
         if (empty($la_paras['refund_id']))
-            throw new \Exception("Refund_id Missing", 1);
+            throw new RttException('SYSTEM_ERROR', "Refund_id Missing");
 	    $input = new \WxPayRefundQuery();
 		$input->SetOut_refund_no($la_paras['refund_id']);
         $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
@@ -109,10 +110,10 @@ class WxService
     public function create_refund($la_paras, $account_id) {
         $vendor_wx_info = $this->get_account_info($account_id);
         if (empty($la_paras['out_trade_no']))
-            throw new \Exception("Out_trade_no Missing", 1);
+            throw new RttException('SYSTEM_ERROR', "Out_trade_no Missing");
         if (!empty($la_paras['total_fee_currency']) 
             && $la_paras['refund_fee_currency'] != $la_paras['total_fee_currency'])
-            throw new \Exception("Refund Currency must match!", 1);
+            throw new RttException("Refund Currency must match!", 1);
         $input = new \WxPayRefund();
         //$input->SetTransaction_id($la_paras['wx_txn_id']);
         $input->SetOut_trade_no($la_paras['out_trade_no']);

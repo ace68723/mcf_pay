@@ -45,6 +45,16 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $e)
     {
+        if ($e instanceof RttException) {
+            $ls_result = array();
+            //$ls_result['ev_error_phase'] = $e->getCode();
+            $ls_result['ev_error'] = $e->getInnerCode();
+            $ls_result['ev_message'] = $e->getMessage();
+            if (env('APP_DEBUG', false)) {
+                $ls_result['ev_context'] = $e->getContext();
+            }
+            return $ls_result;
+        }
         return parent::render($request, $e);
     }
 }

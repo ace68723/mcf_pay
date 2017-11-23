@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Log;
 use Illuminate\Http\Request;
 use Laravel\Lumen\Routing\Controller as BaseController;
+use App\Exceptions\RttException;
 
 class Controller extends BaseController
 {
@@ -30,7 +31,7 @@ class Controller extends BaseController
                     if (in_array($key, ['checker','converter'])) {
                         $tocheck = is_array($value) ? ($value[0]??null) : $value;
                         if (!is_callable($tocheck)) {
-                            //throw new \Exception("invalid setting:".$api_name.":".$para_key,1);
+                            //throw new RttException('SYSTEM_ERROR', "invalid setting:".$api_name.":".$para_key);
                             return false;
                         }
                     }
@@ -97,7 +98,7 @@ doc;
         $api_paras_def =  empty($api_name) ? $this->consts['REQUEST_PARAS'] : 
             $this->consts['REQUEST_PARAS'][$api_name];
         if (empty($api_paras_def))
-            throw new \Exception('EMPTY_API_DEFINITION for '.$api_name);
+            throw new RttException('SYSTEM_ERROR', 'EMPTY_API_DEFINITION for '.$api_name);
         $ret = array();
         $la_paras = $request->json()->all();
         $para_count = 0;
@@ -120,7 +121,7 @@ doc;
                 $para_count += 1;
                 if (isset($item['checker'])) {
                     if (!resolve_func_and_call($item['checker'], $la_paras[$key]))
-                        throw new \Exception("INVALID_PARAMETER"." check failed:".$key);
+                        throw new RttException('INVALID_PARAMETER', " check failed:".$key);
                 }
                 $value = $la_paras[$key];
                 if (isset($item['converter'])) {
@@ -129,7 +130,7 @@ doc;
                 $ret[$rename] = $value;
             }
             elseif (!empty($item['required'])) {
-                throw new \Exception("INVALID_PARAMETER"." missing required:".$key);
+                throw new RttException('INVALID_PARAMETER', " missing required:".$key);
             }
             elseif (array_key_exists('default_value', $item)) {
                 $value = $item['default_value'];
@@ -142,10 +143,16 @@ doc;
         foreach ($this->consts['IGNORED_REQ_PARAS'] as $ign_para) 
             $para_count += array_key_exists($ign_para, $la_paras) ? 1:0;
         if (count($la_paras) > $para_count) {
-            throw new \Exception("HAS_UNDEFINED_PARAMETER");
+            throw new RttException('INVALID_PARAMETER', "has undefined parameter ".count($la_paras).'/'.$para_count);
         }
         Log::DEBUG("parsed:".json_encode($ret));
         return $ret;
+    }
+    public function format_success_ret($data) {
+        return [
+            'ev_error'=>0,
+            'ev_data'=>$data,
+        ];
     }
 }
 

@@ -65,6 +65,7 @@ $app->singleton(
 
 $app->routeMiddleware([
     'auth' => App\Http\Middleware\Authenticate::class,
+//    'succ_format' => App\Http\Middleware\ReturnFormatter::class,
 ]);
 
 /*
@@ -85,6 +86,8 @@ $app->register(App\Providers\GenericService\GenericServiceProvider::class);
 $app->register(App\Providers\RttService\RttServiceProvider::class);
 $app->register(App\Providers\WxService\WxServiceProvider::class);
 $app->register(App\Providers\AliService\AliServiceProvider::class);
+
+$app->register(Illuminate\Redis\RedisServiceProvider::class);
 
 /*
 |--------------------------------------------------------------------------

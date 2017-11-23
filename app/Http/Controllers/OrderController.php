@@ -5,20 +5,8 @@ namespace App\Http\Controllers;
 use Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Exceptions\RttException;
 
-
-function with_exception_handler($request, $callback)
-{
-        $ls_result = array();
-        $ls_result['ev_error'] = 0;
-        try {
-            $ls_result['ev_data'] = $callback($request);
-        } catch (\Exception $e) {
-            $ls_result['ev_error'] = $e->getCode();
-            $ls_result['ev_message'] = $e->getMessage();
-        }
-        return $ls_result;
-}
 
 /** should be dispatch controller
  */
@@ -139,79 +127,75 @@ class OrderController extends Controller
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
         if (!$this->check_api_def())
-            throw new \Exception("ERROR SETTING IN API SCHEMA");
+            throw new RttException('SYSTEM_ERROR', "ERROR SETTING IN API SCHEMA");
     }
 
     public function create_order(Request $request)
     {
-        return with_exception_handler($request, function ($request) {
-            $account_id = Auth::user()->account_id;
-            $la_paras = $this->parse_parameters($request, "create_order");
-            $infoObj = $this->sp_rtt->get_account_info($account_id);
-            $la_paras['_out_trade_no'] = $this->sp_rtt->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
-            $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
-            return $sp->create_order($la_paras, $account_id);
-        });
+        $account_id = Auth::user()->account_id;
+        $la_paras = $this->parse_parameters($request, "create_order");
+        $infoObj = $this->sp_rtt->get_account_info($account_id);
+        $la_paras['_out_trade_no'] = $this->sp_rtt->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
+        $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
+        $ret = $sp->create_order($la_paras, $account_id);
+        return $this->format_success_ret($ret);
     }
 
     public function create_refund(Request $request)
     {
-        return with_exception_handler($request, function ($request) {
-            $account_id = Auth::user()->account_id;
-            $la_paras = $this->parse_parameters($request, "create_refund");
-            $la_paras['_refund_id'] = $this->sp_rtt->generate_txn_ref_id($la_paras, null, 'REFUND');
-            $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
-            return $sp->create_refund($la_paras, $account_id);
-        });
+        $account_id = Auth::user()->account_id;
+        $la_paras = $this->parse_parameters($request, "create_refund");
+        $la_paras['_refund_id'] = $this->sp_rtt->generate_txn_ref_id($la_paras, null, 'REFUND');
+        $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
+        $ret = $sp->create_refund($la_paras, $account_id);
+        return $this->format_success_ret($ret);
     }
     public function query_txn_single(Request $request)
     {
-        return with_exception_handler($request, function ($request) {
-            $account_id = Auth::user()->account_id;
-            $la_paras = $this->parse_parameters($request, "query_txn_single");
+        $account_id = Auth::user()->account_id;
+        $la_paras = $this->parse_parameters($request, "query_txn_single");
+        /*
+        try {
+            $ret = $this->rtt_sp->query_txn_single($la_paras, $account_id);
+            if (!empty(ret))
+                return $ret;
+        } catch (\Exception $e) {
+        }
+        */
+        $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
+        if (strtoupper($la_paras['query_type']) == "CHARGE") {
+            $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
+            $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id);
+        } elseif (strtoupper($la_paras['query_type']) == "REFUND") {
+            $vendor_refund = $sp->query_refund_single($la_paras, $account_id);
+            $txn = $sp->vendor_refund_to_rtt_txn($vendor_refund, $account_id);
             /*
-            try {
-                $ret = $this->rtt_sp->query_txn_single($la_paras, $account_id);
-                if (!empty(ret))
-                    return $ret;
-            } catch (\Exception $e) {
-            }
-            */
-            $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
-            if (strtoupper($la_paras['query_type']) == "CHARGE") {
-                $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
-                $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id);
-            } elseif (strtoupper($la_paras['query_type']) == "REFUND") {
-                $vendor_refund = $sp->query_refund_single($la_paras, $account_id);
-                $txn = $sp->vendor_refund_to_rtt_txn($vendor_refund, $account_id);
-                /*
-            } elseif (strtoupper($la_paras['query_type']) == "CHARGEBYMIN") {
-                $find = false;
-                $hint = $la_paras['out_trade_no'];
-                $vendor_txn = null;
-                for ($i=0; $i<6 && !$find; $i++) 
-                    for ($j=0; $j<10 && !$find; $j++) {
-                    try {
-                        $la_paras['out_trade_no'] = $hint . $i . $j;
-                        $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
-                        $find = true;
-                    }
-                    catch (\Exception $e) {
-                        if ($e->getMessage() != "ORDERNOTEXIST") // only for wx
-                            throw $e;
-                    }
+        } elseif (strtoupper($la_paras['query_type']) == "CHARGEBYMIN") {
+            $find = false;
+            $hint = $la_paras['out_trade_no'];
+            $vendor_txn = null;
+            for ($i=0; $i<6 && !$find; $i++) 
+                for ($j=0; $j<10 && !$find; $j++) {
+                try {
+                    $la_paras['out_trade_no'] = $hint . $i . $j;
+                    $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
+                    $find = true;
                 }
-                if (!$find)
-                    throw new \Exception("NO BILL FIND", 3);
-                $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id);
-                 */
+                catch (\Exception $e) {
+                    if ($e->getMessage() != "ORDERNOTEXIST") // only for wx
+                        throw $e;
+                }
             }
-            //try {
-                $this->sp_rtt->cache_txn($txn);
-            //} catch (\Exception $e) { }
-            $ret = $this->sp_rtt->txn_to_front_end($txn);
-            return $ret;
-        });
+            if (!$find)
+                throw new \Exception("NO BILL FIND", 3);
+            $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id);
+             */
+        }
+        //try {
+            $this->sp_rtt->cache_txn($txn);
+        //} catch (\Exception $e) { }
+        $ret = $this->sp_rtt->txn_to_front_end($txn);
+        return $this->format_success_ret($ret);
     }
 
     public function handle_notify_wx(Request $request)

@@ -4,6 +4,7 @@ namespace App\Providers\RttService;
 use Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use App\Exceptions\RttException;
 
 class RttService{
 
@@ -18,16 +19,16 @@ class RttService{
 
     public function resolve_channel_sp($account_id, $channel) {
         if (empty($account_id))
-            throw new \Exception("Invalid Account ID", 1);
+            throw new RttException('SYSTEM_ERROR', "Invalid Account ID");
         $res = DB::table('account_vendor')->where('account_id','=',$account_id)->first();
         if (!(($res->vendor_channel ?? 0) & ($this->consts["CHANNELS"][strtoupper($channel)] ?? 0)))
-            throw new \Exception("Channel Not Activated", 1);
+            throw new RttException('CHANNEL_NOT_ACTIVATED', ['account_id'=>$account_id, 'channel'=>$channel]);
         $sp_name = strtolower($channel) ."_service";
         if (!app()->bound($sp_name))
-            throw new \Exception("Channel Not Supported", 1);
+            throw new RttException('CHANNEL_NOT_SUPPORTED', ['channel'=>$channel]);
         $sp = app()->make($sp_name);
         if (empty($sp))
-            throw new \Exception("Channel Not Supported", 1);
+            throw new RttException('CHANNEL_NOT_SUPPORTED', ['channel'=>$channel]);
         return $sp;
     }
 
@@ -41,23 +42,23 @@ class RttService{
         if ($type == 'ORDER') {
             $vendor_channel = $la_paras['vendor_channel'];
             if (empty($vendor_channel))
-                throw new \Exception(__FUNCTION__.":Vendor_channel missing", 1);
+                throw new RttException('SYSTEM_ERROR', __FUNCTION__.":Vendor_channel missing");
             $vendor_channel = strtoupper(substr($vendor_channel, 0, 2));
             if (empty($account_ref_id))
-                throw new \Exception(__FUNCTION__.": account_ref_id missing", 1);
+                throw new RttException('SYSTEM_ERROR', __FUNCTION__.": account_ref_id missing");
             $account_ref_id = substr($account_ref_id, 0, 6);
             $ref_id = $this->consts['OUR_NAME'].$vendor_channel.
                 $account_ref_id.date("YmdHis").bin2hex(random_bytes(2));
             if (strlen($ref_id) > $max_length)
-                throw new \Exception(__FUNCTION__.": exceeds max_length", 1);
+                throw new RttException('SYSTEM_ERROR', __FUNCTION__.": exceeds max_length");
             return substr($ref_id, 0, $max_length);
         } elseif ($type == 'REFUND') {
             $ref_id = $la_paras['out_trade_no']."R".$la_paras['refund_no'];
             if (strlen($ref_id) > $max_length)
-                throw new \Exception(__FUNCTION__.": exceeds max_length", 1);
+                throw new RttException('SYSTEM_ERROR', __FUNCTION__.": exceeds max_length");
             return substr($ref_id, 0, $max_length);
         }
-        throw new \Exception(__FUNCTION__.":Unknown type:".$type, 1);
+        throw new RttException('SYSTEM_ERROR', __FUNCTION__.":Unknown type:".$type);
     }
 
     public function txn_to_front_end($rtt_txn) {
