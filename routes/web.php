@@ -20,7 +20,7 @@ $router->post('/create_refund/', ['middleware'=>['auth', ], 'uses'=>'OrderContro
 $router->post('/query_txn_single/', ['middleware'=>['auth', ], 'uses'=>'OrderController@query_txn_single']);
 $router->get('/show_base_api/', ['uses'=>'OrderController@api_doc_md']);
 
-$router->post('/test/', ['uses'=>'OrderController@test']);
+$router->get('/test/', ['uses'=>'OrderController@test']);
 
 $router->post('/notify/wx/', ['uses'=>'OrderController@handle_notify_wx']);
 $router->post('/notify/ali/', ['uses'=>'OrderController@handle_notify_ali']);

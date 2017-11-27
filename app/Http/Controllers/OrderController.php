@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
 use App\Exceptions\RttException;
 
 
@@ -205,4 +207,19 @@ class OrderController extends Controller
         $sp->handle_notify(false);
     }
     //
+    public function test(Request $request)
+    {
+        if (!Redis::exists('count')) {
+            Redis::setEx('count', 3, 0);
+        }
+        $count = Redis::get('count')+1;
+        Redis::set('count',$count);
+        return $count;
+        /*
+        if (!Cache::has('count')) {
+            Cache::put('count', 0, 3);
+        }
+        return Cache::increment('count');
+         */
+    }
 }

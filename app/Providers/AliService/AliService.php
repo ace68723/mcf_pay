@@ -107,7 +107,7 @@ class AliService{
     }
 
     public function query_charge_single($la_paras, $account_id){
-        $vendor_ali_info = $this->get_account_info($account_id);
+        //$vendor_ali_info = $this->get_account_info($account_id);
         $input = $this->create_request_common($la_paras);
         $input['service'] = "alipay.acquire.overseas.query";
         $input['partner_trans_id'] = $la_paras['out_trade_no'];
@@ -123,7 +123,7 @@ class AliService{
     }
     public function query_refund_single($la_paras, $account_id){
         throw new RttException('SYSTEM_ERROR', __FUNCTION__.": Function Not Supported.");
-        $vendor_ali_info = $this->get_account_info($account_id);
+        //$vendor_ali_info = $this->get_account_info($account_id);
         $input = $this->create_request_common($la_paras);
         $input['service'] = "alipay.acquire.overseas.query";
         if (!empty($la_paras['refund_id']))
@@ -141,7 +141,7 @@ class AliService{
     }
 
     public function create_refund($la_paras, $account_id){
-        $vendor_ali_info = $this->get_account_info($account_id);
+        //$vendor_ali_info = $this->get_account_info($account_id);
         $input = $this->create_request_common($la_paras);
         $input['service'] = "alipay.acquire.overseas.spot.refund";
         $input['partner_trans_id'] = $la_paras['out_trade_no'];

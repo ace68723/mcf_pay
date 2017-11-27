@@ -17,6 +17,7 @@ class CreateAccountBaseTable extends Migration
             $table->increments('id');
             $table->timestamps();
             $table->integer('account_id');
+            $table->integer('is_deleted')->default(0);
             $table->string('ref_id', 8);
             $table->string('name',128);
             $table->string('status',16);
