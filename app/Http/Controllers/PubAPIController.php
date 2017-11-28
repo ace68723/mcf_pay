@@ -12,7 +12,7 @@ use App\Exceptions\RttException;
 
 /** should be dispatch controller
  */
-class OrderController extends Controller
+class PubAPIController extends Controller
 {
     /**
      * Create a new controller instance.

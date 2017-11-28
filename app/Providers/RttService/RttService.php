@@ -17,10 +17,24 @@ class RttService{
 
     }
 
-    public function resolve_channel_sp($account_id, $channel) {
+    public function get_vendor_channel_info($account_id, $b_readable=false) {
         if (empty($account_id))
             throw new RttException('SYSTEM_ERROR', "Invalid Account ID");
         $res = DB::table('account_vendor')->where('account_id','=',$account_id)->first();
+        if ($b_readable) {
+            $channels = array();
+            $bitInd = $res->vendor_channel ?? 0;
+            foreach($this->consts['CHANNELS'] as $key=>$value) {
+                if ($value & $bitInd)
+                    $channels[] = $key;
+            }
+            return $channels;
+        }
+        return $res;
+    }
+
+    public function resolve_channel_sp($account_id, $channel) {
+        $res = $this->get_vendor_channel_info($account_id);
         if (!(($res->vendor_channel ?? 0) & ($this->consts["CHANNELS"][strtoupper($channel)] ?? 0)))
             throw new RttException('CHANNEL_NOT_ACTIVATED', ['account_id'=>$account_id, 'channel'=>$channel]);
         $sp_name = strtolower($channel) ."_service";

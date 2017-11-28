@@ -15,13 +15,25 @@ $router->get('/', function () use ($router) {
     return $router->app->version();
 });
 
-$router->post('/create_order/', ['middleware'=>['auth', ], 'uses'=>'OrderController@create_order']);
-$router->post('/create_refund/', ['middleware'=>['auth', ], 'uses'=>'OrderController@create_refund']);
-$router->post('/query_txn_single/', ['middleware'=>['auth', ], 'uses'=>'OrderController@query_txn_single']);
-$router->get('/show_base_api/', ['uses'=>'OrderController@api_doc_md']);
+$router->group(['middleware'=>'auth'], function ($router)
+{
+    $router->post('/create_order/', ['uses'=>'PubAPIController@create_order']);
+    $router->post('/create_refund/', ['uses'=>'PubAPIController@create_refund']);
+    $router->post('/query_txn_single/', ['uses'=>'PubAPIController@query_txn_single']);
+});
+$router->get('/show_base_api/', ['uses'=>'PubAPIController@api_doc_md']);
 
-$router->get('/test/', ['uses'=>'OrderController@test']);
+$router->get('/test/', ['uses'=>'PubAPIController@test']);
 
-$router->post('/notify/wx/', ['uses'=>'OrderController@handle_notify_wx']);
-$router->post('/notify/ali/', ['uses'=>'OrderController@handle_notify_ali']);
+$router->group(['prefix'=>'mcf','middleware'=>'user_auth'], function ($router)
+{
+    $router->post('/create_order/', ['uses'=>'MCFController@create_order']);
+    $router->post('/create_refund/', ['uses'=>'MCFController@create_refund']);
+    $router->post('/query_txn_single/', ['uses'=>'MCFController@query_txn_single']);
+});
+$router->post('/login/', ['uses'=>'LoginController@login']);
+
+
+$router->post('/notify/wx/', ['uses'=>'PubAPIController@handle_notify_wx']);
+$router->post('/notify/ali/', ['uses'=>'PubAPIController@handle_notify_ali']);
 

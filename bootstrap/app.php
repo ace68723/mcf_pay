@@ -66,6 +66,7 @@ $app->singleton(
 
 $app->routeMiddleware([
     'auth' => App\Http\Middleware\Authenticate::class,
+    'user_auth' => App\Http\Middleware\UserAuthenticate::class,
 //    'succ_format' => App\Http\Middleware\ReturnFormatter::class,
 ]);
 
@@ -82,6 +83,7 @@ $app->routeMiddleware([
 
 // $app->register(App\Providers\AppServiceProvider::class);
 $app->register(App\Providers\AuthServiceProvider::class);
+$app->register(App\Providers\UserAuthService\UserAuthServiceProvider::class);
 // $app->register(App\Providers\EventServiceProvider::class);
 $app->register(App\Providers\GenericService\GenericServiceProvider::class);
 $app->register(App\Providers\RttService\RttServiceProvider::class);

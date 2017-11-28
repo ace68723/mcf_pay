@@ -14,12 +14,14 @@ class CreateMcfUserLoginTable extends Migration
     public function up()
     {
         Schema::create('mcf_user_login', function (Blueprint $table) {
-            $table->primary('uid');
+            $table->integer('uid');
             $table->string('version', 10);
             $table->timestamp('lastlogin');
             $table->string('lat',15);
             $table->string('lng',15);
             $table->string('merchant_id',45);
+
+            $table->primary('uid');
         });
     }
 
