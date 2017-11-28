@@ -50,6 +50,7 @@ class UserAuthService{
     }
     public function create_token($userObj) {
         $info = array(
+            'uid'=>$userObj->uid,
             'role'=>$userObj->role,
             'expire'=>time()+$this->consts['token_expire_sec'],
         );

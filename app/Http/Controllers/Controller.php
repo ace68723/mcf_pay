@@ -23,7 +23,7 @@ class Controller extends BaseController
             foreach($api_paras_def as $para_key=>$item) {
                 if (substr($para_key, 0, 1) == "_")
                     return false;
-                if (in_array($para_key, $this->consts['IGNORED_REQ_PARAS'])) 
+                if ($hasIgnorePara && in_array($para_key, $this->consts['IGNORED_REQ_PARAS'])) 
                     return false;
                 foreach($item as $key=>$value) {
                     if (!in_array($key, ['checker', 'required', 'default_value','converter']))
@@ -198,10 +198,12 @@ doc;
                 $ret[$rename] = $value;
             }
         }
-        foreach ($this->consts['IGNORED_REQ_PARAS'] as $ign_para) 
-            $para_count += array_key_exists($ign_para, $la_paras) ? 1:0;
+        if (!empty($this->consts['IGNORED_REQ_PARAS'])) {
+            foreach ($this->consts['IGNORED_REQ_PARAS'] as $ign_para) 
+                $para_count += array_key_exists($ign_para, $la_paras) ? 1:0;
+        }
         if (count($la_paras) > $para_count) {
-            throw new RttException('INVALID_PARAMETER', "has undefined parameter ".count($la_paras).'/'.$para_count);
+            throw new RttException('INVALID_PARAMETER', "has undefined parameter. find ".count($la_paras).'parameters while only defined '.$para_count);
         }
         Log::DEBUG("parsed:".json_encode($ret));
         return $ret;

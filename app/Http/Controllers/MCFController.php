@@ -21,23 +21,10 @@ class MCFController extends Controller
      */
     public function __construct()
     {
-        //
         //$this->sp_generic = app()->make('generic_service');
         $this->sp_rtt = app()->make('rtt_service');
 
-        $is_str_max_len = function ($maxlen) {
-            return function ($x) use ($maxlen) { return is_string($x) && strlen($x)<=$maxlen; };
-        };
-        $is_int_in_range = function ($larger_or_equal, $lesser_or_equal) {
-            return function ($x) use ($larger_or_equal, $lesser_or_equal) {
-                return is_int($x) && $x>=$larger_or_equal && $x<=$lesser_or_equal; 
-            };
-        };
-
         $this->consts['REQUEST_PARAS'] = [];
-        $this->consts['IGNORED_REQ_PARAS'] = [
-            'salt_str', 'account_key', 'sign', 'sign_type',
-        ];
         $this->consts['REQUEST_PARAS']['create_order'] = [
             'vendor_channel'=>[
                 'checker'=>['is_string', 8],

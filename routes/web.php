@@ -15,7 +15,7 @@ $router->get('/', function () use ($router) {
     return $router->app->version();
 });
 
-$router->group(['middleware'=>'auth'], function ($router)
+$router->group(['middleware'=>'auth:api'], function ($router)
 {
     $router->post('/create_order/', ['uses'=>'PubAPIController@create_order']);
     $router->post('/create_refund/', ['uses'=>'PubAPIController@create_refund']);
@@ -25,7 +25,7 @@ $router->get('/show_base_api/', ['uses'=>'PubAPIController@api_doc_md']);
 
 $router->get('/test/', ['uses'=>'PubAPIController@test']);
 
-$router->group(['prefix'=>'mcf','middleware'=>'user_auth'], function ($router)
+$router->group(['prefix'=>'mcf','middleware'=>'auth:token'], function ($router)
 {
     $router->post('/create_order/', ['uses'=>'MCFController@create_order']);
     $router->post('/create_refund/', ['uses'=>'MCFController@create_refund']);

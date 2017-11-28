@@ -66,7 +66,7 @@ $app->singleton(
 
 $app->routeMiddleware([
     'auth' => App\Http\Middleware\Authenticate::class,
-    'user_auth' => App\Http\Middleware\UserAuthenticate::class,
+//    'user_auth' => App\Http\Middleware\UserAuthenticate::class,
 //    'succ_format' => App\Http\Middleware\ReturnFormatter::class,
 ]);
 

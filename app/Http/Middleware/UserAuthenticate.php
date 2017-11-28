@@ -35,12 +35,8 @@ class UserAuthenticate
      */
     public function handle($request, Closure $next)
     {
-        try {
-            $sp = app()->make('user_auth_service');
-            if (!$sp->check_token($request->header('Auth-Token')))  ;
-                return response('Unauthorized.', 401);
-        } catch (\Exception $e) {
-            return response('Authentication Failed.', 402);
+        if ($this->auth->guard('token')->guest()) {
+            return response('Unauthorized.', 401);
         }
 
         return $next($request);

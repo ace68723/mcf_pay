@@ -66,5 +66,19 @@ class AuthServiceProvider extends ServiceProvider
                 return null;
             return new GenericUser(['account_id'=>$secInfo->account_id]);
         });
+
+        $this->app['auth']->viaRequest('token', function ($request) {
+            $sp = app()->make('user_auth_service');
+            $token_info = $sp->check_token($request->header('Auth-Token'));
+            if (empty($token_info)){
+                Log::DEBUG("empty token_info");
+                return null;
+            }
+            if (time() > $token_info->expire) {
+                Log::DEBUG("token expire:".time().">".$token_info->expire);
+                return null;
+            }
+            return new GenericUser(['uid'=>$token_info->uid, 'role'=>$token_info->role]);
+        });
     }
 }
