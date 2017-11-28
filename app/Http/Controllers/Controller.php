@@ -40,6 +40,64 @@ class Controller extends BaseController
         }
         return true;
     }
+    /*
+    public function check_parameters($input, $api_name=null) {
+        $la_paras = (array)$input;
+        $api_paras_def =  empty($api_name) ? $this->consts['REQUEST_PARAS'] : 
+            $this->consts['REQUEST_PARAS'][$api_name];
+        if (empty($api_paras_def))
+            throw new \Exception('EMPTY_API_DEFINITION for '.$api_name);
+        $para_count = 0;
+        foreach ($api_paras_def as $key=>$item) {
+            $rename = $item['rename'] ?? $key;
+            if (array_key_exists($key, $la_paras)) {
+                $para_count += 1;
+                if (isset($item['checker']) && !$item['checker']($la_paras[$key]))
+                    return false;
+                    //throw new \Exception("INVALID_PARAMETER");
+            }
+            elseif (!empty($item['required'])) {
+                return false;
+                //throw new \Exception("INVALID_PARAMETER");
+                //throw new \Exception("MISSING_PARAMETER:".$key);
+            }
+        }
+        if (count($la_paras) > $para_count) {
+            return false;
+            //throw new \Exception("INVALID_PARAMETER");
+            //throw new \Exception("HAS_UNDEFINED_PARAMETER");
+        }
+        return true;
+    }
+    public function test_self() {
+        $is_str_max_len = function ($maxlen) { 
+            return function ($x) use ($maxlen) { return is_string($x) && strlen($x)<=$maxlen; };
+        };
+        $this->consts = array();
+        $this->consts['REQUEST_PARAS'] = [
+            'id'=>['checker'=>'is_int', 'required'=>true,],
+            'message'=>[
+                'checker'=>$is_str_max_len(20),
+                'required'=>false,
+                'default_value'=>'msg missing',
+            ],
+            'datetime'=>[
+                'checker'=>$is_str_max_len(20),
+                'default_value'=>'now',
+                'converter'=>function($x){return new DateTime($x);},
+            ],
+            'amount'=>['converter'=>function($x){return $x+0;}],
+        ];
+        assert($this->check_api_def());
+        assert(false === $this->check_parameters(['id'=>'1'])); //string '1' is not int...
+        assert(true === $this->check_parameters(['id'=>1])); //now is OK
+        assert(false === $this->check_parameters(['id'=>'1', 'foo'=>2,])); //undefined parameters
+        assert(false === $this->check_parameters(['id'=>1, 'message'=>'too long message 12345678901234567890',])); 
+        assert(true === $this->check_parameters(['id'=>1, 'message'=>'short message ',])); 
+        var_dump($this->preprocess_parameters(['id'=>1, 'message'=>'short message ',])); 
+        var_dump($this->preprocess_parameters(['id'=>1, 'message'=>'short message ', 'datetime'=>"20171114",])); 
+    }
+     */
 
     public function api_doc_md() {
         $output = "";
