@@ -4,9 +4,8 @@ namespace App\Http\Controllers;
 
 use Log;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Redis;
+//use Illuminate\Support\Facades\Redis;
 use App\Exceptions\RttException;
 
 
@@ -134,7 +133,7 @@ class PubAPIController extends Controller
 
     public function create_order(Request $request)
     {
-        $account_id = Auth::user()->account_id;
+        $account_id = $request->user('custom_api')->account_id;
         $la_paras = $this->parse_parameters($request, "create_order");
         $infoObj = $this->sp_rtt->get_account_info($account_id);
         $la_paras['_out_trade_no'] = $this->sp_rtt->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
@@ -145,7 +144,7 @@ class PubAPIController extends Controller
 
     public function create_refund(Request $request)
     {
-        $account_id = Auth::user()->account_id;
+        $account_id = $request->user('custom_api')->account_id;
         $la_paras = $this->parse_parameters($request, "create_refund");
         $la_paras['_refund_id'] = $this->sp_rtt->generate_txn_ref_id($la_paras, null, 'REFUND');
         $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
@@ -154,7 +153,7 @@ class PubAPIController extends Controller
     }
     public function query_txn_single(Request $request)
     {
-        $account_id = Auth::user()->account_id;
+        $account_id = $request->user('custom_api')->account_id;
         $la_paras = $this->parse_parameters($request, "query_txn_single");
         /*
         try {

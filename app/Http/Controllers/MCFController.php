@@ -121,7 +121,7 @@ class MCFController extends Controller
 
     public function create_order(Request $request)
     {
-        $account_id = Auth::user()->account_id;
+        $account_id = $request->user('custom_token')->uid;
         $la_paras = $this->parse_parameters($request, "create_order");
         $infoObj = $this->sp_rtt->get_account_info($account_id);
         $la_paras['_out_trade_no'] = $this->sp_rtt->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
@@ -132,7 +132,7 @@ class MCFController extends Controller
 
     public function create_refund(Request $request)
     {
-        $account_id = Auth::user()->account_id;
+        $account_id = $request->user('custom_token')->uid;
         $la_paras = $this->parse_parameters($request, "create_refund");
         $la_paras['_refund_id'] = $this->sp_rtt->generate_txn_ref_id($la_paras, null, 'REFUND');
         $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
@@ -141,7 +141,7 @@ class MCFController extends Controller
     }
     public function query_txn_single(Request $request)
     {
-        $account_id = Auth::user()->account_id;
+        $account_id = $request->user('custom_token')->uid;
         $la_paras = $this->parse_parameters($request, "query_txn_single");
         /*
         try {
