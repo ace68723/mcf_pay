@@ -54,6 +54,7 @@ class AliService{
         //$input['product_code'] = "NEW_OVERSEAS_SELLER";
         );
         $this->consts['STATE_MAP'] = array( //vendor to rtt 
+            'WAIT_BUYER_PAY'=>'USERPAYING',
             'TRADE_SUCCESS'=>'SUCCESS',
             'TRADE_CLOSED'=>'CLOSED',
         );

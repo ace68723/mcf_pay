@@ -3,6 +3,7 @@ namespace App\Providers\RttService;
 
 use Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
 use App\Exceptions\RttException;
 
@@ -14,7 +15,7 @@ class RttService{
         $this->consts = array();
         $this->consts['OUR_NAME'] = "MCF";
         $this->consts['CHANNELS'] = array('WX'=>0x1, 'ALI'=>0x2,);
-
+        $this->consts['ORDER_CACHE_MINS'] = 24*60;
     }
 
     public function get_vendor_channel_info($account_id, $b_readable=false) {
@@ -96,6 +97,27 @@ class RttService{
         }
         else {
             DB::table('txn_base')->where('ref_id','=',$txn['ref_id'])->update($txn);
+        }
+    }
+
+    public function post_create_order($la_paras, $resp) {
+        Cache::put("order:".$la_paras['_out_trade_no'], [
+            'req'=>$la_paras,
+            'resp'=>$resp,
+            'status'=>'USERPAYING',
+        ], $this->consts['ORDER_CACHE_MINS']);
+    }
+    public function query_order_cache($out_trade_no) {
+        return Cache::get("order:".$out_trade_no, null);
+    }
+    public function update_order_cache($out_trade_no, $status, $old=null) {
+        if (empty($old))
+            $old = Cache::get("order:".$out_trade_no, null);
+            if (empty($old)) return;
+        if ($old['status'] != $status) {
+            $old['status'] = $status;
+            Cache::forget("order:".$out_trade_no); 
+            Cache::put("order:".$out_trade_no, $old, $this->consts['ORDER_CACHE_MINS']); 
         }
     }
 

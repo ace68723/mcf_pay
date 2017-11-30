@@ -29,7 +29,7 @@ $router->group(['prefix'=>'mcf','middleware'=>'auth:custom_token'], function ($r
 {
     $router->post('/create_order/', ['uses'=>'MCFController@create_order']);
     $router->post('/create_refund/', ['uses'=>'MCFController@create_refund']);
-    $router->post('/query_txn_single/', ['uses'=>'MCFController@query_txn_single']);
+    $router->post('/check_order_status/', ['uses'=>'MCFController@check_order_status']);
 });
 $router->post('/login/', ['uses'=>'LoginController@login']);
 

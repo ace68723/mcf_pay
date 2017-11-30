@@ -80,10 +80,14 @@ $app->routeMiddleware([
 */
 
 // $app->register(App\Providers\AppServiceProvider::class);
-$app->register(App\Providers\AuthServiceProvider::class);
-$app->register(App\Providers\UserAuthService\UserAuthServiceProvider::class);
 // $app->register(App\Providers\EventServiceProvider::class);
-$app->register(App\Providers\GenericService\GenericServiceProvider::class);
+$app->register(App\Providers\AuthServiceProvider::class);
+
+$app->register(App\Providers\UserAuthService\UserAuthServiceProvider::class);
+//$app->register(App\Providers\McfService\McfServiceProvider::class);
+//$app->register(App\Providers\GenericService\GenericServiceProvider::class);
+
+
 $app->register(App\Providers\RttService\RttServiceProvider::class);
 $app->register(App\Providers\WxService\WxServiceProvider::class);
 $app->register(App\Providers\AliService\AliServiceProvider::class);

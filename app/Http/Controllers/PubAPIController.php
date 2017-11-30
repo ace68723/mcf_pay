@@ -139,6 +139,7 @@ class PubAPIController extends Controller
         $la_paras['_out_trade_no'] = $this->sp_rtt->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
         $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         $ret = $sp->create_order($la_paras, $account_id);
+        $this->sp_rtt->post_create_order($la_paras, $ret);
         return $this->format_success_ret($ret);
     }
 
@@ -155,14 +156,6 @@ class PubAPIController extends Controller
     {
         $account_id = $request->user('custom_api')->account_id;
         $la_paras = $this->parse_parameters($request, "query_txn_single");
-        /*
-        try {
-            $ret = $this->rtt_sp->query_txn_single($la_paras, $account_id);
-            if (!empty(ret))
-                return $ret;
-        } catch (\Exception $e) {
-        }
-        */
         $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         if (strtoupper($la_paras['query_type']) == "CHARGE") {
             $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
@@ -192,9 +185,6 @@ class PubAPIController extends Controller
             $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id);
              */
         }
-        //try {
-            $this->sp_rtt->cache_txn($txn);
-        //} catch (\Exception $e) { }
         $ret = $this->sp_rtt->txn_to_front_end($txn);
         return $this->format_success_ret($ret);
     }

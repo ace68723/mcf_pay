@@ -11,6 +11,8 @@ class RttException extends Exception
     const CHANNEL_NOT_ACTIVATED = 400001;
     const CHANNEL_NOT_SUPPORTED = 400002;
     const SYSTEM_ERROR          = 400003;
+    const ROLE_CHECK_FAIL       = 400003;
+    const NOT_FOUND             = 400003;
     const INVALID_PARAMETER     = 400003;
     const WX_ERROR_VALIDATION   = 400004;
     const WX_ERROR_RETRY        = 400004;

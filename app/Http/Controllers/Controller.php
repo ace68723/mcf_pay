@@ -208,6 +208,13 @@ doc;
         Log::DEBUG("parsed:".json_encode($ret));
         return $ret;
     }
+    public function check_role($role, $api_name) {
+        if (empty($this->consts['ALLOWED_ROLES'][$api_name]))
+            throw new RttException('SYSTEM_ERROR', 'EMPTY_ROLE_CHECK_DEFINITION for '.$api_name);
+        if (!in_array($role, $this->consts['ALLOWED_ROLES'][$api_name]))
+            throw new RttException('ROLE_CHECK_FAIL', [$role,$api_name]);
+        return true;
+    }
     public function format_success_ret($data) {
         return [
             'ev_error'=>0,

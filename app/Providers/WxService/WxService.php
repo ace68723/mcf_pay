@@ -35,8 +35,13 @@ class WxService
             'NATIVE'=>'NATIVE',
         ];
         $this->consts['STATE_MAP'] = array( //vendor to rtt 
-            'REFUND'=>'REFUND',
+            //'REFUND'=>'REFUND',
             'SUCCESS'=>'SUCCESS',
+            'CLOSED'=>'CLOSED',
+            'USERPAYING'=>'USERPAYING',
+            'NOTPAY'=>'USERPAYING',
+            //'REVOKED'=>'REVOKED',
+            //'PAYERROR'=>'ERROR',
         );
     }
     private function get_account_info($account_id, $b_emptyAsException = true){

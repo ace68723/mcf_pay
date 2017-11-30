@@ -34,7 +34,6 @@ class AuthServiceProvider extends ServiceProvider
         // the User instance via an API token or any other method necessary.
 
         $this->app['auth']->viaRequest('custom_api', function ($request) {
-            Log::DEBUG(json_encode(debug_backtrace()));
             if (empty($request->input('account_key')) || 
                 empty($request->input('salt_str')) ||
                 empty($request->input('sign_type')) ||
@@ -69,11 +68,17 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         $this->app['auth']->viaRequest('custom_token', function ($request) {
+            /*
             $a = debug_backtrace();
-            Log::DEBUG(json_encode($a));
+            $b = json_encode($a, JSON_PARTIAL_OUTPUT_ON_ERROR, 2);
+            Log::DEBUG($b);
+             */
             $sp = app()->make('user_auth_service');
             $token_info = $sp->check_token($request->header('Auth-Token'));
-            if (empty($token_info)){
+            if (empty($token_info->uid)
+                || empty($token_info->role)
+                || empty($token_info->account_id) )
+            {
                 Log::DEBUG("empty token_info");
                 return null;
             }
@@ -81,7 +86,11 @@ class AuthServiceProvider extends ServiceProvider
                 Log::DEBUG("token expire:".time().">".$token_info->expire);
                 return null;
             }
-            return new GenericUser(['uid'=>$token_info->uid, 'role'=>$token_info->role]);
+            return new GenericUser([
+                'uid'=>$token_info->uid,
+                'role'=>$token_info->role,
+                'account_id'=>$token_info->account_id,
+            ]);
         });
     }
 }
