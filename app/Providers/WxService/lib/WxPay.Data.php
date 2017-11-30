@@ -276,6 +276,167 @@ class WxPayNotifyReply extends  WxPayDataBase
 
 /**
  * 
+ * exchange rate query输入对象
+ * @author xunrui
+ *
+ */
+class WxPayExchangeRateQuery extends WxPayDataBase
+{
+	/**
+	* 设置微信分配的公众账号ID
+	* @param string $value 
+	**/
+	public function SetAppid($value)
+	{
+		$this->values['appid'] = $value;
+	}
+	/**
+	* 获取微信分配的公众账号ID的值
+	* @return 值
+	**/
+	public function GetAppid()
+	{
+		return $this->values['appid'];
+	}
+	/**
+	* 判断微信分配的公众账号ID是否存在
+	* @return true 或 false
+	**/
+	public function IsAppidSet()
+	{
+		return array_key_exists('appid', $this->values);
+	}
+
+
+    /**
+	* 设置微信支付分配的商户号
+	* @param string $value 
+	**/
+	public function SetMch_id($value)
+	{
+		$this->values['mch_id'] = $value;
+	}
+	/**
+	* 获取微信支付分配的商户号的值
+	* @return 值
+	**/
+	public function GetMch_id()
+	{
+		return $this->values['mch_id'];
+	}
+	/**
+	* 判断微信支付分配的商户号是否存在
+	* @return true 或 false
+	**/
+	public function IsMch_idSet()
+	{
+		return array_key_exists('mch_id', $this->values);
+	}
+
+
+	/**
+	* 设置微信支付分配的子商户号
+	* @param string $value 
+	**/
+	public function SetSub_mch_id($value)
+	{
+		$this->values['sub_mch_id'] = $value;
+	}
+	/**
+	* 获取微信支付分配的子商户号的值
+	* @return 值
+	**/
+	public function GetSub_mch_id()
+	{
+		return $this->values['sub_mch_id'];
+	}
+	/**
+	* 判断微信支付分配的子商户号是否存在
+	* @return true 或 false
+	**/
+	public function IsSub_mch_idSet()
+	{
+		return array_key_exists('sub_mch_id', $this->values);
+	}
+
+	/**
+	* 设置随机字符串，不长于32位。推荐随机数生成算法
+	* @param string $value 
+	**/
+	public function SetNonce_str($value)
+	{
+		$this->values['nonce_str'] = $value;
+	}
+	/**
+	* 获取随机字符串，不长于32位。推荐随机数生成算法的值
+	* @return 值
+	**/
+	public function GetNonce_str()
+	{
+		return $this->values['nonce_str'];
+	}
+	/**
+	* 判断随机字符串，不长于32位。推荐随机数生成算法是否存在
+	* @return true 或 false
+	**/
+	public function IsNonce_strSet()
+	{
+		return array_key_exists('nonce_str', $this->values);
+	}
+
+	/**
+	* 设置符合ISO 4217标准的三位字母代码，默认人民币：CNY，其他值列表详见货币类型
+	* @param string $value 
+	**/
+	public function SetFee_type($value)
+	{
+		$this->values['fee_type'] = $value;
+	}
+	/**
+	* 获取符合ISO 4217标准的三位字母代码，默认人民币：CNY，其他值列表详见货币类型的值
+	* @return 值
+	**/
+	public function GetFee_type()
+	{
+		return $this->values['fee_type'];
+	}
+	/**
+	* 判断符合ISO 4217标准的三位字母代码，默认人民币：CNY，其他值列表详见货币类型是否存在
+	* @return true 或 false
+	**/
+	public function IsFee_typeSet()
+	{
+		return array_key_exists('fee_type', $this->values);
+	}
+
+	/**
+	* 时间，格式为yyyyMMdd
+	* @param string $value 
+	**/
+	public function SetDate($value)
+	{
+		$this->values['date'] = $value;
+	}
+	/**
+	* 时间，格式为yyyyMMdd
+	* @return 值
+	**/
+	public function GetDate()
+	{
+		return $this->values['date'];
+	}
+	/**
+	* 判断时间，格式为yyyyMMdd
+	* @return true 或 false
+	**/
+	public function IsDateSet()
+	{
+		return array_key_exists('date', $this->values);
+	}
+
+}
+/**
+ * 
  * 统一下单输入对象
  * @author widyhu
  *

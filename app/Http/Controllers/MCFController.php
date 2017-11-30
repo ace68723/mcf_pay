@@ -21,11 +21,11 @@ class MCFController extends Controller
         $this->sp_rtt = app()->make('rtt_service');
 
         $this->consts['ALLOWED_ROLES'] = [
-            'create_order'=>[1,2],
-            'create_refund'=>[1,2],
-            'check_order_status'=>[1,2],
-            'get_exchange_rate'=>[1,2],
-            'get_bills_range'=>[1],
+            'create_order'=>[1,2,101,666],
+            'create_refund'=>[1,2,101,666],
+            'check_order_status'=>[1,2,101,666],
+            'get_exchange_rate'=>[1,2,101,666],
+            'get_bills_range'=>[1,666],
         ];
         $this->consts['REQUEST_PARAS'] = [];
         $this->consts['REQUEST_PARAS']['create_order'] = [
@@ -54,6 +54,17 @@ class MCFController extends Controller
             ],
             'out_trade_no'=>[
                 'checker'=>['is_string', 64],
+                'required'=>true,
+            ],
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+
+        $this->consts['REQUEST_PARAS']['get_exchange_rate'] = [
+            'vendor_channel'=>[
+                'checker'=>['is_string', 8],
+                'required'=>true,
+            ],
+            'currency_type'=>[
+                'checker'=>['is_string', 16],
                 'required'=>true,
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
@@ -122,6 +133,7 @@ class MCFController extends Controller
         $ret = $sp->create_refund($la_paras, $account_id);
         return $this->format_success_ret($ret);
     }
+
     public function check_order_status(Request $request)
     {
         $userObj = $request->user('custom_token');
@@ -140,6 +152,20 @@ class MCFController extends Controller
             $this->sp_rtt->update_order_cache($la_paras['out_trade_no'], $status, $cached_order);
         }
         return $this->format_success_ret($status);
+    }
+
+    public function get_exchange_rate(Request $request)
+    {
+        $userObj = $request->user('custom_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $account_id = $userObj->account_id;
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $infoObj = $this->sp_rtt->get_account_info($account_id);
+        if (!empty($infoObj->currency_type) && $infoObj->currency_type != $la_paras['currency_type'])
+            throw new RttException("INVALID_PARAMETER", "currency_type");
+        $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
+        $ret = $sp->get_exchange_rate($account_id,$la_paras['currency_type']);
+        return $this->format_success_ret($ret);
     }
 
     public function handle_notify_wx(Request $request)

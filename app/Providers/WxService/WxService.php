@@ -3,10 +3,12 @@ namespace App\Providers\WxService;
 
 require_once __DIR__."/lib/WxPay.Api.php";
 require_once __DIR__.'/lib/WxPay.Notify.php';
+require_once __DIR__.'/lib/WxPay.Exception.php';
 
 use Log;
 //use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Exceptions\RttException;
 
 function checkErrToThrow($result)
@@ -25,6 +27,7 @@ class WxService
         $this->consts = array();
         $this->consts['GATEWAY_ADDR'] = "";
         $this->consts['VENDOR_TZ'] = "Asia/Shanghai";
+        $this->consts['EXCHANGE_RATE_UPDATE_HOUR'] = 10;
         //$this->consts['CHANNEL_NAME'] = "WX"; 
         $this->consts['CHANNEL_FLAG'] = app()->make('rtt_service')->consts['CHANNELS']['WX'];
         //$this->consts['DEFAULT_CURRENCY'] = "CAD";
@@ -131,7 +134,6 @@ class WxService
         Log::DEBUG("create_refund_wx:sending:" . json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
 		$result = \WxPayApi::refund($input);
 		Log::DEBUG("create_refund_wx:received:" . json_encode($result), JSON_UNESCAPED_UNICODE);
-        return $result;
         checkErrToThrow($result);
 		return $result;
 	}
@@ -177,6 +179,42 @@ class WxService
             }
         }
         return $ret;
+    }
+
+    public function get_exchange_rate($account_id, $fee_type) {
+        $cacheID = "wx:exchange_rate:".$fee_type;
+        $old = Cache::get($cacheID);
+        if (empty($old)) {
+            $vendor_wx_info = $this->get_account_info($account_id);
+            $sub_mch_id = $vendor_wx_info->sub_mch_id;
+		    $input = new \WxPayExchangeRateQuery();
+		    $input->SetSub_mch_id($sub_mch_id);
+		    $input->SetFee_type($fee_type);
+            $dt = new \DateTime("now", new \DateTimeZone($this->consts['VENDOR_TZ']));
+            $cached_hours = 24-$dt->format('H')+$this->consts['EXCHANGE_RATE_UPDATE_HOUR'];
+            if ($dt->format('H')+0 < $this->consts['EXCHANGE_RATE_UPDATE_HOUR']) {
+                $dt->add(\DateInterval::createFromDateString('-1 day'));
+                $cached_hours -= 24;
+            }
+            Log::DEBUG(__FUNCTION__.":to cached hours:" . $cached_hours);
+            $input->SetDate($dt->format('Ymd'));
+            Log::DEBUG(__FUNCTION__.":sending:" . json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
+            $result = \WxPayApi::exchangerateQuery($input);
+            Log::DEBUG(__FUNCTION__.":received:" . json_encode($result, JSON_UNESCAPED_UNICODE));
+            //checkErrToThrow($result); //this return does not have a biz code
+            if (!isset($result["return_code"]) || ($result["return_code"] != "SUCCESS"))
+                throw new RttException('WX_ERROR_VALIDATION', $result["return_msg"]??"Error msg missing!");
+            $release_time = \DateTime::createFromFormat("YmdH",
+                $result['rate_time'].$this->consts['EXCHANGE_RATE_UPDATE_HOUR'],
+                new \DateTimeZone($this->consts['VENDOR_TZ']));
+            $result = [
+                'exchange_rate'=>bcdiv($result['rate'], 10**8, 8),
+                'release_time'=>$release_time->getTimestamp(),
+            ];
+            Cache::put($cacheID, $result, $cached_hours*60);
+            $old = $result;
+        }
+        return $old;
     }
 
     public function handle_notify($needSignOutput) {

@@ -5,7 +5,11 @@
  * @author widyhu
  *
  */
-class WxPayException extends Exception {
+ /**
+  * @modified xunrui@chanmao.ca
+  */
+use App\Exceptions\RttException;
+class WxPayException extends RttException {
 	public function errorMessage()
 	{
 		return $this->getMessage();

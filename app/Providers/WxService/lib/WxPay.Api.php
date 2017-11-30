@@ -301,9 +301,41 @@ class WxPayApi
 		$xml = $inputObj->ToXml();
 		
 		$response = self::postXmlCurl($xml, $url, false, $timeOut);
+        /*
         $obj = new WxPayResults();
 		return $obj->FromXml($response);
 		//return $response;
+         */ 
+        //the above is an old version tested, now(11-30) change to the following not tested.
+        //not that they return different types: object / array
+		return $obj->FromXml($response);
+	}
+
+	/**
+	 * 查询汇率
+	 * @param WxPayExchangeRateQuery $inputObj
+	 * @param int $timeOut
+	 * @throws WxPayException
+	 * @return 成功时返回，其他抛异常
+     * @author xunrui
+	 */
+	public static function exchangerateQuery($inputObj, $timeOut = 6)
+	{
+		$url = "https://apius.mch.weixin.qq.com/pay/queryexchagerate";
+		//检测必填参数
+        if(!$inputObj->IsFee_typeSet() || !$inputObj->IsDateSet() || !$inputObj->IsSub_mch_idSet()) {
+			throw new WxPayException("对账单接口中，缺少必填参数sub_mch_id/fee_type/date！");
+		}
+		$inputObj->SetAppid(WxPayConfig_APPID);//公众账号ID
+		$inputObj->SetMch_id(WxPayConfig_MCHID);//商户号
+		//$inputObj->SetNonce_str(self::getNonceStr());//随机字符串
+		
+		$inputObj->SetSign();//签名
+		$xml = $inputObj->ToXml();
+		
+		$response = self::postXmlCurl($xml, $url, false, $timeOut);
+		$result = WxPayResults::Init($response);
+		return $result;
 	}
 
 	/**

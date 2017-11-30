@@ -30,6 +30,7 @@ $router->group(['prefix'=>'mcf','middleware'=>'auth:custom_token'], function ($r
     $router->post('/create_order/', ['uses'=>'MCFController@create_order']);
     $router->post('/create_refund/', ['uses'=>'MCFController@create_refund']);
     $router->post('/check_order_status/', ['uses'=>'MCFController@check_order_status']);
+    $router->post('/get_exchange_rate/', ['uses'=>'MCFController@get_exchange_rate']);
 });
 $router->post('/login/', ['uses'=>'LoginController@login']);
 

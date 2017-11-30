@@ -16,7 +16,16 @@ class Mcf_user_base_TableSeeder extends Seeder
             'username'=>'testUser', 
             'password'=>'tobemodified', 
             'account_id'=>3, 
-            'role'=>2, 
+            'role'=>101, 
+            'saltstring'=>bin2hex(random_bytes(32)), 
+            'create_time'=>time(),
+        ]);
+        DB::table('mcf_user_base')->insert([
+            'merchant_id'=>'testMerchant', 
+            'username'=>'testAdmin', 
+            'password'=>'tobemodified', 
+            'account_id'=>3, 
+            'role'=>666, 
             'saltstring'=>bin2hex(random_bytes(32)), 
             'create_time'=>time(),
         ]);

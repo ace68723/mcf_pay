@@ -7,6 +7,8 @@ require_once __DIR__."/lib/alipay_md5.function.php";
 use Log;
 //use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use App\Exceptions\RttException;
 
 function sec_to_short_str($sec) {
     if ($sec % 3600 == 0) 
@@ -38,6 +40,7 @@ class AliService{
     public function __construct(){
         $this->consts = array();
         $this->consts['GATEWAY_URL'] = "https://intlmapi.alipay.com/gateway.do";
+        //$this->consts['WEB_GATEWAY_URL'] = "https://mapi.alipay.com/gateway.do";
         $this->consts['VENDOR_TZ'] = "Asia/Shanghai";
         //$this->consts['CHANNEL_NAME'] = "ALI"; 
         $this->consts['CHANNEL_FLAG'] = app()->make('rtt_service')->consts['CHANNELS']['ALI'];
@@ -70,7 +73,7 @@ class AliService{
 
     public function create_order($la_paras, $account_id){
         $vendor_ali_info = $this->get_account_info($account_id);
-        $input = $this->create_request_common($la_paras);
+        $input = $this->create_request_common();
         $input['service'] = "alipay.acquire.precreate";
         $input['notify_url'] = $this->consts['NOTIFY_URL'];
         $input['timestamp'] = isset($la_paras['timestamp']) ? $la_paras['timestamp']."000" : time()."010";
@@ -109,7 +112,7 @@ class AliService{
 
     public function query_charge_single($la_paras, $account_id){
         //$vendor_ali_info = $this->get_account_info($account_id);
-        $input = $this->create_request_common($la_paras);
+        $input = $this->create_request_common();
         $input['service'] = "alipay.acquire.overseas.query";
         $input['partner_trans_id'] = $la_paras['out_trade_no'];
         $signString = getSignString($input);
@@ -125,7 +128,7 @@ class AliService{
     public function query_refund_single($la_paras, $account_id){
         throw new RttException('SYSTEM_ERROR', __FUNCTION__.": Function Not Supported.");
         //$vendor_ali_info = $this->get_account_info($account_id);
-        $input = $this->create_request_common($la_paras);
+        $input = $this->create_request_common();
         $input['service'] = "alipay.acquire.overseas.query";
         if (!empty($la_paras['refund_id']))
             $input['partner_refund_id'] = $la_paras['refund_id'];
@@ -143,7 +146,7 @@ class AliService{
 
     public function create_refund($la_paras, $account_id){
         //$vendor_ali_info = $this->get_account_info($account_id);
-        $input = $this->create_request_common($la_paras);
+        $input = $this->create_request_common();
         $input['service'] = "alipay.acquire.overseas.spot.refund";
         $input['partner_trans_id'] = $la_paras['out_trade_no'];
         $input['partner_refund_id'] = $la_paras['_refund_id'];
@@ -201,10 +204,45 @@ class AliService{
                 $ret[$item[0]] = $item[2]($ali_txn[$item[1]] ?? null);
             }
         }
+        //supposing this function is not frequently called
+        $this->update_cached_exchange_rate($ret['txn_fee_currency'], $ret['exchange_rate'], $ret['vendor_txn_time']);
         return $ret;
     }
 
-    private function create_request_common($la_paras) {
+    private function update_cached_exchange_rate($fee_type, $exchange_rate, $release_time) {
+        $cacheID = "ali:exchange_rate:".$fee_type;
+        $old = Cache::get($cacheID);
+        if (empty($old['release_time']) || ($old['release_time'] < $release_time)) {
+            if (!empty($old))
+                Cache::forget($cacheID);
+            Cache::forever($cacheID, [
+                'exchange_rate'=>$exchange_rate,
+                'release_time'=>$release_time,
+            ]);
+            //TODO may have lock problem??
+        }
+    }
+
+    public function get_exchange_rate($account_id, $fee_type) {
+        $cacheID = "ali:exchange_rate:".$fee_type;
+        $old = Cache::get($cacheID);
+        if (empty($old)) 
+            throw new RttException('SYSTEM_ERROR', "unknown alipay exchange rate for ".$fee_type);
+        return $old;
+        // we have to skip the following as our contract with alipay doesnot include the interface
+        $input = $this->create_request_common();
+        $input['service'] = "forex_rate_file";
+        $signString = getSignString($input);
+        $input['sign'] = md5Sign($signString, $this->consts['KEY']);
+        $url = $this->consts['GATEWAY_URL']."?".createLinkstringUrlencode($input);
+        Log::info("Send to AliPay server:".json_encode($input)."\n Encode Url:".$url);
+        $result = getHttpResponseGET($url, null, $errmsg);
+        Log::info("Received from AliPay server:".$result."\nErrmsg:".$errmsg);
+        if ($result === false)
+            throw new RttException('AL_ERROR_VALIDATION', $errmsg);
+        return $result;
+    }
+    private function create_request_common() {
         $input = array();
         $input['partner'] = $this->consts['PARTNER_ID'];
         $input['_input_charset'] = "utf-8";
