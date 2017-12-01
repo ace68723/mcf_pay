@@ -18,6 +18,10 @@ function sec_to_short_str($sec) {
     return $sec."s";
 }
 
+function my_check_sign($response, $sign, $key) {
+    $sign_str = getSignString($response);
+    return hash_equals(md5Sign($sign_str, $key), $sign);
+}
 function parse_xml_check_err_throw($xmlstr, $key) {
     $result = parse_xml_response($xmlstr);
     if (!isset($result["is_success"]) || ($result["is_success"] != "T"))
@@ -25,8 +29,7 @@ function parse_xml_check_err_throw($xmlstr, $key) {
     if (!isset($result["response"]) || !isset($result["response"]["alipay"]))
         throw new RttException('AL_ERROR_VALIDATION', "Malformed Response From AliPay Server");
     $response = $result["response"]["alipay"];
-    $sign_str = getSignString($response);
-    if (md5Sign($sign_str, $key) != $result["sign"])
+    if (!my_check_sign($response, $result["sign"], $key))
         throw new RttException('AL_ERROR_VALIDATION', "vendor response sign error");
     if (!isset($response["result_code"]) || ($response["result_code"] != "SUCCESS"))
         throw new RttException('AL_ERROR_BIZ', $response["detail_error_code"] ??
@@ -53,6 +56,7 @@ class AliService{
         $this->consts['DEFAULT_EXPIRE_SEC'] = 1200; //"<integer>[m|h|d]";
         $this->consts['SCENARIO_MAP'] = array( //rtt to vendor scenario
             'NATIVE'=>"OVERSEAS_MBARCODE_PAY",
+            'AUTHPAY'=>"OVERSEAS_MBARCODE_PAY",
         //$input['product_code'] = "QR_CODE_OFFLINE";
         //$input['product_code'] = "NEW_OVERSEAS_SELLER";
         );
@@ -67,8 +71,81 @@ class AliService{
         $ret = empty($account_id) ? null: 
             DB::table('vendor_ali')->where('account_id','=',$account_id)->first();
         if ($b_emptyAsException && empty($ret))
-            throw new RttException('SYSTEM_ERROR', "Missing Vendor Ali Entry");
+            throw new RttException('SYSTEM_ERROR', "Missing Vendor Ali Entry. account_id:".$account_id);
         return $ret;
+    }
+
+    public function create_authpay($la_paras, $account_id){
+        $vendor_ali_info = $this->get_account_info($account_id);
+        $input = $this->create_request_common();
+        $input['service'] = "alipay.acquire.overseas.spot.pay";
+        $input['alipay_seller_id'] = $input['partner'];
+        $input['trans_name'] = substr(($la_paras['description'] ?? "Description Missing"), 0, 256);
+        $input['partner_trans_id'] = $la_paras['_out_trade_no'];
+        $input['currency'] = $la_paras['total_fee_currency'];
+        $input['trans_amount'] = number_format(($la_paras["total_fee_in_cent"])/100, 2, ".", "");
+        $input['buyer_identity_code'] = $la_paras['auth_code'];
+        $input['identity_code_type'] = 'qrcode';//'barcode' will also work
+        $scenario = $la_paras['scenario'] ?? null;
+        $scenario = $this->consts['SCENARIO_MAP'][$scenario] ?? null;
+        if (empty($scenario) || $scenario != 'OVERSEAS_MBARCODE_PAY') {
+            throw  new RttException('SYSTEM_ERROR', "WRONG SCENARIO!");
+        }
+        $input['biz_product'] = 'OVERSEAS_MBARCODE_PAY';
+        $sub_mch_info = array();
+        $sub_mch_info["SECONDARY_MERCHANT_ID"] = $vendor_ali_info->sub_mch_id;
+        $sub_mch_info["SECONDARY_MERCHANT_NAME"] = $vendor_ali_info->sub_mch_name;
+        $sub_mch_info["SECONDARY_MERCHANT_INDUSTRY"] = $vendor_ali_info->sub_mch_industry;
+        $sub_mch_info["store_name"] = $vendor_ali_info->sub_mch_name;
+        $sub_mch_info["store_id"] = $vendor_ali_info->sub_mch_id;
+        $input['extend_info'] = json_encode($sub_mch_info);
+        $signString = getSignString($input);
+        $input['sign'] = md5Sign($signString, $this->consts['KEY']);
+        $url = $this->consts['GATEWAY_URL']."?".createLinkstringUrlencode($input);
+        $ret = [
+            'out_trade_no' => $la_paras['_out_trade_no'],
+            'status'=> 'QUERY_LATER',
+        ];
+        Log::info("Send to AliPay server:".json_encode($input)."\n Encode Url:".$url);
+        try {
+            $result = getHttpResponseGET($url, null, $errmsg);
+        }
+        catch(\Exception $e) {
+            Log::DEBUG("ali exception:".$e->getMessage());
+            return $ret;
+        }
+        Log::info("Received from AliPay server:".$result."\nErrmsg:".$errmsg);
+        if ($result === false) {
+            Log::DEBUG("ali returned false:".$errmsg);
+            return $ret;
+        }
+        $key = $this->consts['KEY'];
+        $result = parse_xml_response($result);
+        $is_success = $result["is_success"]??null;
+        $non_biz_error = $result["error"]??null;
+        $response = $result["response"]["alipay"]??null;
+        $error = $response["error"]??null;
+        $result_code = $response["result_code"]??null;
+        if ( $is_success == "F" && $non_biz_error =='ERROR'
+             || $is_success == "T" && $result_code =='UNKNOW' 
+             || $is_success == "T" && $result_code =='FAIL' && $error=='SYSTEM_ERROR' ) {
+            Log::DEBUG("authpay ali case 2:");
+            return $ret;
+        }
+        if (empty($response)) {
+            Log::DEBUG('AL_ERROR_VALIDATION'. " Malformed Response From AliPay Server");
+            return $ret;
+        }
+        if (!my_check_sign($response, ($result["sign"]??null), $key)) {
+            Log::DEBUG('AL_ERROR_VALIDATION'. " sign error");
+            return $ret;
+        }
+        if ($is_success=="T" && $result_code=="SUCCESS") {
+            $ret['status'] = 'SUCCESS';
+            return $ret;
+        }
+        throw new RttException('AL_ERROR_BIZ', $response["detail_error_code"] ??
+                        $error ?? $non_biz_error ?? "Error msg missing!");
     }
 
     public function create_order($la_paras, $account_id){

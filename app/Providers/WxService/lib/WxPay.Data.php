@@ -2593,7 +2593,7 @@ class WxPayShortUrl extends WxPayDataBase
  * 
  * 提交被扫输入对象
  * @author widyhu
- *
+ * @modified xunrui: add sub_mch_id
  */
 class WxPayMicroPay extends WxPayDataBase
 {
@@ -2648,6 +2648,30 @@ class WxPayMicroPay extends WxPayDataBase
 		return array_key_exists('mch_id', $this->values);
 	}
 
+	/**
+	* 设置微信支付分配的子商户号
+	* @param string $value 
+	**/
+	public function SetSub_mch_id($value)
+	{
+		$this->values['sub_mch_id'] = $value;
+	}
+	/**
+	* 获取微信支付分配的子商户号的值
+	* @return 值
+	**/
+	public function GetSub_mch_id()
+	{
+		return $this->values['sub_mch_id'];
+	}
+	/**
+	* 判断微信支付分配的子商户号是否存在
+	* @return true 或 false
+	**/
+	public function IsSub_mch_idSet()
+	{
+		return array_key_exists('sub_mch_id', $this->values);
+	}
 
 	/**
 	* 设置终端设备号(商户自定义，如门店编号)

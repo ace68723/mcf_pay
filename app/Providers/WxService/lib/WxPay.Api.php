@@ -223,7 +223,7 @@ class WxPayApi
 			throw new WxPayException("对账单接口中，缺少必填参数bill_date！");
 		}
 		$inputObj->SetAppid(WxPayConfig_APPID);//公众账号ID
-		$inputObj->SetMch_id(WxPayConfig::MCHID);//商户号
+		$inputObj->SetMch_id(WxPayConfig_MCHID);//商户号
 		$inputObj->SetNonce_str(self::getNonceStr());//随机字符串
 		
 		$inputObj->SetSign();//签名
@@ -361,9 +361,9 @@ class WxPayApi
 			throw new WxPayException("提交被扫支付API接口中，缺少必填参数auth_code！");
 		}
 		
-		$inputObj->SetSpbill_create_ip($_SERVER['REMOTE_ADDR']);//终端ip
+		//$inputObj->SetSpbill_create_ip($_SERVER['REMOTE_ADDR']);//终端ip //commented by xunrui
 		$inputObj->SetAppid(WxPayConfig_APPID);//公众账号ID
-		$inputObj->SetMch_id(WxPayConfig::MCHID);//商户号
+		$inputObj->SetMch_id(WxPayConfig_MCHID);//商户号
 		$inputObj->SetNonce_str(self::getNonceStr());//随机字符串
 		
 		$inputObj->SetSign();//签名

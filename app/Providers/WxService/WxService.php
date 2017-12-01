@@ -36,6 +36,7 @@ class WxService
         $this->consts['DEFAULT_EXPIRE_SEC'] = 3600;
         $this->consts['SCENARIO_MAP'] = [
             'NATIVE'=>'NATIVE',
+            'AUTHPAY'=>'MICROPAY',
         ];
         $this->consts['STATE_MAP'] = array( //vendor to rtt 
             //'REFUND'=>'REFUND',
@@ -53,6 +54,50 @@ class WxService
         if ($b_emptyAsException && empty($ret)) {
             throw new RttException('SYSTEM_ERROR', "Missing Vendor Wx Entry");
         }
+        return $ret;
+    }
+
+    public function create_authpay($la_paras, $account_id){
+        $vendor_wx_info = $this->get_account_info($account_id);
+        $sub_mch_id = $vendor_wx_info->sub_mch_id;
+        $input = new \WxPayMicroPay();
+        $input->SetSub_mch_id($sub_mch_id);
+        $input->SetAuth_code($la_paras['auth_code']);
+        $input->SetBody(mb_strcut($la_paras["description"] ?? "Description Missing", 0, 32));
+        // yes, the string length is different from native pay, 32 <-> 128
+        $input->SetTotal_fee($la_paras["total_fee_in_cent"]);
+        $input->SetFee_type($la_paras["total_fee_currency"]);
+        $input->SetOut_trade_no($la_paras['_out_trade_no']);
+
+        $scenario = $la_paras['scenario'] ?? null;
+        $scenario = $this->consts['SCENARIO_MAP'][$scenario] ?? null;
+        if (empty($scenario) || $scenario != 'MICROPAY')
+            throw  new RttException('SYSTEM_ERROR', "WRONG SCENARIO!");
+        $ret = [
+            'out_trade_no' => $la_paras['_out_trade_no'],
+            'status'=> 'QUERY_LATER',
+        ];
+        Log::info("Send to WxPay server:".json_encode($input->getValues(), JSON_UNESCAPED_UNICODE));
+        try {
+            $result = \WxPayApi::micropay($input, 10);
+        }
+        catch(\Exception $e) {
+            Log::DEBUG("exception in sending wx micropay!".$e->getMessage());
+            return $ret;
+        }
+        Log::info("Received from WxPay server:".json_encode($result, JSON_UNESCAPED_UNICODE));
+        $return_code = $result["return_code"] ?? null;
+        $result_code = $result["result_code"] ?? null;
+        if (($return_code != "SUCCESS")) {
+            Log::DEBUG($result["return_msg"]??"Error msg missing!");
+            return $ret;
+        }
+        if ($result_code != 'SUCCESS' && in_array($result['err_code']??null, ['USERPAYING','SYSTEMERROR']))
+            return $ret;
+        if ($result_code != "SUCCESS")
+            throw new RttException('WX_ERROR_BIZ', $result["err_code"]??"Error msg missing!");
+        //checkErrToThrow($result);
+        $ret['status'] = 'SUCCESS';
         return $ret;
     }
 

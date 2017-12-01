@@ -13,6 +13,7 @@ class RttException extends Exception
     const SYSTEM_ERROR          = 400003;
     const ROLE_CHECK_FAIL       = 400003;
     const NOT_FOUND             = 400003;
+    const QUERY_LATER           = 400003;
     const INVALID_PARAMETER     = 400003;
     const WX_ERROR_VALIDATION   = 400004;
     const WX_ERROR_RETRY        = 400004;

@@ -21,6 +21,7 @@ class MCFController extends Controller
         $this->sp_rtt = app()->make('rtt_service');
 
         $this->consts['ALLOWED_ROLES'] = [
+            'create_authpay'=>[1,2,101,666],
             'create_order'=>[1,2,101,666],
             'create_refund'=>[1,2,101,666],
             'check_order_status'=>[1,2,101,666],
@@ -28,6 +29,29 @@ class MCFController extends Controller
             'get_bills_range'=>[1,666],
         ];
         $this->consts['REQUEST_PARAS'] = [];
+        $this->consts['REQUEST_PARAS']['create_authpay'] = [
+            'vendor_channel'=>[
+                'checker'=>['is_string', 8],
+                'required'=>true,
+            ],
+            'total_fee_in_cent'=>[
+                'checker'=>'is_int',
+                'required'=>true,
+            ],
+            'total_fee_currency'=>[
+                'checker'=>['is_string', 16],
+                'required'=>true,
+            ],
+            'auth_code'=>[
+                'checker'=>['is_string', 128],
+                'required'=>true,
+            ],
+            'description'=>[
+                'checker'=>['is_string', 32],
+                'required'=>false,
+                'default_value'=>" Supported by ". $this->sp_rtt->consts['OUR_NAME'],
+            ],
+        ];
         $this->consts['REQUEST_PARAS']['create_order'] = [
             'vendor_channel'=>[
                 'checker'=>['is_string', 8],
@@ -40,6 +64,11 @@ class MCFController extends Controller
             'total_fee_currency'=>[
                 'checker'=>['is_string', 16],
                 'required'=>true,
+            ],
+            'description'=>[
+                'checker'=>['is_string', 32],
+                'required'=>false,
+                'default_value'=>" Supported by ". $this->sp_rtt->consts['OUR_NAME'],
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
@@ -103,18 +132,34 @@ class MCFController extends Controller
             throw new RttException('SYSTEM_ERROR', "ERROR SETTING IN API SCHEMA");
     }
 
+    public function create_authpay(Request $request){
+        $userObj = $request->user('custom_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $account_id = $userObj->account_id;
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $infoObj = $this->sp_rtt->get_account_info($account_id);
+        if (!empty($infoObj->currency_type) && $infoObj->currency_type != $la_paras['total_fee_currency'])
+            throw new RttException("INVALID_PARAMETER", "currency_type");
+        $la_paras['_out_trade_no'] = $this->sp_rtt->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
+        $la_paras['scenario'] = 'AUTHPAY';
+        $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
+        $ret = $sp->create_authpay($la_paras, $account_id);
+        $this->sp_rtt->post_create_order($la_paras, $ret);
+        $ret['total_fee_in_cent'] = $la_paras['total_fee_in_cent'];
+        return $this->format_success_ret($ret);
+    }
+
     public function create_order(Request $request)
     {
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
-        $la_paras = $this->parse_parameters($request, "create_order");
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $infoObj = $this->sp_rtt->get_account_info($account_id);
         if (!empty($infoObj->currency_type) && $infoObj->currency_type != $la_paras['total_fee_currency'])
             throw new RttException("INVALID_PARAMETER", "currency_type");
         $la_paras['_out_trade_no'] = $this->sp_rtt->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
         $la_paras['scenario'] = 'NATIVE';
-        $la_paras['description'] = '^_^ Supported by MCF.';
         $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         $ret = $sp->create_order($la_paras, $account_id);
         $this->sp_rtt->post_create_order($la_paras, $ret);

@@ -27,6 +27,7 @@ $router->get('/test/', ['uses'=>'PubAPIController@test']);
 
 $router->group(['prefix'=>'mcf','middleware'=>'auth:custom_token'], function ($router)
 {
+    $router->post('/create_authpay/', ['uses'=>'MCFController@create_authpay']);
     $router->post('/create_order/', ['uses'=>'MCFController@create_order']);
     $router->post('/create_refund/', ['uses'=>'MCFController@create_refund']);
     $router->post('/check_order_status/', ['uses'=>'MCFController@check_order_status']);
