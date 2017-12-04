@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Exception;
+use Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -33,6 +34,16 @@ class Handler extends ExceptionHandler
      */
     public function report(Exception $e)
     {
+        if ($e instanceof RttException) {
+            $ls_result = [
+                'ev_error' => $e->getInnerCode(),
+                'ev_message' => $e->getMessage(),
+                'ev_context' => $e->getContext(),
+            ];
+            Log::DEBUG($e->getFile().':'.$e->getLine().':RttException:'.
+                json_encode($ls_result, JSON_PARTIAL_OUTPUT_ON_ERROR));
+            return;
+        }
         parent::report($e);
     }
 
