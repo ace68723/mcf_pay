@@ -165,7 +165,7 @@ class MCFController extends Controller
         $la_paras['scenario'] = 'AUTHPAY';
         $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         $ret = $sp->create_authpay($la_paras, $account_id,
-            $this->sp_rtt->cb_new_order, $this->sp_rtt->cb_new_txn);
+            [$this->sp_rtt,'cb_new_order'], [$this->sp_rtt,'cb_order_update']);
         $ret['total_fee_in_cent'] = $la_paras['total_fee_in_cent'];
         return $this->format_success_ret($ret);
     }
@@ -183,7 +183,7 @@ class MCFController extends Controller
         $la_paras['scenario'] = 'NATIVE';
         $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         $ret = $sp->create_order($la_paras, $account_id,
-            $this->sp_rtt->cb_new_order);
+            [$this->sp_rtt,'cb_new_order'], [$this->sp_rtt,'cb_order_update']);
         $ret['total_fee_in_cent'] = $la_paras['total_fee_in_cent'];
         return $this->format_success_ret($ret);
     }
@@ -214,9 +214,10 @@ class MCFController extends Controller
             $la_paras['type'] == 'force_remote') {
             $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
             $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
+            //only success txn gets here
             $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id);
-            $status = $txn['status'];
-            $this->sp_rtt->cb_order_update($la_paras['out_trade_no'], $status, $cached_order);
+            $status = $txn['status'];//TODO we need to map the status
+            $this->sp_rtt->cb_order_update($la_paras['out_trade_no'], $status, $txn, $cached_order);
         }
         return $this->format_success_ret($status);
     }

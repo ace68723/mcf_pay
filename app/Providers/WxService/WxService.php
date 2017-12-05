@@ -58,7 +58,7 @@ class WxService
         return $ret;
     }
 
-    public function create_authpay($la_paras, $account_id, callable cb_new_order, callable cb_order_update){
+    public function create_authpay($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update){
         $vendor_wx_info = $this->get_account_info($account_id);
         $sub_mch_id = $vendor_wx_info->sub_mch_id;
         $input = new \WxPayMicroPay();
@@ -74,11 +74,8 @@ class WxService
         $scenario = $this->consts['SCENARIO_MAP'][$scenario] ?? null;
         if (empty($scenario) || $scenario != 'MICROPAY')
             throw  new RttException('SYSTEM_ERROR', "WRONG SCENARIO!");
-        $ret = [
-            'out_trade_no' => $la_paras['_out_trade_no'],
-            'status'=> 'QUERY_LATER',
-        ];
-        $cachedItem = cb_new_order($la_paras['_out_trade_no'], $account_id,
+        $ret = [ 'out_trade_no' => $la_paras['_out_trade_no'], ];
+        $cachedItem = $cb_new_order($la_paras['_out_trade_no'], $account_id,
             $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues());
         Log::info("Send to WxPay server:".json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
         try {
@@ -86,31 +83,35 @@ class WxService
         }
         catch(\Exception $e) {
             Log::DEBUG("exception in sending wx micropay!".$e->getMessage());
-            cb_order_update($la_paras['_out_trade_no'], 'WAIT', $e->getMessage(), $cachedItem);
+            $ret['status'] = 'WAIT';
+            $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $e->getMessage(), $cachedItem);
             return $ret;
         }
         Log::info("Received from WxPay server:".json_encode($result, JSON_UNESCAPED_UNICODE));
 		if(!array_key_exists("return_code", $result)
-			|| !array_key_exists("out_trade_no", $result)
+            //|| !array_key_exists("out_trade_no", $result)
+            //the wx official example code does not work here,
+            //userpaying retrun message does not have an out_trade_no
             || !array_key_exists("result_code", $result)
             || ($result["return_code"] == "SUCCESS" && $result["result_code"] == "FAIL" && 
 		        $result["err_code"] != "USERPAYING" && $result["err_code"] != "SYSTEMERROR"))
         {
             $errmsg = $result["err_code"]??"Error msg missing!";
-            cb_order_update($la_paras['_out_trade_no'], 'FAIL', $errmsg, $cachedItem);
+            $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $errmsg, $cachedItem);
             throw new RttException('WX_ERROR_BIZ', $errmsg);
         }
         if ($result['result_code'] != 'SUCCESS') {
             // && in_array($result['err_code']??null, ['USERPAYING','SYSTEMERROR']))
-            cb_order_update($la_paras['_out_trade_no'], 'WAIT', $result['err_code'], $cachedItem);
+            $ret['status'] = 'WAIT';
+            $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $result['err_code'], $cachedItem);
             return $ret;
         }
-        cb_order_update($la_paras['_out_trade_no'], 'SUCCESS', $result, $cachedItem);
         $ret['status'] = 'SUCCESS';
+        $cb_order_update($la_paras['_out_trade_no'], 'SUCCESS', $result, $cachedItem);
         return $ret;
     }
 
-    public function create_order($la_paras, $account_id, callable cb_new_order, callable cb_order_update){
+    public function create_order($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update){
         $vendor_wx_info = $this->get_account_info($account_id);
         $sub_mch_id = $vendor_wx_info->sub_mch_id;
         $input = new \WxPayUnifiedOrder();
@@ -134,7 +135,7 @@ class WxService
             throw  new RttException('SYSTEM_ERROR', "WRONG SCENARIO!");
         $input->SetTrade_type("NATIVE");
         $input->SetProduct_id(date("YmdHis"));
-        $cachedItem = cb_new_order($la_paras['_out_trade_no'], $account_id,
+        $cachedItem = $cb_new_order($la_paras['_out_trade_no'], $account_id,
             $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues());
         try {
             Log::info("Send to WxPay server:".json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
@@ -142,14 +143,14 @@ class WxService
             Log::info("Received from WxPay server:".json_encode($result, JSON_UNESCAPED_UNICODE));
             checkErrToThrow($result);
         } catch (\Exception $e) {
-            cb_order_update($la_paras['_out_trade_no'], 'FAIL', $e->getMessage(), $cachedItem);
+            $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $e->getMessage(), $cachedItem);
             throw $e;
         }
-        cb_order_update($la_paras['_out_trade_no'], 'WAIT', $result, $cachedItem);
+        $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $result, $cachedItem);
         return array("out_trade_no"=>$la_paras['_out_trade_no'], "code_url"=>$result["code_url"]);
     }
 
-    public function create_refund($la_paras, $account_id, callable cb_new_order, callable cb_order_update) {
+    public function create_refund($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update) {
         $vendor_wx_info = $this->get_account_info($account_id);
         if (empty($la_paras['out_trade_no']))
             throw new RttException('SYSTEM_ERROR', "Out_trade_no Missing");
@@ -165,7 +166,7 @@ class WxService
         $input->SetOut_refund_no($la_paras['_refund_id']);
         $input->SetOp_user_id(\WxPayConfig::MCHID);
         $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
-        $cachedItem = cb_new_order($la_paras['_refund_id'], $account_id,
+        $cachedItem = $cb_new_order($la_paras['_refund_id'], $account_id,
             $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues());
         try {
             Log::info(__FUNCTION__.":wx:sending:". json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
@@ -173,10 +174,10 @@ class WxService
             Log::info(__FUNCTION__.":wx:received:". json_encode($result), JSON_UNESCAPED_UNICODE);
             checkErrToThrow($result);        
         } catch (\Exception $e) {
-            cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage(), $cachedItem); //TODO: return refund_id for some cases
+            $cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage(), $cachedItem); //TODO: return refund_id for some cases
             throw $e;
         }
-        cb_order_update($la_paras['_refund_id'], 'SUCCESS', $result, $cachedItem);
+        $cb_order_update($la_paras['_refund_id'], 'SUCCESS', $result, $cachedItem);
 		return $result;
 	}
 

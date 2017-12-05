@@ -110,8 +110,8 @@ class RttService{
     public function cb_new_order($order_id, $account_id, $channel_name, $input, $req=null, $resp=null) {
         $status = 'INIT';
         $item = [
-            'account_id':$account_id,
-            'channel_sp_name':$channel_name,
+            'account_id'=>$account_id,
+            'channel_sp_name'=>$channel_name,
             'input'=>$input,
             'req'=>$req,
             'resp'=>$resp,

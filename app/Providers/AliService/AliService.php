@@ -76,7 +76,7 @@ class AliService{
         return $ret;
     }
 
-    public function create_authpay($la_paras, $account_id, callable cb_new_order, callable cb_order_update){
+    public function create_authpay($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update){
         $vendor_ali_info = $this->get_account_info($account_id);
         $input = $this->create_request_common();
         $input['service'] = "alipay.acquire.overseas.spot.pay";
@@ -103,11 +103,8 @@ class AliService{
         $signString = getSignString($input);
         $input['sign'] = md5Sign($signString, $this->consts['KEY']);
         $url = $this->consts['GATEWAY_URL']."?".createLinkstringUrlencode($input);
-        $ret = [
-            'out_trade_no' => $la_paras['_out_trade_no'],
-            'status'=> 'QUERY_LATER',
-        ];
-        $cachedItem = cb_new_order($la_paras['_out_trade_no'], $account_id,
+        $ret = [ 'out_trade_no' => $la_paras['_out_trade_no'], ];
+        $cachedItem = $cb_new_order($la_paras['_out_trade_no'], $account_id,
             $this->consts['CHANNEL_NAME'], $la_paras, $input);
         try {
             Log::info("Send to AliPay server:".json_encode($input)."\n Encode Url:".$url);
@@ -133,20 +130,21 @@ class AliService{
         }
         catch(\Exception $e) {
             Log::DEBUG("enter wait because:".$e->getMessage());
-            cb_order_update($la_paras['_out_trade_no'], 'WAIT', $e->getMessage(), $cachedItem);
+            $ret['status'] = 'WAIT';
+            $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $e->getMessage(), $cachedItem);
             return $ret;
         }
         if ($is_success=="T" && $result_code=="SUCCESS") {
             $ret['status'] = 'SUCCESS';
-            cb_order_update($la_paras['_out_trade_no'], 'SUCCESS', $ret, $cachedItem);
+            $cb_order_update($la_paras['_out_trade_no'], 'SUCCESS', $ret, $cachedItem);
             return $ret;
         }
         $errmsg = $response["detail_error_code"] ??  $error ?? $non_biz_error ?? "Error msg missing!";
-        cb_order_update($la_paras['_out_trade_no'], 'FAIL', $errmsg, $cachedItem);
+        $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $errmsg, $cachedItem);
         throw new RttException('AL_ERROR_BIZ', $errmsg);
     }
 
-    public function create_order($la_paras, $account_id, callable cb_new_order, callable cb_order_update){
+    public function create_order($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update){
         $vendor_ali_info = $this->get_account_info($account_id);
         $input = $this->create_request_common();
         $input['service'] = "alipay.acquire.precreate";
@@ -177,7 +175,7 @@ class AliService{
         $signString = getSignString($input);
         $input['sign'] = md5Sign($signString, $this->consts['KEY']);
         $url = $this->consts['GATEWAY_URL']."?".createLinkstringUrlencode($input);
-        $cachedItem = cb_new_order($la_paras['_out_trade_no'], $account_id,
+        $cachedItem = $cb_new_order($la_paras['_out_trade_no'], $account_id,
             $this->consts['CHANNEL_NAME'], $la_paras, $input);
         try {
             Log::info("Send to AliPay server:".json_encode($input)."\n Encode Url:".$url);
@@ -188,14 +186,14 @@ class AliService{
             $ret = parse_xml_check_err_throw($result, $this->consts['KEY']);
         }
         catch (\Exception $e) {
-            cb_order_update($la_paras['_out_trade_no'], 'FAIL', $e->getMessage(), $cachedItem);
+            $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $e->getMessage(), $cachedItem);
             throw $e;
         }
-        cb_order_update($la_paras['_out_trade_no'], 'WAIT', $ret, $cachedItem);
-        return ["out_trade_no"=>$la_paras['_out_trade_no'], "code_url"=>$ret["code_url"]];
+        $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $ret, $cachedItem);
+        return ["out_trade_no"=>$la_paras['_out_trade_no'], "code_url"=>$ret["qr_code"]];
     }
 
-    public function create_refund($la_paras, $account_id, callable cb_new_order, callable cb_order_update){
+    public function create_refund($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update){
         //$vendor_ali_info = $this->get_account_info($account_id);
         $input = $this->create_request_common();
         $input['service'] = "alipay.acquire.overseas.spot.refund";
@@ -207,7 +205,7 @@ class AliService{
         $signString = getSignString($input);
         $input['sign'] = md5Sign($signString, $this->consts['KEY']);
         $url = $this->consts['GATEWAY_URL']."?".createLinkstringUrlencode($input);
-        $cachedItem = cb_new_order($la_paras['_refund_id'], $account_id,
+        $cachedItem = $cb_new_order($la_paras['_refund_id'], $account_id,
             $this->consts['CHANNEL_NAME'], $la_paras, $input);
         try {
             Log::info("Send to AliPay server:".json_encode($input)."\n Encode Url:".$url);
@@ -218,10 +216,10 @@ class AliService{
             $ret = parse_xml_check_err_throw($result, $this->consts['KEY']);
         }
         catch (\Exception $e) {
-            cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage(), $cachedItem);
+            $cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage(), $cachedItem);
             throw $e;
         }
-        cb_order_update($la_paras['_refund_id'], 'SUCCESS', $ret, $cachedItem);
+        $cb_order_update($la_paras['_refund_id'], 'SUCCESS', $ret, $cachedItem);
         return $ret;
     }
 
