@@ -15,7 +15,12 @@ class RttService{
         $this->consts = array();
         $this->consts['OUR_NAME'] = "MCF";
         $this->consts['CHANNELS'] = array('WX'=>0x1, 'ALI'=>0x2,);
-        $this->consts['ORDER_CACHE_MINS'] = 24*60;
+        $this->consts['ORDER_CACHE_MINS'] = [
+            'INIT'=>24*60,
+            'WAIT'=>24*60,
+            'SUCCESS'=>7*24*60,
+            'FAIL'=>24*60,
+        ];
     }
 
     public function get_vendor_channel_info($account_id, $b_readable=false) {
@@ -89,6 +94,7 @@ class RttService{
         return $rtt_txn;
     }
 
+    /*
     public function cache_txn($txn){
         //DB::table('txn_base')->updateOrCreate(['ref_id'=>$txn['ref_id']],$txn); //TODO:use Eloquent
         $old = DB::table('txn_base')->where('ref_id','=',$txn['ref_id'])->first();
@@ -99,26 +105,46 @@ class RttService{
             DB::table('txn_base')->where('ref_id','=',$txn['ref_id'])->update($txn);
         }
     }
+     */
 
-    public function post_create_order($la_paras, $resp) {
-        Cache::put("order:".$la_paras['_out_trade_no'], [
-            'req'=>$la_paras,
+    public function cb_new_order($order_id, $account_id, $channel_name, $input, $req=null, $resp=null) {
+        $status = 'INIT';
+        $item = [
+            'account_id':$account_id,
+            'channel_sp_name':$channel_name,
+            'input'=>$input,
+            'req'=>$req,
             'resp'=>$resp,
-            'status'=>'USERPAYING',
-        ], $this->consts['ORDER_CACHE_MINS']);
+            'status'=>$status,
+        ];
+        Cache::put("order:".$order_id, $item, $this->consts['ORDER_CACHE_MINS'][$status]);
+        return $item;
     }
-    public function query_order_cache($out_trade_no) {
-        return Cache::get("order:".$out_trade_no, null);
-    }
-    public function update_order_cache($out_trade_no, $status, $old=null) {
-        if (empty($old))
-            $old = Cache::get("order:".$out_trade_no, null);
-            if (empty($old)) return;
+
+    public function cb_order_update($order_id, $status, $newResp=null, $old=null) {
+        if (empty($this->consts['ORDER_CACHE_MINS'][$status])) {
+            Log::info(__FUNCTION__.': undefined status:'.$status);
+            return ;
+        }
+        if (empty($old)) {
+            $old = Cache::get("order:".$order_id, null);
+            if (empty($old)) {
+                Log::info(__FUNCTION__.': updating non-exist order:'.$order_id);
+                return;
+            }
+        }
         if ($old['status'] != $status) {
             $old['status'] = $status;
-            Cache::forget("order:".$out_trade_no); 
-            Cache::put("order:".$out_trade_no, $old, $this->consts['ORDER_CACHE_MINS']); 
+            if (!empty($newResp)) {
+                $old['resp'] = $newResp;
+            }
+            Cache::forget("order:".$order_id); 
+            Cache::put("order:".$order_id, $old, $this->consts['ORDER_CACHE_MINS'][$status]); 
         }
+    }
+
+    public function query_order_cache($order_id) {
+        return Cache::get("order:".$order_id, null);
     }
 
     public function download_bills($start_date, $end_date) {

@@ -18,9 +18,11 @@ class RttException extends Exception
     const WX_ERROR_VALIDATION   = 400004;
     const WX_ERROR_RETRY        = 400004;
     const WX_ERROR_BIZ          = 400004;
+    const WX_ERROR_RAW          = 400004;
     const AL_ERROR_VALIDATION   = 400004;
     const AL_ERROR_RETRY        = 400004;
     const AL_ERROR_BIZ          = 400004;
+    const AL_ERROR_RAW          = 400004;
 
     public function __construct(string $const_name, $context = null) {
         parent::__construct($const_name, 1);

@@ -26,7 +26,7 @@ class Controller extends BaseController
                 if ($hasIgnorePara && in_array($para_key, $this->consts['IGNORED_REQ_PARAS'])) 
                     return false;
                 foreach($item as $key=>$value) {
-                    if (!in_array($key, ['checker', 'required', 'default_value','converter']))
+                    if (!in_array($key, ['checker', 'required', 'default_value','converter', 'description']))
                         return false;
                     if (in_array($key, ['checker','converter'])) {
                         $tocheck = is_array($value) ? ($value[0]??null) : $value;
@@ -143,8 +143,9 @@ doc;
                         $type_str .= "(". $checker_para .")";
                 }
                 $required_str = !empty($para_spec['required']) ? "是" : "否";
-                $output .= "| ". $para_name . " | ". $type_str . " | " . $required_str;
-                $output .= " | ----------------------------- | ---------------- | ";
+                $desc_str = $para_spec['description'] ?? "----------------";
+                $output .= "| ". $para_name . " | ". $type_str . " | " . $required_str ." | ". $desc_str;
+                $output .= " | ---------------- | ";
                 $output .= "\n";
             }
             $output .= "\n";

@@ -21,17 +21,17 @@ $router->group(['middleware'=>'auth:custom_api'], function ($router)
     $router->post('/create_refund/', ['uses'=>'PubAPIController@create_refund']);
     $router->post('/query_txn_single/', ['uses'=>'PubAPIController@query_txn_single']);
 });
-$router->get('/show_base_api/', ['uses'=>'PubAPIController@api_doc_md']);
+$router->get('/api_doc/', ['uses'=>'PubAPIController@api_doc_md']);
 
 $router->get('/test/', ['uses'=>'PubAPIController@test']);
 
 $router->group(['prefix'=>'mcf','middleware'=>'auth:custom_token'], function ($router)
 {
-    $router->post('/create_authpay/', ['uses'=>'MCFController@create_authpay']);
-    $router->post('/create_order/', ['uses'=>'MCFController@create_order']);
-    $router->post('/create_refund/', ['uses'=>'MCFController@create_refund']);
-    $router->post('/check_order_status/', ['uses'=>'MCFController@check_order_status']);
-    $router->post('/get_exchange_rate/', ['uses'=>'MCFController@get_exchange_rate']);
+    $api_names = ['create_authpay','create_order','create_refund','check_order_status','get_exchange_rate'];
+    foreach($api_names as $api_name) {
+        $router->post('/'.$api_name.'/', ['uses'=>'MCFController@'.$api_name]);
+    }
+    $router->get('/api_doc/', ['uses'=>'MCFController@api_doc_md']);
 });
 $router->post('/login/', ['uses'=>'LoginController@login']);
 

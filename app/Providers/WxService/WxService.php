@@ -28,8 +28,9 @@ class WxService
         $this->consts['GATEWAY_ADDR'] = "";
         $this->consts['VENDOR_TZ'] = "Asia/Shanghai";
         $this->consts['EXCHANGE_RATE_UPDATE_HOUR'] = 10;
-        //$this->consts['CHANNEL_NAME'] = "WX"; 
-        $this->consts['CHANNEL_FLAG'] = app()->make('rtt_service')->consts['CHANNELS']['WX'];
+        $this->consts['CHANNEL_NAME'] = 'wx'; 
+        $this->consts['CHANNEL_FLAG'] = app()->make('rtt_service')
+            ->consts['CHANNELS'][strtoupper($this->consts['CHANNEL_NAME'])];
         //$this->consts['DEFAULT_CURRENCY'] = "CAD";
         //$this->consts['NOTIFY_URL'] = "http://paysdk.weixin.qq.com/example/notify.php";
         $this->consts['NOTIFY_URL'] = "http://www.rttpay.com/index.php/api/v1/test";
@@ -57,7 +58,7 @@ class WxService
         return $ret;
     }
 
-    public function create_authpay($la_paras, $account_id){
+    public function create_authpay($la_paras, $account_id, callable cb_new_order, callable cb_order_update){
         $vendor_wx_info = $this->get_account_info($account_id);
         $sub_mch_id = $vendor_wx_info->sub_mch_id;
         $input = new \WxPayMicroPay();
@@ -77,31 +78,39 @@ class WxService
             'out_trade_no' => $la_paras['_out_trade_no'],
             'status'=> 'QUERY_LATER',
         ];
-        Log::info("Send to WxPay server:".json_encode($input->getValues(), JSON_UNESCAPED_UNICODE));
+        $cachedItem = cb_new_order($la_paras['_out_trade_no'], $account_id,
+            $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues());
+        Log::info("Send to WxPay server:".json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
         try {
             $result = \WxPayApi::micropay($input, 10);
         }
         catch(\Exception $e) {
             Log::DEBUG("exception in sending wx micropay!".$e->getMessage());
+            cb_order_update($la_paras['_out_trade_no'], 'WAIT', $e->getMessage(), $cachedItem);
             return $ret;
         }
         Log::info("Received from WxPay server:".json_encode($result, JSON_UNESCAPED_UNICODE));
-        $return_code = $result["return_code"] ?? null;
-        $result_code = $result["result_code"] ?? null;
-        if (($return_code != "SUCCESS")) {
-            Log::DEBUG($result["return_msg"]??"Error msg missing!");
+		if(!array_key_exists("return_code", $result)
+			|| !array_key_exists("out_trade_no", $result)
+            || !array_key_exists("result_code", $result)
+            || ($result["return_code"] == "SUCCESS" && $result["result_code"] == "FAIL" && 
+		        $result["err_code"] != "USERPAYING" && $result["err_code"] != "SYSTEMERROR"))
+        {
+            $errmsg = $result["err_code"]??"Error msg missing!";
+            cb_order_update($la_paras['_out_trade_no'], 'FAIL', $errmsg, $cachedItem);
+            throw new RttException('WX_ERROR_BIZ', $errmsg);
+        }
+        if ($result['result_code'] != 'SUCCESS') {
+            // && in_array($result['err_code']??null, ['USERPAYING','SYSTEMERROR']))
+            cb_order_update($la_paras['_out_trade_no'], 'WAIT', $result['err_code'], $cachedItem);
             return $ret;
         }
-        if ($result_code != 'SUCCESS' && in_array($result['err_code']??null, ['USERPAYING','SYSTEMERROR']))
-            return $ret;
-        if ($result_code != "SUCCESS")
-            throw new RttException('WX_ERROR_BIZ', $result["err_code"]??"Error msg missing!");
-        //checkErrToThrow($result);
+        cb_order_update($la_paras['_out_trade_no'], 'SUCCESS', $result, $cachedItem);
         $ret['status'] = 'SUCCESS';
         return $ret;
     }
 
-    public function create_order($la_paras, $account_id){
+    public function create_order($la_paras, $account_id, callable cb_new_order, callable cb_order_update){
         $vendor_wx_info = $this->get_account_info($account_id);
         $sub_mch_id = $vendor_wx_info->sub_mch_id;
         $input = new \WxPayUnifiedOrder();
@@ -125,12 +134,51 @@ class WxService
             throw  new RttException('SYSTEM_ERROR', "WRONG SCENARIO!");
         $input->SetTrade_type("NATIVE");
         $input->SetProduct_id(date("YmdHis"));
-        Log::info("Send to WxPay server:".json_encode($input->getValues(), JSON_UNESCAPED_UNICODE));
-		$result = \WxPayApi::unifiedOrder($input, 10);
-        Log::info("Received from WxPay server:".json_encode($result, JSON_UNESCAPED_UNICODE));
-        checkErrToThrow($result);
+        $cachedItem = cb_new_order($la_paras['_out_trade_no'], $account_id,
+            $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues());
+        try {
+            Log::info("Send to WxPay server:".json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
+            $result = \WxPayApi::unifiedOrder($input, 10);
+            Log::info("Received from WxPay server:".json_encode($result, JSON_UNESCAPED_UNICODE));
+            checkErrToThrow($result);
+        } catch (\Exception $e) {
+            cb_order_update($la_paras['_out_trade_no'], 'FAIL', $e->getMessage(), $cachedItem);
+            throw $e;
+        }
+        cb_order_update($la_paras['_out_trade_no'], 'WAIT', $result, $cachedItem);
         return array("out_trade_no"=>$la_paras['_out_trade_no'], "code_url"=>$result["code_url"]);
     }
+
+    public function create_refund($la_paras, $account_id, callable cb_new_order, callable cb_order_update) {
+        $vendor_wx_info = $this->get_account_info($account_id);
+        if (empty($la_paras['out_trade_no']))
+            throw new RttException('SYSTEM_ERROR', "Out_trade_no Missing");
+        if (!empty($la_paras['total_fee_currency']) 
+            && $la_paras['refund_fee_currency'] != $la_paras['total_fee_currency'])
+            throw new RttException("Refund Currency must match!", 1);
+        $input = new \WxPayRefund();
+        //$input->SetTransaction_id($la_paras['wx_txn_id']);
+        $input->SetOut_trade_no($la_paras['out_trade_no']);
+        $input->SetTotal_fee($la_paras['total_fee_in_cent']);
+        $input->SetRefund_fee($la_paras['refund_fee_in_cent']);
+        $input->SetRefund_fee_type($la_paras['refund_fee_currency']);
+        $input->SetOut_refund_no($la_paras['_refund_id']);
+        $input->SetOp_user_id(\WxPayConfig::MCHID);
+        $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
+        $cachedItem = cb_new_order($la_paras['_refund_id'], $account_id,
+            $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues());
+        try {
+            Log::info(__FUNCTION__.":wx:sending:". json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
+            $result = \WxPayApi::refund($input);
+            Log::info(__FUNCTION__.":wx:received:". json_encode($result), JSON_UNESCAPED_UNICODE);
+            checkErrToThrow($result);        
+        } catch (\Exception $e) {
+            cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage(), $cachedItem); //TODO: return refund_id for some cases
+            throw $e;
+        }
+        cb_order_update($la_paras['_refund_id'], 'SUCCESS', $result, $cachedItem);
+		return $result;
+	}
 
     public function query_charge_single($la_paras, $account_id) {
         $vendor_wx_info = $this->get_account_info($account_id);
@@ -156,29 +204,6 @@ class WxService
         Log::DEBUG("query_refund_single_wx:sending:" . json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
 		$result = \WxPayApi::refundQuery($input);
 		Log::DEBUG("query_refund_single_wx:received:" . json_encode($result, JSON_UNESCAPED_UNICODE));
-        checkErrToThrow($result);
-		return $result;
-	}
-
-    public function create_refund($la_paras, $account_id) {
-        $vendor_wx_info = $this->get_account_info($account_id);
-        if (empty($la_paras['out_trade_no']))
-            throw new RttException('SYSTEM_ERROR', "Out_trade_no Missing");
-        if (!empty($la_paras['total_fee_currency']) 
-            && $la_paras['refund_fee_currency'] != $la_paras['total_fee_currency'])
-            throw new RttException("Refund Currency must match!", 1);
-        $input = new \WxPayRefund();
-        //$input->SetTransaction_id($la_paras['wx_txn_id']);
-        $input->SetOut_trade_no($la_paras['out_trade_no']);
-        $input->SetTotal_fee($la_paras['total_fee_in_cent']);
-        $input->SetRefund_fee($la_paras['refund_fee_in_cent']);
-        $input->SetRefund_fee_type($la_paras['refund_fee_currency']);
-        $input->SetOut_refund_no($la_paras['_refund_id']);
-        $input->SetOp_user_id(\WxPayConfig::MCHID);
-        $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
-        Log::DEBUG("create_refund_wx:sending:" . json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
-		$result = \WxPayApi::refund($input);
-		Log::DEBUG("create_refund_wx:received:" . json_encode($result), JSON_UNESCAPED_UNICODE);
         checkErrToThrow($result);
 		return $result;
 	}
