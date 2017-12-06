@@ -28,6 +28,6 @@ class Kernel extends ConsoleKernel
         $schedule->call(function () {
             $sp = app()->make('rtt_service');
             $sp->download_bills("20170911","20171011");
-        })->everyMinute();
+        })->everyDay();
     }
 }

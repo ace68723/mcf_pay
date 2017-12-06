@@ -40,13 +40,13 @@ class WxService
             'AUTHPAY'=>'MICROPAY',
         ];
         $this->consts['STATE_MAP'] = array( //vendor to rtt 
-            //'REFUND'=>'REFUND',
+            'REFUND'=>'SUCCESS', //wx REFUND means has refund
             'SUCCESS'=>'SUCCESS',
-            'CLOSED'=>'CLOSED',
-            'USERPAYING'=>'USERPAYING',
-            'NOTPAY'=>'USERPAYING',
-            //'REVOKED'=>'REVOKED',
-            //'PAYERROR'=>'ERROR',
+            'CLOSED'=>'FAIL',
+            'USERPAYING'=>'WAIT',
+            'NOTPAY'=>'WAIT',
+            'REVOKED'=>'FAIL',
+            'PAYERROR'=>'FAIL',
         );
     }
     private function get_account_info($account_id, $b_emptyAsException = true){

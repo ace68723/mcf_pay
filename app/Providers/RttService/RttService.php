@@ -153,7 +153,7 @@ class RttService{
     }
 
     public function cb_order_update($order_id, $status, $newResp=null, $old=null) {
-        if (empty($this->consts['ORDER_CACHE_MINS'][$status])) {
+        if (!$this->is_defined_status($status)) {
             Log::info(__FUNCTION__.': undefined status:'.$status);
             return ;
         }
@@ -176,6 +176,13 @@ class RttService{
 
     public function query_order_cache($order_id) {
         return Cache::get("order:".$order_id, null);
+    }
+
+    protected function cached_order_to_txn($order) {
+    }
+
+    public function is_defined_status($status) {
+        return !empty($this->consts['ORDER_CACHE_MINS'][$status]); // treat 0 cache mins as undefined
     }
 
     public function download_bills($start_date, $end_date) {

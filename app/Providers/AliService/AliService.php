@@ -62,9 +62,9 @@ class AliService{
         //$input['product_code'] = "NEW_OVERSEAS_SELLER";
         );
         $this->consts['STATE_MAP'] = array( //vendor to rtt 
-            'WAIT_BUYER_PAY'=>'USERPAYING',
+            'WAIT_BUYER_PAY'=>'WAIT',
             'TRADE_SUCCESS'=>'SUCCESS',
-            'TRADE_CLOSED'=>'CLOSED',
+            //'TRADE_CLOSED'=>'FAIL', //ali regards totally refunded txn as closed, not sure how to map this
         );
     }
 

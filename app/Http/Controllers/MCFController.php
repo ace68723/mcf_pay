@@ -246,9 +246,13 @@ class MCFController extends Controller
             $la_paras['type'] == 'force_remote') {
             $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
             $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
-            //only success txn gets here
+            //only success query gets here
             $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id);
-            $status = $txn['status'];//TODO we need to map the status
+            $status = $txn['status'];//TODO ensure the state map in wx/ali service consists with rtt config
+            if (!$this->sp_rtt->is_defined_status($status)) {
+                Log::INFO('regard undefined status '. $status . ' as FAIL');
+                $status = 'FAIL';
+            }
             $this->sp_rtt->cb_order_update($la_paras['out_trade_no'], $status, $txn, $cached_order);
         }
         return $this->format_success_ret($status);
