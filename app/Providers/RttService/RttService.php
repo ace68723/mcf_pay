@@ -43,6 +43,10 @@ class RttService{
         $res = $this->get_vendor_channel_info($account_id);
         if (!(($res->vendor_channel ?? 0) & ($this->consts["CHANNELS"][strtoupper($channel)] ?? 0)))
             throw new RttException('CHANNEL_NOT_ACTIVATED', ['account_id'=>$account_id, 'channel'=>$channel]);
+        /*
+        if (!$b_only_channel_name)
+            return strtolower($channel);
+         */
         $sp_name = strtolower($channel) ."_service";
         if (!app()->bound($sp_name))
             throw new RttException('CHANNEL_NOT_SUPPORTED', ['channel'=>$channel]);
@@ -92,6 +96,33 @@ class RttService{
             }
         }
         return $rtt_txn;
+    }
+
+    public function precreate_authpay($la_paras, $account_id) {
+        $cachedItem = $this->cb_new_order($la_paras['_out_trade_no'], $account_id, 
+            $la_paras['vendor_channel'], $la_paras);
+        return ['out_trade_no'=>$la_paras['_out_trade_no'],];
+    }
+    public function create_authpay($new_la_paras, $account_id) {
+        $cachedItem = $this->query_order_cache($new_la_paras['out_trade_no']);
+        if (empty($cachedItem['input']) || ($cachedItem['status']??null) != 'INIT')
+            throw new RttException("INVALID_PARAMETER", "out_trade_no");
+        //TODO remember to unset APP_DEBUG in production env, which will prevent outputing exception context message
+        //to frontend, since the above message may be used to verify if an order exists.
+        //Although timing attack may still work, it shouldn't be a problem,
+        //considering its hardness and the limited order expire time...
+        $la_paras = $cachedItem['input'];
+        if (($la_paras['_out_trade_no']??null) != $new_la_paras['out_trade_no'])
+            throw new RttException("INVALID_PARAMETER", "out_trade_no"); //note that $la_paras['_out_trade_no'] is the real effecting parameter
+        foreach (['scenario', 'total_fee_in_cent', 'total_fee_currency', 'vendor_channel'] as $pa_name) {
+            if (($la_paras[$pa_name]??null) != $new_la_paras[$pa_name])
+                throw new RttException("INVALID_PARAMETER", $pa_name);
+        }
+        $la_paras['auth_code'] = $new_la_paras['auth_code'];
+        $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
+        $ret = $sp->create_authpay($la_paras, $account_id,
+            (function(...$args) {}), [$this,'cb_order_update']); //null cb_new_order do not memorize auth_code
+        return $ret;
     }
 
     /*

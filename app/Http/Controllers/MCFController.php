@@ -21,6 +21,7 @@ class MCFController extends Controller
         $this->sp_rtt = app()->make('rtt_service');
 
         $this->consts['ALLOWED_ROLES'] = [
+            'precreate_authpay'=>[1,2,101,666],
             'create_authpay'=>[1,2,101,666],
             'create_order'=>[1,2,101,666],
             'create_refund'=>[1,2,101,666],
@@ -30,6 +31,29 @@ class MCFController extends Controller
         ];
 
         $this->consts['REQUEST_PARAS'] = [];
+        $this->consts['REQUEST_PARAS']['precreate_authpay'] = [
+            'vendor_channel'=>[
+                'checker'=>['is_string', 8],
+                'required'=>true,
+                'description'=> '付款渠道，目前支持wx或者ali',
+            ],
+            'total_fee_in_cent'=>[
+                'checker'=>'is_int',
+                'required'=>true,
+                'description'=> '标价金额，以分为单位的整数',
+            ],
+            'total_fee_currency'=>[
+                'checker'=>['is_string', 16],
+                'required'=>true,
+                'description'=> '标价金额的币种',
+            ],
+            'description'=>[
+                'checker'=>['is_string', 32],
+                'required'=>false,
+                'default_value'=>" Supported by ". $this->sp_rtt->consts['OUR_NAME'],
+                'description'=> '商品标题，将显示在顾客端',
+            ],
+        ];
         $this->consts['REQUEST_PARAS']['create_authpay'] = [
             'vendor_channel'=>[
                 'checker'=>['is_string', 8],
@@ -46,16 +70,15 @@ class MCFController extends Controller
                 'required'=>true,
                 'description'=> '标价金额的币种',
             ],
+            'out_trade_no'=>[
+                'checker'=>['is_string', 64],
+                'required'=>true,
+                'description'=> 'MCF开头的交易单号',
+            ],
             'auth_code'=>[
                 'checker'=>['is_string', 128],
                 'required'=>true,
                 'description'=> '顾客授权码',
-            ],
-            'description'=>[
-                'checker'=>['is_string', 32],
-                'required'=>false,
-                'default_value'=>" Supported by ". $this->sp_rtt->consts['OUR_NAME'],
-                'description'=> '商品标题，将显示在顾客端',
             ],
         ];
         $this->consts['REQUEST_PARAS']['create_order'] = [
@@ -153,7 +176,7 @@ class MCFController extends Controller
             throw new RttException('SYSTEM_ERROR', "ERROR SETTING IN API SCHEMA");
     }
 
-    public function create_authpay(Request $request){
+    public function precreate_authpay(Request $request){
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
@@ -163,10 +186,19 @@ class MCFController extends Controller
             throw new RttException("INVALID_PARAMETER", "currency_type");
         $la_paras['_out_trade_no'] = $this->sp_rtt->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
         $la_paras['scenario'] = 'AUTHPAY';
-        $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
-        $ret = $sp->create_authpay($la_paras, $account_id,
-            [$this->sp_rtt,'cb_new_order'], [$this->sp_rtt,'cb_order_update']);
+        $ret = $this->sp_rtt->precreate_authpay($la_paras, $account_id);
+        return $this->format_success_ret($ret);
+    }
+
+    public function create_authpay(Request $request){
+        $userObj = $request->user('custom_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $account_id = $userObj->account_id;
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras['scenario'] = 'AUTHPAY'; 
+        $ret = $this->sp_rtt->create_authpay($la_paras, $account_id);
         $ret['total_fee_in_cent'] = $la_paras['total_fee_in_cent'];
+        $ret['total_fee_currency'] = $la_paras['total_fee_currency'];
         return $this->format_success_ret($ret);
     }
 
