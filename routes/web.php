@@ -34,7 +34,7 @@ $router->group(['prefix'=>'mcf','middleware'=>'auth:custom_token'], function ($r
     }
     $router->get('/api_doc/', ['uses'=>'MCFController@api_doc_md']);
 });
-$router->post('/login/', ['middleware'=>'throttle:2,1', 'uses'=>'LoginController@login']);
+$router->post('/login/', ['middleware'=>'throttle:5,1', 'uses'=>'LoginController@login']); //5 times /1min
 
 
 $router->post('/notify/wx/', ['uses'=>'PubAPIController@handle_notify_wx']);

@@ -1,5 +1,8 @@
 <?php
-namespace Illuminate\Routing\Middleware;
+
+namespace App\Http\Middleware;
+
+use Log;
 use Closure;
 use RuntimeException;
 use Illuminate\Support\Str;
@@ -7,6 +10,7 @@ use Illuminate\Cache\RateLimiter;
 use Illuminate\Support\InteractsWithTime;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+
 class ThrottleRequests
 {
     use InteractsWithTime;
@@ -41,7 +45,8 @@ class ThrottleRequests
         $key = $this->resolveRequestSignature($request);
         $maxAttempts = $this->resolveMaxAttempts($request, $maxAttempts);
         if ($this->limiter->tooManyAttempts($key, $maxAttempts, $decayMinutes)) {
-            throw $this->buildException($key, $maxAttempts);
+            return new Response('Too Many Attempts', 429);
+            //throw $this->buildException($key, $maxAttempts);
         }
         $this->limiter->hit($key, $decayMinutes);
         $response = $next($request);
@@ -73,6 +78,10 @@ class ThrottleRequests
      */
     protected function resolveRequestSignature($request)
     {
+        $infostr = $request->method().'|'.$request->server('SERVER_NAME').'|'.$request->path().'|'.$request->ip();
+        //Log::DEBUG($infostr);
+        return sha1($infostr);
+        /*
         if ($user = $request->user()) {
             return sha1($user->getAuthIdentifier());
         }
@@ -82,6 +91,7 @@ class ThrottleRequests
         throw new RuntimeException(
             'Unable to generate the request signature. Route unavailable.'
         );
+         */
     }
     /**
      * Create a 'too many attempts' exception.
