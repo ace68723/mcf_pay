@@ -197,12 +197,15 @@ class PubAPIController extends Controller
     //
     public function test(Request $request)
     {
+        return "OK";
+        /*
         if (!Redis::exists('count')) {
             Redis::setEx('count', 3, 0);
         }
         $count = Redis::get('count')+1;
         Redis::set('count',$count);
         return $count;
+         */
         /*
         if (!Cache::has('count')) {
             Cache::put('count', 0, 3);

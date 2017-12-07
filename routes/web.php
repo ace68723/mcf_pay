@@ -21,9 +21,11 @@ $router->group(['middleware'=>'auth:custom_api'], function ($router)
     $router->post('/create_refund/', ['uses'=>'PubAPIController@create_refund']);
     $router->post('/query_txn_single/', ['uses'=>'PubAPIController@query_txn_single']);
 });
-$router->get('/api_doc/', ['uses'=>'PubAPIController@api_doc_md']);
+//$router->get('/api_doc/', ['uses'=>'PubAPIController@api_doc_md']);
+$router->get('/login_api_doc/', ['uses'=>'LoginController@api_doc_md']);
 
 $router->get('/test/', ['uses'=>'PubAPIController@test']);
+$router->post('/test/', ['uses'=>'PubAPIController@test']);
 
 $router->group(['prefix'=>'mcf','middleware'=>'auth:custom_token'], function ($router)
 {
