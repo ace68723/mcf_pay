@@ -15,7 +15,6 @@ class CreateTxnBaseTable extends Migration
     {
         Schema::create('txn_base', function (Blueprint $table) {
             $table->increments('id');
-            $table->timestamps();
             $table->string('ref_id',32);
             $table->boolean('is_refund');
             $table->integer('account_id');

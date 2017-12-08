@@ -328,7 +328,7 @@ class AliService{
             }
         }
         //supposing this function is not frequently called
-        if ($is_refund) {
+        if (!$is_refund) {
             $this->update_cached_exchange_rate($ret['txn_fee_currency'],
                 $ret['exchange_rate'], $ret['vendor_txn_time']);
         }
