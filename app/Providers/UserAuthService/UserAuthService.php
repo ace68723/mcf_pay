@@ -59,9 +59,10 @@ class UserAuthService{
     }
     private function update_login($la_paras, $userObj) {
         DB::table('mcf_user_login')
-            ->where('uid',$userObj->uid)
-            ->update([
-                'lastlogin'=>time(),
+            ->updateOrInsert(['uid'=>$userObj->uid],[
+                'version'=>$la_paras['version'],
+                'merchant_id'=>$la_paras['merchantID'],
+                'lastlogin'=>time(),//new \Datetime(),
                 'lat'=>explode(',',$la_paras['latlng'])[0],
                 'lng'=>explode(',',$la_paras['latlng'])[1],
             ]);

@@ -103,6 +103,7 @@ class RttService{
             $la_paras['vendor_channel'], $la_paras);
         return ['out_trade_no'=>$la_paras['_out_trade_no'],];
     }
+
     public function create_authpay($new_la_paras, $account_id) {
         $cachedItem = $this->query_order_cache($new_la_paras['out_trade_no']);
         if (empty($cachedItem['input']) || ($cachedItem['status']??null) != 'INIT')
@@ -139,6 +140,11 @@ class RttService{
      */
 
     public function cb_new_order($order_id, $account_id, $channel_name, $input, $req=null, $resp=null) {
+        $old = $this->query_order_cache($order_id);
+        if (!empty($old)) {
+            Log::DEBUG('cache new order fail because of duplicate order_id '. $order_id . ', this may happen for refund');
+            return $old;
+        }
         $status = 'INIT';
         $item = [
             'account_id'=>$account_id,
@@ -169,6 +175,10 @@ class RttService{
             if (!empty($newResp)) {
                 $old['resp'] = $newResp;
             }
+            if ($status == 'SUCCESS') {
+                $txn = $this->cached_order_to_rtt_txn($old);
+                if (!empty($txn)) DB::table('txn_base')->updateOrInsert( ['ref_id'=>$txn['ref_id']], $txn);
+            }
             Cache::forget("order:".$order_id); 
             Cache::put("order:".$order_id, $old, $this->consts['ORDER_CACHE_MINS'][$status]); 
         }
@@ -178,7 +188,17 @@ class RttService{
         return Cache::get("order:".$order_id, null);
     }
 
-    protected function cached_order_to_txn($order) {
+    protected function cached_order_to_rtt_txn($order) {
+        if ($order['status'] != 'SUCCESS') {
+            return null;
+        }
+        if (empty($order['resp'])) {
+            return null;
+        }
+        return $order['resp'];
+    }
+
+    public function saved() {
     }
 
     public function is_defined_status($status) {

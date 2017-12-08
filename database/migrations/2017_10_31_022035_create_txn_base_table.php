@@ -29,7 +29,7 @@ class CreateTxnBaseTable extends Migration
             $table->string('paid_fee_currency', 16);
             $table->string('exchange_rate',16);
             $table->string('customer_id', 128);
-            $table->integer('refund_no');
+            //$table->integer('refund_no');
             $table->string('txn_link_id',32);
             $table->string('status', 16);
 

@@ -15,7 +15,6 @@ class CreateAccountVendorTable extends Migration
     {
         Schema::create('account_vendor', function (Blueprint $table) {
             $table->integer('account_id');
-            $table->timestamps();
             $table->integer('vendor_channel');
 
             $table->primary('account_id');

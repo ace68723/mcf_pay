@@ -15,7 +15,6 @@ class CreateAccountBaseTable extends Migration
     {
         Schema::create('account_base', function (Blueprint $table) {
             $table->increments('id');
-            $table->timestamps();
             $table->integer('account_id');
             $table->integer('is_deleted')->default(0);
             $table->string('ref_id', 8);
@@ -23,7 +22,7 @@ class CreateAccountBaseTable extends Migration
             $table->string('name',128);
             $table->string('status',16);
             $table->string('changed_by', 32);
-            $table->timestamp('changed_at');
+            $table->bigInteger('changed_at');
 
             $table->unique('account_id');
         });

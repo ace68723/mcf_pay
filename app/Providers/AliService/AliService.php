@@ -66,6 +66,52 @@ class AliService{
             'TRADE_SUCCESS'=>'SUCCESS',
             //'TRADE_CLOSED'=>'FAIL', //ali regards totally refunded txn as closed, not sure how to map this
         );
+        $this->consts['TO_RTT_TXN'] = [];
+        $this->consts['TO_RTT_TXN']['FROM_AUTHPAY'] = [
+            ['ref_id', 'partner_trans_id'], 
+            ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
+            ['vendor_txn_id', 'alipay_trans_id'],
+            ['vendor_txn_time', 'alipay_pay_time', function ($dtstr) {
+                $dt = new \DateTime($dtstr, new \DateTimeZone($this->consts['VENDOR_TZ'])); 
+                return $dt->getTimestamp();
+            }],
+            ['txn_scenario', 'scenario',], //TODO may get the wrong scenario if ali has the same name
+            ['txn_fee_in_cent', 'trans_amount', function ($x) {
+                return bcmul($x, 100);
+            }],
+            ['txn_fee_currency','currency'],
+            ['paid_fee_in_cent','trans_amount_cny', function ($x) {
+                return bcmul($x, 100);
+            }],
+            ['paid_fee_currency', null, "CNY"],
+            ['exchange_rate','exchange_rate'],
+            ['customer_id', 'alipay_buyer_user_id'],
+            ['status', null, 'SUCCESS'],
+        ];
+        $this->consts['TO_RTT_TXN']['DEFAULT'] = [
+            //['ref_id', 'out_trade_no'], 
+            ['ref_id', 'partner_trans_id'],  //ali has both out_trade_no and partner_trans_id as the same thing
+            ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
+            ['vendor_txn_id', 'alipay_trans_id'],
+            ['vendor_txn_time', 'alipay_pay_time', function ($dtstr) {
+                $dt = new \DateTime($dtstr, new \DateTimeZone($this->consts['VENDOR_TZ'])); 
+                return $dt->getTimestamp();
+            }],
+            ['txn_scenario', 'scenario'], //TODO may get the wrong scenario if ali has the same name
+            ['txn_fee_in_cent', 'trans_amount', function ($x) {
+                return bcmul($x, 100);
+            }],
+            ['txn_fee_currency','currency'],
+            ['paid_fee_in_cent','trans_amount_cny', function ($x) {
+                return bcmul($x, 100);
+            }],
+            ['paid_fee_currency', null, "CNY"],
+            ['exchange_rate','exchange_rate'],
+            ['customer_id', 'alipay_buyer_user_id'],
+            ['status', 'alipay_trans_status', function($state) { 
+                return $this->consts['STATE_MAP'][$state] ?? "OTHER-AL-".$state;
+            }],
+        ];
     }
 
     private function get_account_info($account_id, $b_emptyAsException = true){
@@ -136,7 +182,8 @@ class AliService{
         }
         if ($is_success=="T" && $result_code=="SUCCESS") {
             $ret['status'] = 'SUCCESS';
-            $cb_order_update($la_paras['_out_trade_no'], 'SUCCESS', $ret, $cachedItem);
+            $cb_order_update($la_paras['_out_trade_no'], 'SUCCESS',
+                $this->vendor_txn_to_rtt_txn($response, $account_id, 'FROM_AUTHPAY', $la_paras), $cachedItem);
             return $ret;
         }
         $errmsg = $response["detail_error_code"] ??  $error ?? $non_biz_error ?? "Error msg missing!";
@@ -219,7 +266,8 @@ class AliService{
             $cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage(), $cachedItem);
             throw $e;
         }
-        $cb_order_update($la_paras['_refund_id'], 'SUCCESS', $ret, $cachedItem);
+        $cb_order_update($la_paras['_refund_id'], 'SUCCESS',
+            $this->vendor_txn_to_rtt_txn($ret, $account_id, 'FROM_REFUND', $la_paras), $cachedItem);
         return $ret;
     }
 
@@ -260,45 +308,30 @@ class AliService{
     public function handle_notify($needSignOutput) {
     }
 
-    public function vendor_txn_to_rtt_txn($ali_txn, $account_id) {
-        $ret = array();
-        $attr_map = [
-            ['ref_id', 'out_trade_no'], 
-            ['is_refund', null, false],
-            ['account_id', null, $account_id],
-            ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
-            ['vendor_txn_id', 'alipay_trans_id'],
-            ['vendor_txn_time', 'alipay_pay_time', function ($dtstr) {
-                $dt = new \DateTime($dtstr, new \DateTimeZone($this->consts['VENDOR_TZ'])); 
-                return $dt->getTimestamp();
-            }],
-            ['txn_scenario', null, "NATIVE"],
-            ['txn_fee_in_cent', 'trans_amount', function ($x) {
-                return bcmul($x, 100);
-            }],
-            ['txn_fee_currency','currency'],
-            ['paid_fee_in_cent','trans_amount_cny', function ($x) {
-                return bcmul($x, 100);
-            }],
-            ['paid_fee_currency', null, "CNY"],
-            ['exchange_rate','exchange_rate'],
-            ['customer_id', 'alipay_buyer_user_id'],
-            ['status', 'alipay_trans_status', function($state) { 
-                return $this->consts['STATE_MAP'][$state] ?? "OTHER-AL-".$state;
-            }],
+    public function vendor_txn_to_rtt_txn($vendor_txn, $account_id, $sc_selector='DEFAULT', $moreInfo=null) {
+        $is_refund = $sc_selector == 'FROM_REFUND';
+        $ret = [
+            'is_refund' => $is_refund,
+            'account_id' => $account_id,
         ];
+        $attr_map = $this->consts['TO_RTT_TXN'][$sc_selector];
         foreach($attr_map as $item) {
             if (empty($item[1])) {
-                $ret[$item[0]] = $item[2];
-                continue;
+                if ($item[2] instanceof Closure)
+                    $ret[$item[0]] = $item[2]();
+                else
+                    $ret[$item[0]] = $item[2];
             } elseif (empty($item[2])) {
-                $ret[$item[0]] = $ali_txn[$item[1]] ?? null;
+                $ret[$item[0]] = $vendor_txn[$item[1]] ?? $moreInfo[$item[1]] ?? null;
             } else {
-                $ret[$item[0]] = $item[2]($ali_txn[$item[1]] ?? null);
+                $ret[$item[0]] = $item[2]($vendor_txn[$item[1]] ?? $moreInfo[$item[1]] ?? null);
             }
         }
         //supposing this function is not frequently called
-        $this->update_cached_exchange_rate($ret['txn_fee_currency'], $ret['exchange_rate'], $ret['vendor_txn_time']);
+        if ($is_refund) {
+            $this->update_cached_exchange_rate($ret['txn_fee_currency'],
+                $ret['exchange_rate'], $ret['vendor_txn_time']);
+        }
         return $ret;
     }
 

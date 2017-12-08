@@ -16,7 +16,7 @@ class CreateMcfUserLoginTable extends Migration
         Schema::create('mcf_user_login', function (Blueprint $table) {
             $table->integer('uid');
             $table->string('version', 10);
-            $table->timestamp('lastlogin');
+            $table->bigInteger('lastlogin');
             $table->string('lat',15);
             $table->string('lng',15);
             $table->string('merchant_id',45);

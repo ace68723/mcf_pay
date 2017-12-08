@@ -15,12 +15,11 @@ class CreateAccountSecurityTable extends Migration
     {
         Schema::create('account_security', function (Blueprint $table) {
             $table->integer('account_id');
-            $table->timestamps();
             $table->string('account_key');
             $table->string('account_secret');
             $table->string('status', 16);
             $table->string('changed_by', 32);
-            $table->timestamp('changed_at');
+            $table->bigInteger('changed_at');
 
             $table->primary('account_id');
         });

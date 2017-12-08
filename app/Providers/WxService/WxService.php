@@ -6,6 +6,7 @@ require_once __DIR__.'/lib/WxPay.Notify.php';
 require_once __DIR__.'/lib/WxPay.Exception.php';
 
 use Log;
+use Closure;
 //use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -48,6 +49,53 @@ class WxService
             'REVOKED'=>'FAIL',
             'PAYERROR'=>'FAIL',
         );
+
+        $this->consts['TO_RTT_TXN'] = [];
+        $this->consts['TO_RTT_TXN']['DEFAULT'] = [
+            ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
+            ['ref_id', 'out_trade_no'], 
+            ['vendor_txn_id', 'transaction_id'],
+            ['vendor_txn_time', 'time_end', function ($dtstr) { 
+                $dt = new \DateTime($dtstr, new \DateTimeZone($this->consts['VENDOR_TZ'])); 
+                return $dt->getTimestamp();
+            }],
+            ['txn_scenario', 'trade_type', function($trade_type) { 
+                foreach ($this->consts['SCENARIO_MAP'] as $key=>$value) {
+                    if ($trade_type == $value) return $key;
+                }
+                return "WX-".$trade_type;
+            }],
+            ['txn_fee_in_cent', 'total_fee'],
+            ['txn_fee_currency', 'fee_type'],
+            ['paid_fee_in_cent', 'cash_fee'],
+            ['paid_fee_currency', 'cash_fee_type'],
+            ['customer_id', 'openid'],
+            ['status', 'trade_state', function($state) {
+                return $this->consts['STATE_MAP'][$state] ?? "OTHER-WX-".$state;
+            }],
+            ['exchange_rate','rate', function ($rate) {
+                if (is_null($rate)) return null;
+                return bcdiv($rate, 10**8, 8);
+            }],
+        ];
+        $this->consts['TO_RTT_TXN']['FROM_REFUND'] = [
+            ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
+            ['ref_id', 'out_refund_no'], 
+            ['vendor_txn_id', 'refund_id'],
+            ['vendor_txn_time', null, function () { return time(); }],
+            ['txn_scenario', null, 'REFUND'],
+            ['txn_fee_in_cent', 'refund_fee'],
+            ['txn_fee_currency', 'refund_fee_type'],
+            ['paid_fee_in_cent', 'cash_refund_fee'],
+            ['paid_fee_currency', 'cash_refund_fee_type'],
+            ['customer_id', null, null],
+            ['status', null, 'SUCCESS' ],
+            ['exchange_rate','rate', function ($rate) {
+                if (is_null($rate)) return null;
+                return bcdiv($rate, 10**8, 8);
+            }],
+            ['txn_link_id', 'out_trade_no'], 
+        ];
     }
     private function get_account_info($account_id, $b_emptyAsException = true){
         $ret = empty($account_id) ? null: 
@@ -107,7 +155,9 @@ class WxService
             return $ret;
         }
         $ret['status'] = 'SUCCESS';
-        $cb_order_update($la_paras['_out_trade_no'], 'SUCCESS', $result, $cachedItem);
+        $result['trade_state'] = 'SUCCESS'; // this is used in vendor_txn_to_rtt_txn
+        $cb_order_update($la_paras['_out_trade_no'], 'SUCCESS',
+            $this->vendor_txn_to_rtt_txn($result, $account_id), $cachedItem);
         return $ret;
     }
 
@@ -164,20 +214,21 @@ class WxService
         $input->SetRefund_fee($la_paras['refund_fee_in_cent']);
         $input->SetRefund_fee_type($la_paras['refund_fee_currency']);
         $input->SetOut_refund_no($la_paras['_refund_id']);
-        $input->SetOp_user_id(\WxPayConfig::MCHID);
+        $input->SetOp_user_id(\WxPayConfig_MCHID);
         $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
         $cachedItem = $cb_new_order($la_paras['_refund_id'], $account_id,
             $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues());
         try {
             Log::info(__FUNCTION__.":wx:sending:". json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
             $result = \WxPayApi::refund($input);
-            Log::info(__FUNCTION__.":wx:received:". json_encode($result), JSON_UNESCAPED_UNICODE);
+            Log::info(__FUNCTION__.":wx:received:". json_encode($result, JSON_UNESCAPED_UNICODE));
             checkErrToThrow($result);        
         } catch (\Exception $e) {
             $cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage(), $cachedItem); //TODO: return refund_id for some cases
             throw $e;
         }
-        $cb_order_update($la_paras['_refund_id'], 'SUCCESS', $result, $cachedItem);
+        $cb_order_update($la_paras['_refund_id'], 'SUCCESS',
+            $this->vendor_txn_to_rtt_txn($result, $account_id, 'FROM_AUTHPAY'), $cachedItem);
 		return $result;
 	}
 
@@ -209,44 +260,23 @@ class WxService
 		return $result;
 	}
 
-    public function vendor_txn_to_rtt_txn($wx_txn, $account_id) {
-        $ret = array();
-        $attr_map = [
-            ['ref_id', 'out_trade_no'], 
-            ['is_refund', null, false],
-            ['account_id', null, $account_id], //TODO check this with sub_mch_id
-            ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
-            ['vendor_txn_id', 'transaction_id'],
-            ['vendor_txn_time', 'time_end', function ($dtstr) { 
-                $dt = new \DateTime($dtstr, new \DateTimeZone($this->consts['VENDOR_TZ'])); 
-                return $dt->getTimestamp();
-            }],
-            ['txn_scenario', 'trade_type', function($trade_type) { 
-                foreach ($this->consts['SCENARIO_MAP'] as $key=>$value) {
-                    if ($trade_type == $value) return $key;
-                }
-                return "WX-".$trade_type;
-            }],
-            ['txn_fee_in_cent', 'total_fee'],
-            ['txn_fee_currency', 'fee_type'],
-            ['paid_fee_in_cent', 'cash_fee'],
-            ['paid_fee_currency', 'cash_fee_type'],
-            ['exchange_rate','rate', function ($rate) {
-                return bcdiv($rate, 10**8, 8);
-            }],
-            ['customer_id', 'openid'],
-            ['status', 'trade_state', function($state) {
-                return $this->consts['STATE_MAP'][$state] ?? "OTHER-WX-".$state;
-            }],
+    public function vendor_txn_to_rtt_txn($vendor_txn, $account_id, $sc_selector='DEFAULT', $moreInfo=null) {
+        $is_refund = $sc_selector == 'FROM_REFUND';
+        $ret = [
+            'is_refund' => $is_refund,
+            'account_id' => $account_id, //TODO check this with sub_mch_id
         ];
+        $attr_map = $this->consts['TO_RTT_TXN'][$sc_selector];
         foreach($attr_map as $item) {
             if (empty($item[1])) {
-                $ret[$item[0]] = $item[2];
-                continue;
+                if ($item[2] instanceof Closure)
+                    $ret[$item[0]] = $item[2]();
+                else
+                    $ret[$item[0]] = $item[2];
             } elseif (empty($item[2])) {
-                $ret[$item[0]] = $wx_txn[$item[1]] ?? null;
+                $ret[$item[0]] = $vendor_txn[$item[1]] ?? $moreInfo[$item[1]] ?? null;
             } else {
-                $ret[$item[0]] = $item[2]($wx_txn[$item[1]] ?? null);
+                $ret[$item[0]] = $item[2]($vendor_txn[$item[1]] ?? $moreInfo[$item[1]] ?? null);
             }
         }
         return $ret;

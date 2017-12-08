@@ -22,7 +22,7 @@ class CreateMcfUserBaseTable extends Migration
             $table->integer('role');
             $table->integer('is_deleted')->default(0);
             $table->string('saltstring', 64);
-            $table->timestamp('create_time');
+            $table->bigInteger('create_time');
         });
     }
 

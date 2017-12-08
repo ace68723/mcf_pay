@@ -228,7 +228,8 @@ class MCFController extends Controller
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $la_paras['_refund_id'] = $this->sp_rtt->generate_txn_ref_id($la_paras, null, 'REFUND');
         $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
-        $ret = $sp->create_refund($la_paras, $account_id);
+        $ret = $sp->create_refund($la_paras, $account_id,
+            [$this->sp_rtt,'cb_new_order'], [$this->sp_rtt,'cb_order_update']);
         return $this->format_success_ret($ret);
     }
 
@@ -247,7 +248,7 @@ class MCFController extends Controller
             $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
             $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
             //only success query gets here
-            $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id);
+            $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id, 'DEFAULT', ($cached_order['input']??null));
             $status = $txn['status'];//TODO ensure the state map in wx/ali service consists with rtt config
             if (!$this->sp_rtt->is_defined_status($status)) {
                 Log::INFO('regard undefined status '. $status . ' as FAIL');
