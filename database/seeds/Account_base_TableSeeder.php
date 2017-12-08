@@ -17,6 +17,7 @@ class Account_base_TableSeeder extends Seeder
             'ref_id'=>'YMHL', 
             'name'=>'雁鸣画廊', 
             'status'=>'NORMAL', 
+            'currency_type'=>'CAD',
             'changed_by'=>'test_seeder', 
         ]);
         DB::table('account_base')->insert([
@@ -24,6 +25,7 @@ class Account_base_TableSeeder extends Seeder
             'ref_id'=>'TESTAL', 
             'name'=>'TestAccount2', 
             'status'=>'NORMAL', 
+            'currency_type'=>'CAD',
             'changed_by'=>'test_seeder', 
         ]);
         DB::table('account_base')->insert([
@@ -31,6 +33,7 @@ class Account_base_TableSeeder extends Seeder
             'ref_id'=>'TESTBO', 
             'name'=>'TestAccount3', 
             'status'=>'NORMAL', 
+            'currency_type'=>'CAD',
             'changed_by'=>'test_seeder', 
         ]);
         DB::table('account_base')->insert([
@@ -38,6 +41,7 @@ class Account_base_TableSeeder extends Seeder
             'ref_id'=>'TESTNU', 
             'name'=>'TestAccount4', 
             'status'=>'NORMAL', 
+            'currency_type'=>'CAD',
             'changed_by'=>'test_seeder', 
         ]);
     }

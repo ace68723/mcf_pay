@@ -217,6 +217,7 @@ class MCFController extends Controller
         $ret = $sp->create_order($la_paras, $account_id,
             [$this->sp_rtt,'cb_new_order'], [$this->sp_rtt,'cb_order_update']);
         $ret['total_fee_in_cent'] = $la_paras['total_fee_in_cent'];
+        $ret['total_fee_currency'] = $la_paras['total_fee_currency'];
         return $this->format_success_ret($ret);
     }
 
