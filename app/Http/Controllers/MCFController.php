@@ -181,10 +181,6 @@ class MCFController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
-        $infoObj = $this->sp_rtt->get_account_info($account_id);
-        if (!empty($infoObj->currency_type) && $infoObj->currency_type != $la_paras['total_fee_currency'])
-            throw new RttException("INVALID_PARAMETER", "currency_type");
-        $la_paras['_out_trade_no'] = $this->sp_rtt->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
         $la_paras['scenario'] = 'AUTHPAY';
         $ret = $this->sp_rtt->precreate_authpay($la_paras, $account_id);
         return $this->format_success_ret($ret);
@@ -208,14 +204,8 @@ class MCFController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
-        $infoObj = $this->sp_rtt->get_account_info($account_id);
-        if (!empty($infoObj->currency_type) && $infoObj->currency_type != $la_paras['total_fee_currency'])
-            throw new RttException("INVALID_PARAMETER", "currency_type");
-        $la_paras['_out_trade_no'] = $this->sp_rtt->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
         $la_paras['scenario'] = 'NATIVE';
-        $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
-        $ret = $sp->create_order($la_paras, $account_id,
-            [$this->sp_rtt,'cb_new_order'], [$this->sp_rtt,'cb_order_update']);
+        $ret = $this->sp_rtt->create_order($la_paras, $account_id);
         $ret['total_fee_in_cent'] = $la_paras['total_fee_in_cent'];
         $ret['total_fee_currency'] = $la_paras['total_fee_currency'];
         return $this->format_success_ret($ret);
@@ -227,10 +217,7 @@ class MCFController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
-        $la_paras['_refund_id'] = $this->sp_rtt->generate_txn_ref_id($la_paras, null, 'REFUND');
-        $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
-        $ret = $sp->create_refund($la_paras, $account_id,
-            [$this->sp_rtt,'cb_new_order'], [$this->sp_rtt,'cb_order_update']);
+        $ret = $this->create_refund($la_paras, $account_id);
         return $this->format_success_ret($ret);
     }
 
@@ -240,23 +227,7 @@ class MCFController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
-        $cached_order = $this->sp_rtt->query_order_cache($la_paras['out_trade_no']);
-        if (empty($cached_order))
-            throw new RttException('NOT_FOUND', ["ORDER",$la_paras['out_trade_no']]);
-        $status = $cached_order['status'];
-        if ($la_paras['type'] == 'refresh' && $status != 'SUCCESS' ||
-            $la_paras['type'] == 'force_remote') {
-            $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
-            $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
-            //only success query gets here
-            $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id, 'DEFAULT', ($cached_order['input']??null));
-            $status = $txn['status'];//TODO ensure the state map in wx/ali service consists with rtt config
-            if (!$this->sp_rtt->is_defined_status($status)) {
-                Log::INFO('regard undefined status '. $status . ' as FAIL');
-                $status = 'FAIL';
-            }
-            $this->sp_rtt->cb_order_update($la_paras['out_trade_no'], $status, $txn, $cached_order);
-        }
+        $status = $this->check_order_status($la_paras, $account_id);
         return $this->format_success_ret($status);
     }
 

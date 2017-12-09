@@ -15,12 +15,7 @@ class RttService{
         $this->consts = array();
         $this->consts['OUR_NAME'] = "MCF";
         $this->consts['CHANNELS'] = array('WX'=>0x1, 'ALI'=>0x2,);
-        $this->consts['ORDER_CACHE_MINS'] = [
-            'INIT'=>24*60,
-            'WAIT'=>24*60,
-            'SUCCESS'=>7*24*60,
-            'FAIL'=>24*60,
-        ];
+        $this->sp_oc = app()->make('order_cache_service');
     }
 
     public function get_vendor_channel_info($account_id, $b_readable=false) {
@@ -99,7 +94,11 @@ class RttService{
     }
 
     public function precreate_authpay($la_paras, $account_id) {
-        $cachedItem = $this->cb_new_order($la_paras['_out_trade_no'], $account_id, 
+        $infoObj = $this->get_account_info($account_id);
+        if (!empty($infoObj->currency_type) && $infoObj->currency_type != $la_paras['total_fee_currency'])
+            throw new RttException("INVALID_PARAMETER", "currency_type");
+        $la_paras['_out_trade_no'] = $this->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
+        $cachedItem = $this->sp_oc->cb_new_order($la_paras['_out_trade_no'], $account_id, 
             $la_paras['vendor_channel'], $la_paras);
         return ['out_trade_no'=>$la_paras['_out_trade_no'],];
     }
@@ -122,10 +121,49 @@ class RttService{
         $la_paras['auth_code'] = $new_la_paras['auth_code'];
         $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         $ret = $sp->create_authpay($la_paras, $account_id,
-            (function(...$args) {}), [$this,'cb_order_update']); //null cb_new_order do not memorize auth_code
+            (function(...$args) {}), [$this->sp_oc,'cb_order_update']); //null cb_new_order do not memorize auth_code
         return $ret;
     }
 
+    public function create_order($la_paras, $account_id){
+        $infoObj = $this->get_account_info($account_id);
+        if (!empty($infoObj->currency_type) && $infoObj->currency_type != $la_paras['total_fee_currency'])
+            throw new RttException("INVALID_PARAMETER", "currency_type");
+        $la_paras['_out_trade_no'] = $this->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
+        $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
+        $ret = $sp->create_order($la_paras, $account_id,
+            [$this->sp_oc,'cb_new_order'], [$this->sp_oc,'cb_order_update']);
+        return $ret;
+    }
+
+    public function create_refund($la_paras, $account_id){
+        $la_paras['_refund_id'] = $this->generate_txn_ref_id($la_paras, null, 'REFUND');
+        $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
+        $ret = $sp->create_refund($la_paras, $account_id,
+            [$this->sp_oc,'cb_new_order'], [$this->sp_oc,'cb_order_update']);
+        return $ret;
+    }
+
+    public function check_order_status($la_paras, $account_id){
+        $cached_order = $this->query_order_cache($la_paras['out_trade_no']);
+        if (empty($cached_order))
+            throw new RttException('NOT_FOUND', ["ORDER",$la_paras['out_trade_no']]);
+        $status = $cached_order['status'];
+        if ($la_paras['type'] == 'refresh' && $status != 'SUCCESS' ||
+            $la_paras['type'] == 'force_remote') {
+            $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
+            $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
+            //only success query gets here
+            $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id, 'DEFAULT', ($cached_order['input']??null));
+            $status = $txn['status'];//TODO ensure the state map in wx/ali service consists with rtt config
+            if (!$this->is_defined_status($status)) {
+                Log::INFO('regard undefined status '. $status . ' as FAIL');
+                $status = 'FAIL';
+            }
+            $this->sp_oc->cb_order_update($la_paras['out_trade_no'], $status, $txn, $cached_order);
+        }
+        return $status;
+    }
     /*
     public function cache_txn($txn){
         //DB::table('txn_base')->updateOrCreate(['ref_id'=>$txn['ref_id']],$txn); //TODO:use Eloquent
@@ -139,70 +177,8 @@ class RttService{
     }
      */
 
-    public function cb_new_order($order_id, $account_id, $channel_name, $input, $req=null, $resp=null) {
-        $old = $this->query_order_cache($order_id);
-        if (!empty($old)) {
-            Log::DEBUG('cache new order fail because of duplicate order_id '. $order_id . ', this may happen for refund');
-            return $old;
-        }
-        $status = 'INIT';
-        $item = [
-            'account_id'=>$account_id,
-            'channel_sp_name'=>$channel_name,
-            'input'=>$input,
-            'req'=>$req,
-            'resp'=>$resp,
-            'status'=>$status,
-        ];
-        Cache::put("order:".$order_id, $item, $this->consts['ORDER_CACHE_MINS'][$status]);
-        return $item;
-    }
-
-    public function cb_order_update($order_id, $status, $newResp=null, $old=null) {
-        if (!$this->is_defined_status($status)) {
-            Log::info(__FUNCTION__.': undefined status:'.$status);
-            return ;
-        }
-        if (empty($old)) {
-            $old = Cache::get("order:".$order_id, null);
-            if (empty($old)) {
-                Log::info(__FUNCTION__.': updating non-exist order:'.$order_id);
-                return;
-            }
-        }
-        if ($old['status'] != $status) {
-            $old['status'] = $status;
-            if (!empty($newResp)) {
-                $old['resp'] = $newResp;
-            }
-            if ($status == 'SUCCESS') {
-                $txn = $this->cached_order_to_rtt_txn($old);
-                if (!empty($txn)) DB::table('txn_base')->updateOrInsert( ['ref_id'=>$txn['ref_id']], $txn);
-            }
-            Cache::forget("order:".$order_id); 
-            Cache::put("order:".$order_id, $old, $this->consts['ORDER_CACHE_MINS'][$status]); 
-        }
-    }
-
-    public function query_order_cache($order_id) {
-        return Cache::get("order:".$order_id, null);
-    }
-
-    protected function cached_order_to_rtt_txn($order) {
-        if ($order['status'] != 'SUCCESS') {
-            return null;
-        }
-        if (empty($order['resp'])) {
-            return null;
-        }
-        return $order['resp'];
-    }
-
-    public function saved() {
-    }
-
     public function is_defined_status($status) {
-        return !empty($this->consts['ORDER_CACHE_MINS'][$status]); // treat 0 cache mins as undefined
+        return $this->sp_oc->is_defined_status($status);
     }
 
     public function download_bills($start_date, $end_date) {
