@@ -33,6 +33,8 @@ class CreateTxnBaseTable extends Migration
             $table->string('status', 16);
 
             $table->unique(['ref_id']);
+            $table->index('account_id');
+            $table->index('vendor_txn_time');
         });
     }
 

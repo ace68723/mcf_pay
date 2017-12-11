@@ -15,6 +15,7 @@ class RttService{
         $this->consts = array();
         $this->consts['OUR_NAME'] = "MCF";
         $this->consts['CHANNELS'] = array('WX'=>0x1, 'ALI'=>0x2,);
+        $this->consts['DEFAULT_PAGESIZE'] = 20;
         $this->sp_oc = app()->make('order_cache_service');
     }
 
@@ -163,6 +164,24 @@ class RttService{
             $this->sp_oc->cb_order_update($la_paras['out_trade_no'], $status, $txn, $cached_order);
         }
         return $status;
+    }
+
+    public function query_txns_by_time($la_paras, $account_id){
+        $where_cond = [
+            ['account_id', '=', $account_id],
+        ];
+        if ($la_paras['start_time'] >= 0)
+            $where_cond[] = ['vendor_txn_time', '>=', $la_paras['start_time']];
+        if ($la_paras['end_time'] >= 0)
+            $where_cond[] = ['vendor_txn_time', '<', $la_paras['end_time']];
+        $count = DB::table('txn_base')->where($where_cond)->count();
+        $result = DB::table('txn_base')
+            ->where($where_cond)
+            ->orderBy('vendor_txn_time','DESC')
+            ->offset($la_paras['offset']??0)
+            ->limit($la_paras['page_size']??$this->consts['DEFAULT_PAGESIZE'])
+            ->get();
+        return ['count'=>$count, 'records'=>$result];
     }
     /*
     public function cache_txn($txn){

@@ -30,7 +30,7 @@ $router->post('/test/', ['uses'=>'PubAPIController@test']);
 $router->group(['prefix'=>'mcf','middleware'=>'auth:custom_token'], function ($router)
 {
     $api_names = ['create_authpay','precreate_authpay','create_order','create_refund',
-        'check_order_status','get_exchange_rate'];
+        'check_order_status','get_exchange_rate', 'query_txns_by_time'];
     foreach($api_names as $api_name) {
         $router->post('/'.$api_name.'/', ['uses'=>'MCFController@'.$api_name]);
     }

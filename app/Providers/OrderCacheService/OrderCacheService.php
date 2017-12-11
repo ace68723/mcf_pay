@@ -60,6 +60,8 @@ class OrderCacheService{
                 if (!empty($txn)) DB::table('txn_base')->updateOrInsert( ['ref_id'=>$txn['ref_id']], $txn);
             }
             Cache::forget("order:".$order_id); 
+            //$tags = [$account_id, $status];
+            //Cache::tags($tags)->put("order:".$order_id, $old, $this->consts['ORDER_CACHE_MINS'][$status]); 
             Cache::put("order:".$order_id, $old, $this->consts['ORDER_CACHE_MINS'][$status]); 
         }
     }

@@ -108,7 +108,7 @@ class MCFController extends Controller
         $this->consts['REQUEST_PARAS']['check_order_status'] = [
             'vendor_channel'=>[
                 'checker'=>['is_string', 8],
-                'required'=>false,
+                'required'=>true,
                 'description'=> '付款渠道，目前支持wx或者ali',
             ],
             'type'=>[
@@ -120,6 +120,31 @@ class MCFController extends Controller
                 'checker'=>['is_string', 64],
                 'required'=>true,
                 'description'=> 'MCF开头的交易单号',
+            ],
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+
+        $this->consts['REQUEST_PARAS']['query_txns_by_time'] = [
+            'start_time'=>[
+                'checker'=>['is_int'],
+                'required'=>true,
+                'description'=> '开始时间的unix timestamp, inclusive',
+            ],
+            'end_time'=>[
+                'checker'=>['is_int'],
+                'required'=>true,
+                'description'=> '结束时间的unix timestamp, exclusive',
+            ],
+            'offset'=>[
+                'checker'=>['is_int'],
+                'required'=>false,
+                'default_value'=>0,
+                'description'=> 'offset',
+            ],
+            'page_size'=>[
+                'checker'=>['is_int', [1,50]],
+                'required'=>false,
+                'default_value'=>$this->sp_rtt->consts['DEFAULT_PAGESIZE'],
+                'description'=> 'page size',
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
@@ -229,6 +254,16 @@ class MCFController extends Controller
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $status = $this->check_order_status($la_paras, $account_id);
         return $this->format_success_ret($status);
+    }
+
+    public function query_txns_by_time(Request $request){
+        $userObj = $request->user('custom_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $account_id = $userObj->account_id;
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $infoObj = $this->sp_rtt->get_account_info($account_id);
+        $ret = $this->sp_rtt->query_txns_by_time($la_paras, $account_id);
+        return $this->format_success_ret($ret);
     }
 
     public function get_exchange_rate(Request $request)
