@@ -31,6 +31,8 @@ class CreateTxnBaseTable extends Migration
             //$table->integer('refund_no');
             $table->string('txn_link_id',32);
             $table->string('status', 16);
+            $table->string('device_id', 64);
+            $table->integer('user_id');
 
             $table->unique(['ref_id']);
             $table->index('account_id');

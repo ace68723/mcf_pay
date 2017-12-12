@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Exception;
 
 

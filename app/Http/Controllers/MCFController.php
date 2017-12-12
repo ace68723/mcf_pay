@@ -134,7 +134,7 @@ class MCFController extends Controller
                 'required'=>true,
                 'description'=> '结束时间的unix timestamp, exclusive',
             ],
-            'offset'=>[
+            'page_num'=>[
                 'checker'=>['is_int'],
                 'required'=>false,
                 'default_value'=>0,
@@ -261,7 +261,6 @@ class MCFController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
-        $infoObj = $this->sp_rtt->get_account_info($account_id);
         $ret = $this->sp_rtt->query_txns_by_time($la_paras, $account_id);
         return $this->format_success_ret($ret);
     }
@@ -272,9 +271,6 @@ class MCFController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
-        $infoObj = $this->sp_rtt->get_account_info($account_id);
-        if (!empty($infoObj->currency_type) && $infoObj->currency_type != $la_paras['currency_type'])
-            throw new RttException("INVALID_PARAMETER", "currency_type");
         $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         $ret = $sp->get_exchange_rate($account_id,$la_paras['currency_type']);
         return $this->format_success_ret($ret);

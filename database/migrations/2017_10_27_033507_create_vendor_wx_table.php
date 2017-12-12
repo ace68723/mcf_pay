@@ -18,9 +18,7 @@ class CreateVendorWxTable extends Migration
             $table->integer('account_id');
             $table->integer('rate');
             $table->string('sub_mch_id',32);
-            $table->bigInteger('valid_from');
-            $table->bigInteger('valid_to');
-            $table->string('status', 16);
+            $table->integer('is_deleted');
             $table->string('changed_by', 32);
             $table->bigInteger('changed_at');
 
