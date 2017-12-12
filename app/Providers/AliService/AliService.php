@@ -87,6 +87,8 @@ class AliService{
             ['exchange_rate','exchange_rate'],
             ['customer_id', 'alipay_buyer_user_id'],
             ['status', null, 'SUCCESS'],
+            ['device_id', 'device_id'],
+            ['user_id','_uid'],
         ];
         $this->consts['TO_RTT_TXN']['DEFAULT'] = [
             //['ref_id', 'out_trade_no'], 
@@ -111,6 +113,8 @@ class AliService{
             ['status', 'alipay_trans_status', function($state) { 
                 return $this->consts['STATE_MAP'][$state] ?? "OTHER-AL-".$state;
             }],
+            ['device_id', 'device_id'],
+            ['user_id','_uid'],
         ];
     }
 

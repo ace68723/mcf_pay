@@ -14,7 +14,11 @@ class RttService{
     {
         $this->consts = array();
         $this->consts['OUR_NAME'] = "MCF";
-        $this->consts['CHANNELS'] = array('WX'=>0x1, 'ALI'=>0x2,);
+        $this->consts['CHANNELS'] = ['WX'=>0x1, 'ALI'=>0x2,];
+        $this->consts['CHANNELS_REV'] = [];
+        foreach($this->consts['CHANNELS'] as $key=>$value) {
+            $this->consts['CHANNELS_REV'][$value] = $key;
+        }
         $this->consts['DEFAULT_PAGESIZE'] = 20;
         $this->sp_oc = app()->make('order_cache_service');
     }
@@ -175,13 +179,32 @@ class RttService{
         if ($la_paras['end_time'] >= 0)
             $where_cond[] = ['vendor_txn_time', '<', $la_paras['end_time']];
         $count = DB::table('txn_base')->where($where_cond)->count();
+        $page_size =$la_paras['page_size']??$this->consts['DEFAULT_PAGESIZE']; 
+        $offset = ($la_paras['page_num']-1)*$page_size;
         $result = DB::table('txn_base')
+            ->leftJoin('mcf_user_base', 'txn_base.user_id','=','mcf_user_base.uid')
             ->where($where_cond)
             ->orderBy('vendor_txn_time','DESC')
-            ->offset($la_paras['offset']??0)
-            ->limit($la_paras['page_size']??$this->consts['DEFAULT_PAGESIZE'])
+            ->offset($offset)
+            ->limit($page_size)
             ->get();
-        return ['count'=>$count, 'records'=>$result];
+        return ['total_pages'=>$total_page, 'txns'=>$result];
+    }
+
+    public function txn_to_front_end(&$txn) {
+        $new_txn = [
+            'time'=>$txn->vendor_txn_time,
+            'is_refund'=>$txn->is_refund,
+            'amount_in_cent'=>$txn->total_fee_in_cent,
+            'amount_currency'=>$txn->total_fee_currency,
+            'vendor_channel'=>$this->consts['CHANNELS_REV'][$txn->vendor_channel],
+            'username'=>$txn->username,
+        ];
+        $txn = $new_txn;
+    }
+
+    public function get_company_info($account_id) {
+        return DB::table('company_info')->where('account_id','=', $account_id)->first();
     }
     /*
     public function cache_txn($txn){

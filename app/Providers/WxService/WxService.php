@@ -77,6 +77,8 @@ class WxService
                 if (is_null($rate)) return null;
                 return bcdiv($rate, 10**8, 8);
             }],
+            ['device_id', 'device_id'],
+            ['user_id', '_uid'],
         ];
         $this->consts['TO_RTT_TXN']['FROM_REFUND'] = [
             ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
@@ -95,6 +97,8 @@ class WxService
                 return bcdiv($rate, 10**8, 8);
             }],
             ['txn_link_id', 'out_trade_no'], 
+            ['device_id', 'device_id'],
+            ['user_id', '_uid'],
         ];
     }
     private function get_account_info($account_id, $b_emptyAsException = true){
