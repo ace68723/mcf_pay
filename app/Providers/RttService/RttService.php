@@ -170,6 +170,12 @@ class RttService{
         return $status;
     }
 
+    public function query_txns_hot($la_paras, $account_id) {
+        $page_num = $la_paras['page_num'] ?? 0;
+        $limit = $la_paras['page_size'];
+        $offset = ($page_num-1)*$page_size;
+        return $this->sp_oc->query_txns_hot($account_id, $offset, $limit);
+    }
     public function query_txns_by_time($la_paras, $account_id){
         $where_cond = [
             ['account_id', '=', $account_id],
@@ -188,7 +194,7 @@ class RttService{
             ->offset($offset)
             ->limit($page_size)
             ->get();
-        return ['total_pages'=>$total_page, 'txns'=>$result];
+        return ['total_count'=>$count, 'txns'=>$result];
     }
 
     public function txn_to_front_end(&$txn) {

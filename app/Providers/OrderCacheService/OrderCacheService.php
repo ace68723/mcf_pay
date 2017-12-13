@@ -4,6 +4,7 @@ namespace App\Providers\OrderCacheService;
 use Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Http\Request;
 
 class OrderCacheService{
@@ -37,7 +38,7 @@ trait ByRedisFacade{
             'resp'=>$resp,
             'status'=>$status,
         ];
-        Cache::put("order:".$order_id, $item, $this->consts['ORDER_CACHE_MINS'][$status]);
+        Redis::setex("order:".$order_id, $this->consts['ORDER_CACHE_MINS'][$status]*60, $item);
         return $item;
     }
 
@@ -46,8 +47,9 @@ trait ByRedisFacade{
             Log::info(__FUNCTION__.': undefined status:'.$status);
             return ;
         }
+        $key = "order:".$order_id;
         if (empty($old)) {
-            $old = Cache::get("order:".$order_id, null);
+            $old = Redis::get($key);
             if (empty($old)) {
                 Log::info(__FUNCTION__.': updating non-exist order:'.$order_id);
                 return;
@@ -60,17 +62,30 @@ trait ByRedisFacade{
             }
             if ($status == 'SUCCESS') {
                 $txn = $this->cached_order_to_rtt_txn($old);
-                if (!empty($txn)) DB::table('txn_base')->updateOrInsert( ['ref_id'=>$txn['ref_id']], $txn);
+                if (!empty($txn)){
+                    $account_id = $txn['account_id'] ?? null;
+                    if (!empty($account_id)) {
+                        $idx_id = "index:".$account_id;
+                        if ($txn['vendor_txn_time'] < 0)
+                            throw new RttException('SYSTEM_ERROR', 'vendor_txn_time < 0 for '.$key);
+                        Redis::zadd($idx_id, $txn['vendor_txn_time'], $txn);
+                        $now = time();
+                        Redis::zremrangebyscore($idx_id, '-inf', $now-(60*$this->consts['ORDER_CACHE_MINS'][$status]));
+                    }
+                    else {
+                        Log::INFO(__FUNCTION__.": cannot get the account_id of txn ".$key);
+                    }
+                    DB::table('txn_base')->updateOrInsert( ['ref_id'=>$txn['ref_id']], $txn);
+                }
             }
-            Cache::forget("order:".$order_id); 
-            //$tags = [$account_id, $status];
-            //Cache::tags($tags)->put("order:".$order_id, $old, $this->consts['ORDER_CACHE_MINS'][$status]); 
-            Cache::put("order:".$order_id, $old, $this->consts['ORDER_CACHE_MINS'][$status]); 
+        //Redis::multi();
+        //Redis::exec();
+            Redis::setex($key, $this->consts['ORDER_CACHE_MINS'][$status], $old);
         }
     }
 
     public function query_order_cache($order_id) {
-        return Cache::get("order:".$order_id, null);
+        return Redis::get("order:".$order_id);
     }
 
     protected function cached_order_to_rtt_txn($order) {
@@ -80,7 +95,22 @@ trait ByRedisFacade{
         return $order['resp']??null;
     }
 
-    public function saved() {
+    public function query_txns_hot($account_id, $offset, $limit) {
+        $idx_id = "index:".$account_id;
+        if (!Redis::EXSITS($idx_id))
+            return ['total_count'=>0, 'txns'=>[]];
+        $txns = Redis::ZREVRANGE($idx_id, $offset, $offset+$limit-1);
+        $count = Redis::ZCARD($idx_id);
+        return ['total_count'=>$count, 'txns'=>$txns];
+    }
+    public function query_txns_by_time($account_id, $start_time, $end_time, $offset, $limit) {
+        $idx_id = "index:".$account_id;
+        if (!Redis::EXSITS($idx_id))
+            return ['total_count'=>0, 'txns'=>[]];
+        $end_time = '('.$end_time;
+        $txns = Redis::ZREVRANGEBYSCORE($idx_id, $end_time, $start_time, 'LIMIT '.$offset . ' '. $limit);
+        $count = Redis::ZREVRANGEBYSCORE($idx_id, $start_time, $end_time);
+        return ['total_count'=>$count, 'txns'=>$txns];
     }
 
     public function is_defined_status($status) {
