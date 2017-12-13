@@ -85,19 +85,6 @@ class RttService{
         throw new RttException('SYSTEM_ERROR', __FUNCTION__.":Unknown type:".$type);
     }
 
-    public function txn_to_front_end($rtt_txn) {
-        $channel = $rtt_txn['vendor_channel']; 
-        unset($rtt_txn['account_id']);
-        $rtt_txn['vendor_channel'] = 'unknown';
-        foreach ($this->consts['CHANNELS'] as $key=>$value) {
-            if ($channel == $value) {
-                $rtt_txn['vendor_channel'] = $key;
-                break;
-            }
-        }
-        return $rtt_txn;
-    }
-
     public function precreate_authpay($la_paras, $account_id) {
         $infoObj = $this->get_account_info($account_id);
         if (!empty($infoObj->currency_type) && $infoObj->currency_type != $la_paras['total_fee_currency'])
@@ -170,11 +157,11 @@ class RttService{
         return $status;
     }
 
-    public function query_txns_hot($la_paras, $account_id) {
+    public function get_hot_txns($la_paras, $account_id) {
         $page_num = $la_paras['page_num'] ?? 0;
         $limit = $la_paras['page_size'];
         $offset = ($page_num-1)*$page_size;
-        return $this->sp_oc->query_txns_hot($account_id, $offset, $limit);
+        return $this->sp_oc->get_hot_txns($account_id, $offset, $limit);
     }
     public function query_txns_by_time($la_paras, $account_id){
         $where_cond = [
@@ -197,7 +184,7 @@ class RttService{
         return ['total_count'=>$count, 'txns'=>$result];
     }
 
-    public function txn_to_front_end(&$txn) {
+    public function txn_to_export(&$txn) {
         $new_txn = [
             'time'=>$txn->vendor_txn_time,
             'is_refund'=>$txn->is_refund,
@@ -210,7 +197,10 @@ class RttService{
     }
 
     public function get_company_info($account_id) {
-        return DB::table('company_info')->where('account_id','=', $account_id)->first();
+        $ret = DB::table('company_info')->where('account_id','=', $account_id)->first();
+        if (empty($ret))
+            throw new RttException('SYSTEM_ERROR', 'company_info not found');
+        return $ret;
     }
     /*
     public function cache_txn($txn){

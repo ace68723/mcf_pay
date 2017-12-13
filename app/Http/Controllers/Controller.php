@@ -99,17 +99,17 @@ class Controller extends BaseController
     }
      */
 
-    public function api_doc_md() {
+    public function api_doc_md($prefix='api/v1/merchant') {
         $output = "";
         foreach($this->consts['REQUEST_PARAS'] as $api_spec_name=>$api_spec) {
             $output .= "##".$api_spec_name."\n\n";
             $output .= "|  Tables  |       说明       | 默认值  |\n";
             $output .= "| :------: | :------------: | :--: |\n";
-            $output .= "|   URL    | /".$api_spec_name."/ |      |\n";
+            $output .= "|   URL    | /".$prefix.'/'.$api_spec_name."/ |      |\n";
             $output .= <<<doc
 | HTTP请求方式 |      POST      |      |
-|  是否需要登录  |       否        |      |
-|  授权访问限制  |     MD5签名      |      |
+|  是否需要登录  |       是        |      |
+|  授权访问限制  |     Token      |      |
 |  授权范围()  |      单次请求      |      |
 |   支持格式   |  JSON (utf-8)  |      |
 
@@ -118,14 +118,18 @@ class Controller extends BaseController
 | Tables       | 类型及其范围 | 说明               | 默认值  |
 | ------------ | ------ | ---------------- | ---- |
 | Content-Type | string | application/json |      |
+| Auth-Token | string | 登陆时返回的token |      |
 
 
 Body参数:
 
+doc;
+            $table_header = <<<headerStr
 | Tables             | 类型及其范围      | 必填   | 说明                            | 默认值/样例           |
 | ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
 
-doc;
+headerStr;
+            $output .= (empty($api_spec))? "无": $table_header;
             foreach($api_spec as $para_name=>$para_spec) {
                 $type_str = $para_spec['checker'] ?? null;
                 if (is_array($type_str))
@@ -144,8 +148,9 @@ doc;
                 }
                 $required_str = !empty($para_spec['required']) ? "是" : "否";
                 $desc_str = $para_spec['description'] ?? "----------------";
-                $output .= "| ". $para_name . " | ". $type_str . " | " . $required_str ." | ". $desc_str;
-                $output .= " | ---------------- | ";
+                $default_str = $para_spec['default_value'] ?? "----------------";
+                $output .= "| ". $para_name . " | ". $type_str . " | " . $required_str
+                    ." | ". $desc_str . " | ". $default_str. " | ";
                 $output .= "\n";
             }
             $output .= "\n";

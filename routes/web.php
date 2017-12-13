@@ -27,10 +27,19 @@ $router->get('/login_api_doc/', ['uses'=>'LoginController@api_doc_md']);
 $router->get('/test/', ['uses'=>'PubAPIController@test']);
 $router->post('/test/', ['uses'=>'PubAPIController@test']);
 
-$router->group(['prefix'=>'mcf','middleware'=>'auth:custom_token'], function ($router)
+$router->group(['prefix'=>'api/v1/merchant','middleware'=>'auth:custom_token'], function ($router)
 {
-    $api_names = ['create_authpay','precreate_authpay','create_order','create_refund',
-        'check_order_status','get_exchange_rate', 'query_txns_by_time'];
+    $api_names = [
+        'create_authpay',
+        'precreate_authpay',
+        'create_order',
+        'create_refund',
+        'check_order_status',
+        'get_exchange_rate',
+        'query_txns_by_time',
+        'get_hot_txns',
+        'get_company_info',
+    ];
     foreach($api_names as $api_name) {
         $router->post('/'.$api_name.'/', ['uses'=>'MCFController@'.$api_name]);
     }

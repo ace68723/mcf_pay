@@ -36,5 +36,11 @@ class Account_base_TableSeeder extends Seeder
             'currency_type'=>'CAD',
             'changed_by'=>'test_seeder', 
         ]);
+        DB::table('company_info')->insert([
+            'account_id'=>3, 
+            'display_name'=>'测试商家', 
+            'cell'=>'123456789',
+            'address'=>'Centre of the Universe', 
+        ]);
     }
 }

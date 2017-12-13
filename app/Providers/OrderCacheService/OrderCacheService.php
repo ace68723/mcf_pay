@@ -95,7 +95,7 @@ trait ByRedisFacade{
         return $order['resp']??null;
     }
 
-    public function query_txns_hot($account_id, $offset, $limit) {
+    public function get_hot_txns($account_id, $offset, $limit) {
         $idx_id = "index:".$account_id;
         if (!Redis::EXSITS($idx_id))
             return ['total_count'=>0, 'txns'=>[]];

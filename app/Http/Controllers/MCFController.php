@@ -28,8 +28,9 @@ class MCFController extends Controller
             'check_order_status'=>[101,666],
             'get_exchange_rate'=>[101,666],
             'query_txns_by_time'=>[666],
-            'query_txns_hot'=>[666],
+            'get_hot_txns'=>[101, 666],
             'get_company_info'=>[666],
+            'get_settlements'=>[666],
         ];
 
         $this->consts['REQUEST_PARAS'] = [];
@@ -137,7 +138,22 @@ class MCFController extends Controller
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
-        $this->consts['REQUEST_PARAS']['query_txns_hot'] = [
+        $this->consts['REQUEST_PARAS']['get_hot_txns'] = [
+            'page_num'=>[
+                'checker'=>['is_int'],
+                'required'=>false,
+                'default_value'=>1,
+                'description'=> 'starts from 1',
+            ],
+            'page_size'=>[
+                'checker'=>['is_int', [1,50]],
+                'required'=>false,
+                'default_value'=>$this->sp_rtt->consts['DEFAULT_PAGESIZE'],
+                'description'=> 'page size',
+            ],
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+
+        $this->consts['REQUEST_PARAS']['get_settlements'] = [
             'page_num'=>[
                 'checker'=>['is_int'],
                 'required'=>false,
@@ -297,14 +313,13 @@ class MCFController extends Controller
         return $this->format_success_ret($status);
     }
 
-    public function query_txns_hot(Request $request){
+    public function get_hot_txns(Request $request){
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
-        $result = $this->sp_rtt->query_txns_hot($la_paras, $account_id);
-        $ret = $this->sp_rtt->query_txns_hot($la_paras, $account_id);
-        array_walk($ret['txns'], [$this->sp_rtt, 'txn_to_frontend']);
+        $ret = $this->sp_rtt->get_hot_txns($la_paras, $account_id);
+        array_walk($ret['txns'], [$this->sp_rtt, 'txn_to_export']);
         return $this->format_success_ret($ret);
     }
 
@@ -314,7 +329,7 @@ class MCFController extends Controller
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $ret = $this->sp_rtt->query_txns_by_time($la_paras, $account_id);
-        array_walk($ret['txns'], [$this->sp_rtt, 'txn_to_frontend']);
+        array_walk($ret['txns'], [$this->sp_rtt, 'txn_to_export']);
         return $this->format_success_ret($ret);
     }
 

@@ -184,8 +184,8 @@ class PubAPIController extends Controller
             $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id);
              */
         }
-        $ret = $this->sp_rtt->txn_to_front_end($txn);
-        return $this->format_success_ret($ret);
+        $this->sp_rtt->txn_to_export($txn);
+        return $this->format_success_ret($txn);
     }
 
     public function handle_notify_wx(Request $request)

@@ -67,6 +67,27 @@ class AuthServiceProvider extends ServiceProvider
             return new GenericUser(['account_id'=>$secInfo->account_id]);
         });
 
+        $this->app['auth']->viaRequest('custom_mgt_token', function ($request) {
+            $sp = app()->make('user_auth_service');
+            $token_info = $sp->check_token($request->header('Auth-Token'));
+            if (empty($token_info->uid)
+                || empty($token_info->role)
+                || $token_info->role < 999
+                || empty($token_info->expire) )
+            {
+                Log::DEBUG("empty token_info or insufficient role");
+                return null;
+            }
+            if (!env('APP_DEBUG') && time() > $token_info->expire) {
+                Log::DEBUG("token expire:".time().">".$token_info->expire);
+                return null;
+            }
+            return new GenericUser([
+                'uid'=>$token_info->uid,
+                'role'=>$token_info->role,
+            ]);
+        });
+
         $this->app['auth']->viaRequest('custom_token', function ($request) {
             /*
             $a = debug_backtrace();
@@ -77,7 +98,8 @@ class AuthServiceProvider extends ServiceProvider
             $token_info = $sp->check_token($request->header('Auth-Token'));
             if (empty($token_info->uid)
                 || empty($token_info->role)
-                || empty($token_info->account_id) )
+                || empty($token_info->account_id)
+                || empty($token_info->expire) )
             {
                 Log::DEBUG("empty token_info");
                 return null;
