@@ -38,7 +38,7 @@ trait ByRedisFacade{
             'resp'=>$resp,
             'status'=>$status,
         ];
-        Redis::setex("order:".$order_id, $this->consts['ORDER_CACHE_MINS'][$status]*60, $item);
+        Redis::setex("order:".$order_id, $this->consts['ORDER_CACHE_MINS'][$status]*60, serialize($item));
         return $item;
     }
 
@@ -54,6 +54,7 @@ trait ByRedisFacade{
                 Log::info(__FUNCTION__.': updating non-exist order:'.$order_id);
                 return;
             }
+            $old = unserialize($old);
         }
         if ($old['status'] != $status) {
             $old['status'] = $status;
@@ -68,7 +69,7 @@ trait ByRedisFacade{
                         $idx_id = "index:".$account_id;
                         if ($txn['vendor_txn_time'] < 0)
                             throw new RttException('SYSTEM_ERROR', 'vendor_txn_time < 0 for '.$key);
-                        Redis::zadd($idx_id, $txn['vendor_txn_time'], $txn);
+                        Redis::zadd($idx_id, $txn['vendor_txn_time'], serialize($txn));
                         $now = time();
                         Redis::zremrangebyscore($idx_id, '-inf', $now-(60*$this->consts['ORDER_CACHE_MINS'][$status]));
                     }
@@ -80,12 +81,13 @@ trait ByRedisFacade{
             }
         //Redis::multi();
         //Redis::exec();
-            Redis::setex($key, $this->consts['ORDER_CACHE_MINS'][$status], $old);
+            Redis::setex($key, $this->consts['ORDER_CACHE_MINS'][$status], serialize($old));
         }
     }
 
     public function query_order_cache($order_id) {
-        return Redis::get("order:".$order_id);
+        $ret = Redis::get("order:".$order_id);
+        return (empty($ret))? null:unserialize($ret);
     }
 
     protected function cached_order_to_rtt_txn($order) {
@@ -97,9 +99,10 @@ trait ByRedisFacade{
 
     public function get_hot_txns($account_id, $offset, $limit) {
         $idx_id = "index:".$account_id;
-        if (!Redis::EXSITS($idx_id))
+        if (!Redis::EXISTS($idx_id))
             return ['total_count'=>0, 'txns'=>[]];
         $txns = Redis::ZREVRANGE($idx_id, $offset, $offset+$limit-1);
+        array_walk($txns, function(&$x) {$x = unserialize($x);});
         $count = Redis::ZCARD($idx_id);
         return ['total_count'=>$count, 'txns'=>$txns];
     }
@@ -109,6 +112,7 @@ trait ByRedisFacade{
             return ['total_count'=>0, 'txns'=>[]];
         $end_time = '('.$end_time;
         $txns = Redis::ZREVRANGEBYSCORE($idx_id, $end_time, $start_time, 'LIMIT '.$offset . ' '. $limit);
+        array_walk($txns, function(&$x) {$x = unserialize($x);});
         $count = Redis::ZREVRANGEBYSCORE($idx_id, $start_time, $end_time);
         return ['total_count'=>$count, 'txns'=>$txns];
     }

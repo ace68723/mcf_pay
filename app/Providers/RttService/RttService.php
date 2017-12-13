@@ -96,7 +96,7 @@ class RttService{
     }
 
     public function create_authpay($new_la_paras, $account_id) {
-        $cachedItem = $this->query_order_cache($new_la_paras['out_trade_no']);
+        $cachedItem = $this->sp_oc->query_order_cache($new_la_paras['out_trade_no']);
         if (empty($cachedItem['input']) || ($cachedItem['status']??null) != 'INIT')
             throw new RttException("INVALID_PARAMETER", "out_trade_no");
         //TODO remember to unset APP_DEBUG in production env, which will prevent outputing exception context message
@@ -137,7 +137,7 @@ class RttService{
     }
 
     public function check_order_status($la_paras, $account_id){
-        $cached_order = $this->query_order_cache($la_paras['out_trade_no']);
+        $cached_order = $this->sp_oc->query_order_cache($la_paras['out_trade_no']);
         if (empty($cached_order))
             throw new RttException('NOT_FOUND', ["ORDER",$la_paras['out_trade_no']]);
         $status = $cached_order['status'];
@@ -159,13 +159,13 @@ class RttService{
 
     public function get_hot_txns($la_paras, $account_id) {
         $page_num = $la_paras['page_num'] ?? 0;
-        $limit = $la_paras['page_size'];
+        $page_size = $la_paras['page_size'];
         $offset = ($page_num-1)*$page_size;
-        return $this->sp_oc->get_hot_txns($account_id, $offset, $limit);
+        return $this->sp_oc->get_hot_txns($account_id, $offset, $page_size);
     }
     public function query_txns_by_time($la_paras, $account_id){
         $where_cond = [
-            ['account_id', '=', $account_id],
+            ['txn_base.account_id', '=', $account_id],
         ];
         if ($la_paras['start_time'] >= 0)
             $where_cond[] = ['vendor_txn_time', '>=', $la_paras['start_time']];
@@ -185,13 +185,16 @@ class RttService{
     }
 
     public function txn_to_export(&$txn) {
+        Log::DEBUG(__FUNCTION__.serialize($txn));
+        if (!is_array($txn))
+            $txn = (array)$txn;
         $new_txn = [
-            'time'=>$txn->vendor_txn_time,
-            'is_refund'=>$txn->is_refund,
-            'amount_in_cent'=>$txn->total_fee_in_cent,
-            'amount_currency'=>$txn->total_fee_currency,
-            'vendor_channel'=>$this->consts['CHANNELS_REV'][$txn->vendor_channel],
-            'username'=>$txn->username,
+            'time'=>$txn['vendor_txn_time'],
+            'is_refund'=>$txn['is_refund'],
+            'amount_in_cent'=>$txn['txn_fee_in_cent'],
+            'amount_currency'=>$txn['txn_fee_currency'],
+            'vendor_channel'=>$this->consts['CHANNELS_REV'][$txn['vendor_channel']],
+            //'username'=>$txn->username,
         ];
         $txn = $new_txn;
     }

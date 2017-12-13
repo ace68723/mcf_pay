@@ -299,7 +299,7 @@ class MCFController extends Controller
         $account_id = $userObj->account_id;
         $la_paras['_uid'] = $userObj->uid;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
-        $ret = $this->create_refund($la_paras, $account_id);
+        $ret = $this->sp_rtt->create_refund($la_paras, $account_id);
         return $this->format_success_ret($ret);
     }
 
@@ -309,7 +309,7 @@ class MCFController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
-        $status = $this->check_order_status($la_paras, $account_id);
+        $status = $this->sp_rtt->check_order_status($la_paras, $account_id);
         return $this->format_success_ret($status);
     }
 
