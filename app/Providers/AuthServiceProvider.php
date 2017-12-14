@@ -85,7 +85,6 @@ class AuthServiceProvider extends ServiceProvider
             return new GenericUser([
                 'uid'=>$token_info->uid,
                 'role'=>$token_info->role,
-                'username'=>$token_info->username,
             ]);
         });
 
@@ -99,6 +98,7 @@ class AuthServiceProvider extends ServiceProvider
             $token_info = $sp->check_token($request->header('Auth-Token'));
             if (empty($token_info->uid)
                 || empty($token_info->role)
+                || empty($token_info->username)
                 || empty($token_info->account_id)
                 || empty($token_info->expire) )
             {
