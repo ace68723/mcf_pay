@@ -170,7 +170,12 @@ headerStr;
             $b_extra_para = is_array($func_spec) && count($func_spec)>=2;
             $func = is_array($func_spec)? $func_spec[0]: $func_spec;
             if ($b_extra_para && $func == 'is_int') {
-                $value = is_int($value) && $value>=$func_spec[1][0] && $value<=$func_spec[1][1];
+                $new_value = is_int($value);
+                if (is_int($func_spec[1][0]))
+                    $new_value = $new_value && $value>=$func_spec[1][0];
+                if (is_int($func_spec[1][1]))
+                    $new_value = $new_value && $value<=$func_spec[1][1];
+                $value = $new_value;
             }
             elseif ($b_extra_para && $func == 'is_string') {
                 $value = is_string($value) && strlen($value)<=$func_spec[1];

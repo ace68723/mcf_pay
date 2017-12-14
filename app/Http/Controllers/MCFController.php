@@ -140,7 +140,7 @@ class MCFController extends Controller
 
         $this->consts['REQUEST_PARAS']['get_hot_txns'] = [
             'page_num'=>[
-                'checker'=>['is_int'],
+                'checker'=>['is_int', [1,'inf']],
                 'required'=>false,
                 'default_value'=>1,
                 'description'=> 'starts from 1',
@@ -155,7 +155,7 @@ class MCFController extends Controller
 
         $this->consts['REQUEST_PARAS']['get_settlements'] = [
             'page_num'=>[
-                'checker'=>['is_int'],
+                'checker'=>['is_int', [1,'inf']],
                 'required'=>false,
                 'default_value'=>1,
                 'description'=> 'starts from 1',
@@ -180,7 +180,7 @@ class MCFController extends Controller
                 'description'=> '结束时间的unix timestamp, exclusive',
             ],
             'page_num'=>[
-                'checker'=>['is_int'],
+                'checker'=>['is_int', [1,'inf']],
                 'required'=>false,
                 'default_value'=>1,
                 'description'=> 'starts from 1',
@@ -261,6 +261,7 @@ class MCFController extends Controller
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $la_paras['scenario'] = 'AUTHPAY';
         $la_paras['_uid'] = $userObj->uid;
+        $la_paras['_username'] = $userObj->username;
         $ret = $this->sp_rtt->precreate_authpay($la_paras, $account_id);
         return $this->format_success_ret($ret);
     }
@@ -272,6 +273,7 @@ class MCFController extends Controller
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $la_paras['scenario'] = 'AUTHPAY'; 
         $la_paras['_uid'] = $userObj->uid;
+        $la_paras['_username'] = $userObj->username;
         $ret = $this->sp_rtt->create_authpay($la_paras, $account_id);
         $ret['total_fee_in_cent'] = $la_paras['total_fee_in_cent'];
         $ret['total_fee_currency'] = $la_paras['total_fee_currency'];
@@ -286,6 +288,7 @@ class MCFController extends Controller
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $la_paras['scenario'] = 'NATIVE';
         $la_paras['_uid'] = $userObj->uid;
+        $la_paras['_username'] = $userObj->username;
         $ret = $this->sp_rtt->create_order($la_paras, $account_id);
         $ret['total_fee_in_cent'] = $la_paras['total_fee_in_cent'];
         $ret['total_fee_currency'] = $la_paras['total_fee_currency'];
@@ -297,8 +300,9 @@ class MCFController extends Controller
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
-        $la_paras['_uid'] = $userObj->uid;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras['_uid'] = $userObj->uid;
+        $la_paras['_username'] = $userObj->username;
         $ret = $this->sp_rtt->create_refund($la_paras, $account_id);
         return $this->format_success_ret($ret);
     }

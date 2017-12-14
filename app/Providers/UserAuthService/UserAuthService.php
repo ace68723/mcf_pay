@@ -52,6 +52,7 @@ class UserAuthService{
         $info = array(
             'uid'=>$userObj->uid,
             'role'=>$userObj->role,
+            'username'=>$userObj->username,
             'account_id'=>$userObj->account_id,
             'expire'=>time()+$this->consts['token_expire_sec'],
         );

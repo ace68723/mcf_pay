@@ -76,12 +76,13 @@ trait ByRedisFacade{
                     else {
                         Log::INFO(__FUNCTION__.": cannot get the account_id of txn ".$key);
                     }
+                    unset($txn['username']);
                     DB::table('txn_base')->updateOrInsert( ['ref_id'=>$txn['ref_id']], $txn);
                 }
             }
         //Redis::multi();
         //Redis::exec();
-            Redis::setex($key, $this->consts['ORDER_CACHE_MINS'][$status], serialize($old));
+            Redis::setex($key, $this->consts['ORDER_CACHE_MINS'][$status]*60, serialize($old));
         }
     }
 
@@ -94,7 +95,11 @@ trait ByRedisFacade{
         if ($order['status'] != 'SUCCESS') {
             return null;
         }
-        return $order['resp']??null;
+        $txn = $order['resp']??null;
+        if (!empty($txn)) {
+            $txn['username'] = $order['input']['_username'] ?? "unknown";
+        }
+        return $txn;
     }
 
     public function get_hot_txns($account_id, $offset, $limit) {
@@ -123,6 +128,7 @@ trait ByRedisFacade{
 
 }
 
+/*
 trait ByCacheFacade{ //this is an incomplete implementation
     public function cb_new_order($order_id, $account_id, $channel_name, $input, $req=null, $resp=null) {
         $old = $this->query_order_cache($order_id);
@@ -179,7 +185,11 @@ trait ByCacheFacade{ //this is an incomplete implementation
         if ($order['status'] != 'SUCCESS') {
             return null;
         }
-        return $order['resp']??null;
+        $txn = $order['resp']??null;
+        if (!empty($txn)) {
+            $txn['username'] = $order['input']['_username'];
+        }
+        return $txn;
     }
 
     public function is_defined_status($status) {
@@ -187,3 +197,4 @@ trait ByCacheFacade{ //this is an incomplete implementation
     }
 
 }
+ */

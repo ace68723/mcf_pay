@@ -5,6 +5,7 @@ require_once __DIR__."/lib/alipay_core.function.php";
 require_once __DIR__."/lib/alipay_md5.function.php";
 
 use Log;
+use Closure;
 //use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -86,6 +87,26 @@ class AliService{
             ['paid_fee_currency', null, "CNY"],
             ['exchange_rate','exchange_rate'],
             ['customer_id', 'alipay_buyer_user_id'],
+            ['status', null, 'SUCCESS'],
+            ['device_id', 'device_id'],
+            ['user_id','_uid'],
+        ];
+        $this->consts['TO_RTT_TXN']['FROM_REFUND'] = [
+            ['ref_id', 'partner_refund_id'], 
+            ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
+            ['vendor_txn_id', null, null],
+            ['vendor_txn_time', null, function () { return time(); }],
+            ['txn_scenario', null, null],
+            ['txn_fee_in_cent', 'refund_amount', function ($x) {
+                return bcmul($x, 100);
+            }],
+            ['txn_fee_currency','currency'],
+            ['paid_fee_in_cent','refund_amount_cny', function ($x) {
+                return bcmul($x, 100);
+            }],
+            ['paid_fee_currency', null, "CNY"],
+            ['exchange_rate','exchange_rate'],
+            ['customer_id', null, null],
             ['status', null, 'SUCCESS'],
             ['device_id', 'device_id'],
             ['user_id','_uid'],
@@ -321,7 +342,7 @@ class AliService{
         $attr_map = $this->consts['TO_RTT_TXN'][$sc_selector];
         foreach($attr_map as $item) {
             if (empty($item[1])) {
-                if ($item[2] instanceof Closure)
+                if ($item[2] instanceof \Closure)
                     $ret[$item[0]] = $item[2]();
                 else
                     $ret[$item[0]] = $item[2];

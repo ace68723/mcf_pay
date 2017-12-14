@@ -232,7 +232,7 @@ class WxService
             throw $e;
         }
         $cb_order_update($la_paras['_refund_id'], 'SUCCESS',
-            $this->vendor_txn_to_rtt_txn($result, $account_id, 'FROM_AUTHPAY'), $cachedItem);
+            $this->vendor_txn_to_rtt_txn($result, $account_id, 'FROM_REFUND'), $cachedItem);
 		return $result;
 	}
 

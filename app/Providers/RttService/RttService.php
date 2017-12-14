@@ -181,20 +181,21 @@ class RttService{
             ->offset($offset)
             ->limit($page_size)
             ->get();
-        return ['total_count'=>$count, 'txns'=>$result];
+        return ['total_count'=>$count, 'txns'=>$result->toArray()];
     }
 
     public function txn_to_export(&$txn) {
-        Log::DEBUG(__FUNCTION__.serialize($txn));
-        if (!is_array($txn))
+        if (!is_array($txn)) {
             $txn = (array)$txn;
+            Log::DEBUG(__FUNCTION__.serialize($txn));
+        }
         $new_txn = [
             'time'=>$txn['vendor_txn_time'],
             'is_refund'=>$txn['is_refund'],
             'amount_in_cent'=>$txn['txn_fee_in_cent'],
             'amount_currency'=>$txn['txn_fee_currency'],
             'vendor_channel'=>$this->consts['CHANNELS_REV'][$txn['vendor_channel']],
-            //'username'=>$txn->username,
+            'username'=>$txn['username']??'unknown',
         ];
         $txn = $new_txn;
     }
@@ -205,18 +206,6 @@ class RttService{
             throw new RttException('SYSTEM_ERROR', 'company_info not found');
         return $ret;
     }
-    /*
-    public function cache_txn($txn){
-        //DB::table('txn_base')->updateOrCreate(['ref_id'=>$txn['ref_id']],$txn); //TODO:use Eloquent
-        $old = DB::table('txn_base')->where('ref_id','=',$txn['ref_id'])->first();
-        if (empty($old)) {
-            DB::table('txn_base')->insert($txn);
-        }
-        else {
-            DB::table('txn_base')->where('ref_id','=',$txn['ref_id'])->update($txn);
-        }
-    }
-     */
 
     public function is_defined_status($status) {
         return $this->sp_oc->is_defined_status($status);

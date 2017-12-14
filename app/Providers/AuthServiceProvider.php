@@ -85,6 +85,7 @@ class AuthServiceProvider extends ServiceProvider
             return new GenericUser([
                 'uid'=>$token_info->uid,
                 'role'=>$token_info->role,
+                'username'=>$token_info->username,
             ]);
         });
 
@@ -111,6 +112,7 @@ class AuthServiceProvider extends ServiceProvider
             return new GenericUser([
                 'uid'=>$token_info->uid,
                 'role'=>$token_info->role,
+                'username'=>$token_info->username,
                 'account_id'=>$token_info->account_id,
             ]);
         });
