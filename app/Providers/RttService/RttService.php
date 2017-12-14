@@ -166,6 +166,21 @@ class RttService{
         $offset = ($page_num-1)*$page_size;
         return $this->sp_oc->get_hot_txns($account_id, $offset, $page_size);
     }
+    public function get_settlements($la_paras, $account_id){
+        $where_cond = [
+            ['account_id', '=', $account_id],
+        ];
+        $count = DB::table('settlement')->where($where_cond)->count();
+        $page_size =$la_paras['page_size']??$this->consts['DEFAULT_PAGESIZE']; 
+        $offset = ($la_paras['page_num']-1)*$page_size;
+        $result = DB::table('settlement')
+            ->where($where_cond)
+            ->orderBy('settle_time','DESC')
+            ->offset($offset)
+            ->limit($page_size)
+            ->get();
+        return ['total_count'=>$count, 'settlements'=>$result->toArray()];
+    }
     public function query_txns_by_time($la_paras, $account_id){
         $where_cond = [
             ['txn_base.account_id', '=', $account_id],

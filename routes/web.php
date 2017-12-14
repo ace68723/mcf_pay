@@ -38,6 +38,7 @@ $router->group(['prefix'=>'api/v1/merchant','middleware'=>'auth:custom_token'], 
         'get_exchange_rate',
         'query_txns_by_time',
         'get_hot_txns',
+        'get_settlements',
         'get_company_info',
     ];
     foreach($api_names as $api_name) {

@@ -362,6 +362,15 @@ class MCFController extends Controller
         return $this->format_success_ret($ret);
     }
 
+    public function get_settlements(Request $request){
+        $userObj = $request->user('custom_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $account_id = $userObj->account_id;
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $ret = $this->sp_rtt->get_settlements($la_paras, $account_id);
+        return $this->format_success_ret($ret);
+    }
+
     public function get_company_info(Request $request){
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
