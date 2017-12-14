@@ -24,51 +24,53 @@ class OrderCacheService{
 
 trait ByRedisFacade{
     public function cb_new_order($order_id, $account_id, $channel_name, $input, $req=null, $resp=null) {
-        $old = $this->query_order_cache($order_id);
-        if (!empty($old)) {
-            Log::DEBUG('cache new order fail because of duplicate order_id '. $order_id . ', this may happen for refund');
-            return $old;
+        $key = "order:".$order_id;
+        if (Redis::EXISTS($key)) {
+            Log::DEBUG('cache new order failed because of duplicate order_id '.
+                $order_id . ', this may happen for refund/authpay');
+            return false;
         }
         $status = 'INIT';
         $item = [
-            'account_id'=>$account_id,
-            'channel_name'=>$channel_name,
+            //'account_id'=>$account_id,
+            //'channel_name'=>$channel_name,
             'input'=>$input,
             //'req'=>$req, //seems not used. remove this for efficiency
             'resp'=>$resp,
             'status'=>$status,
         ];
-        Redis::setex("order:".$order_id, $this->consts['ORDER_CACHE_MINS'][$status]*60, serialize($item));
-        return $item;
+        //Redis::setex($key, $this->consts['ORDER_CACHE_MINS'][$status]*60, serialize($item));
+        Redis::HMSET($key, 'input', serialize($item['input']), 'resp', serialize($item['resp']), 'status', $status);
+        Redis::EXPIRE($key, $this->consts['ORDER_CACHE_MINS'][$status]*60); //no need to use transactions here
+        return true;
     }
 
-    public function cb_order_update($order_id, $status, $newResp=null, $old=null) {
+    public function cb_order_update($order_id, $status, $newResp=null) {
         if (!$this->is_defined_status($status)) {
             Log::info(__FUNCTION__.': undefined status:'.$status);
             return ;
         }
         $key = "order:".$order_id;
-        if (empty($old)) {
-            $old = Redis::get($key);
-            if (empty($old)) {
-                Log::info(__FUNCTION__.': updating non-exist order:'.$order_id);
-                return;
-            }
-            $old = unserialize($old);
+        $old_status = $this->query_order_cache_field($order_id, 'status'); 
+        if (empty($old_status)) {
+            Log::info(__FUNCTION__.': updating non-exist order:'.$order_id);
+            return;
         }
-        if ($old['status'] != $status) {
-            $old['status'] = $status;
+        if ($old_status != $status) {
             if (!empty($newResp)) {
-                $old['resp'] = $newResp;
+                Redis::HSET($key, 'resp', serialize($newResp));
             }
             if ($status == 'SUCCESS') {
-                $txn = $this->cached_order_to_rtt_txn($old);
-                if (!empty($txn)){
+                if (empty($newResp)) {
+                    $newResp = $this->query_order_cache_field($order_id, 'resp');
+                }
+                if (!empty($newResp)){
+                    $txn = $newResp;
+                    $input = $this->query_order_cache_field($order_id, 'input');
+                    $txn['username'] = $input['_username'] ?? "unknown";
                     $account_id = $txn['account_id'] ?? null;
                     if (!empty($account_id)) {
                         $idx_id = "index:".$account_id;
-                        if ($txn['vendor_txn_time'] < 0)
-                            throw new RttException('SYSTEM_ERROR', 'vendor_txn_time < 0 for '.$key);
                         Redis::zadd($idx_id, $txn['vendor_txn_time'], serialize($txn));
                         $now = time();
                         Redis::zremrangebyscore($idx_id, '-inf', $now-(60*$this->consts['ORDER_CACHE_MINS'][$status]));
@@ -80,26 +82,18 @@ trait ByRedisFacade{
                     DB::table('txn_base')->updateOrInsert( ['ref_id'=>$txn['ref_id']], $txn);
                 }
             }
-        //Redis::multi();
-        //Redis::exec();
-            Redis::setex($key, $this->consts['ORDER_CACHE_MINS'][$status]*60, serialize($old));
+            //Redis::multi();
+            //Redis::exec();
+            Redis::HSET($key, 'status', $status);
+            Redis::EXPIRE($key, $this->consts['ORDER_CACHE_MINS'][$status]*60); //no need to use transactions here
         }
     }
 
-    public function query_order_cache($order_id) {
-        $ret = Redis::get("order:".$order_id);
-        return (empty($ret))? null:unserialize($ret);
-    }
-
-    protected function cached_order_to_rtt_txn($order) {
-        if ($order['status'] != 'SUCCESS') {
+    public function query_order_cache_field($order_id, $field) {
+        $ret = Redis::HGET("order:".$order_id, $field);
+        if (empty($ret))
             return null;
-        }
-        $txn = $order['resp']??null;
-        if (!empty($txn)) {
-            $txn['username'] = $order['input']['_username'] ?? "unknown";
-        }
-        return $txn;
+        return ($field == 'status')? $ret : unserialize($ret);
     }
 
     public function get_hot_txns($account_id, $offset, $limit) {
@@ -128,73 +122,3 @@ trait ByRedisFacade{
 
 }
 
-/*
-trait ByCacheFacade{ //this is an incomplete implementation
-    public function cb_new_order($order_id, $account_id, $channel_name, $input, $req=null, $resp=null) {
-        $old = $this->query_order_cache($order_id);
-        if (!empty($old)) {
-            Log::DEBUG('cache new order fail because of duplicate order_id '. $order_id . ', this may happen for refund');
-            return $old;
-        }
-        $status = 'INIT';
-        $item = [
-            'account_id'=>$account_id,
-            'channel_name'=>$channel_name,
-            'input'=>$input,
-            //'req'=>$req, //seems not used. remove this for efficiency
-            'resp'=>$resp,
-            'status'=>$status,
-        ];
-        Cache::put("order:".$order_id, $item, $this->consts['ORDER_CACHE_MINS'][$status]);
-        return $item;
-    }
-
-    public function cb_order_update($order_id, $status, $newResp=null, $old=null) {
-        if (!$this->is_defined_status($status)) {
-            Log::info(__FUNCTION__.': undefined status:'.$status);
-            return ;
-        }
-        if (empty($old)) {
-            $old = Cache::get("order:".$order_id, null);
-            if (empty($old)) {
-                Log::info(__FUNCTION__.': updating non-exist order:'.$order_id);
-                return;
-            }
-        }
-        if ($old['status'] != $status) {
-            $old['status'] = $status;
-            if (!empty($newResp)) {
-                $old['resp'] = $newResp;
-            }
-            if ($status == 'SUCCESS') {
-                $txn = $this->cached_order_to_rtt_txn($old);
-                if (!empty($txn)) DB::table('txn_base')->updateOrInsert( ['ref_id'=>$txn['ref_id']], $txn);
-            }
-            Cache::forget("order:".$order_id); 
-            //$tags = [$account_id, $status];
-            //Cache::tags($tags)->put("order:".$order_id, $old, $this->consts['ORDER_CACHE_MINS'][$status]); 
-            Cache::put("order:".$order_id, $old, $this->consts['ORDER_CACHE_MINS'][$status]); 
-        }
-    }
-
-    public function query_order_cache($order_id) {
-        return Cache::get("order:".$order_id, null);
-    }
-
-    protected function cached_order_to_rtt_txn($order) {
-        if ($order['status'] != 'SUCCESS') {
-            return null;
-        }
-        $txn = $order['resp']??null;
-        if (!empty($txn)) {
-            $txn['username'] = $order['input']['_username'];
-        }
-        return $txn;
-    }
-
-    public function is_defined_status($status) {
-        return !empty($this->consts['ORDER_CACHE_MINS'][$status]); // treat 0 cache mins as undefined
-    }
-
-}
- */

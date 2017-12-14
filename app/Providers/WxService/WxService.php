@@ -127,8 +127,9 @@ class WxService
         if (empty($scenario) || $scenario != 'MICROPAY')
             throw  new RttException('SYSTEM_ERROR', "WRONG SCENARIO!");
         $ret = [ 'out_trade_no' => $la_paras['_out_trade_no'], ];
-        $cachedItem = $cb_new_order($la_paras['_out_trade_no'], $account_id,
-            $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues());
+        if (!$cb_new_order($la_paras['_out_trade_no'], $account_id,
+            $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues()))
+            throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
         Log::info("Send to WxPay server:".json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
         try {
             $result = \WxPayApi::micropay($input, 10);
@@ -136,7 +137,7 @@ class WxService
         catch(\Exception $e) {
             Log::DEBUG("exception in sending wx micropay!".$e->getMessage());
             $ret['status'] = 'WAIT';
-            $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $e->getMessage(), $cachedItem);
+            $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $e->getMessage());
             return $ret;
         }
         Log::info("Received from WxPay server:".json_encode($result, JSON_UNESCAPED_UNICODE));
@@ -149,19 +150,19 @@ class WxService
 		        $result["err_code"] != "USERPAYING" && $result["err_code"] != "SYSTEMERROR"))
         {
             $errmsg = $result["err_code"]??"Error msg missing!";
-            $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $errmsg, $cachedItem);
+            $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $errmsg);
             throw new RttException('WX_ERROR_BIZ', $errmsg);
         }
         if ($result['result_code'] != 'SUCCESS') {
             // && in_array($result['err_code']??null, ['USERPAYING','SYSTEMERROR']))
             $ret['status'] = 'WAIT';
-            $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $result['err_code'], $cachedItem);
+            $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $result['err_code']);
             return $ret;
         }
         $ret['status'] = 'SUCCESS';
         $result['trade_state'] = 'SUCCESS'; // this is used in vendor_txn_to_rtt_txn
         $cb_order_update($la_paras['_out_trade_no'], 'SUCCESS',
-            $this->vendor_txn_to_rtt_txn($result, $account_id), $cachedItem);
+            $this->vendor_txn_to_rtt_txn($result, $account_id, 'DEFAULT', $la_paras));
         return $ret;
     }
 
@@ -189,18 +190,19 @@ class WxService
             throw  new RttException('SYSTEM_ERROR', "WRONG SCENARIO!");
         $input->SetTrade_type("NATIVE");
         $input->SetProduct_id(date("YmdHis"));
-        $cachedItem = $cb_new_order($la_paras['_out_trade_no'], $account_id,
-            $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues());
+        if (!$cb_new_order($la_paras['_out_trade_no'], $account_id,
+            $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues()))
+            throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
         try {
             Log::info("Send to WxPay server:".json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
             $result = \WxPayApi::unifiedOrder($input, 10);
             Log::info("Received from WxPay server:".json_encode($result, JSON_UNESCAPED_UNICODE));
             checkErrToThrow($result);
         } catch (\Exception $e) {
-            $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $e->getMessage(), $cachedItem);
+            $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $e->getMessage());
             throw $e;
         }
-        $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $result, $cachedItem);
+        $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $result);
         return array("out_trade_no"=>$la_paras['_out_trade_no'], "code_url"=>$result["code_url"]);
     }
 
@@ -220,19 +222,20 @@ class WxService
         $input->SetOut_refund_no($la_paras['_refund_id']);
         $input->SetOp_user_id(\WxPayConfig_MCHID);
         $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
-        $cachedItem = $cb_new_order($la_paras['_refund_id'], $account_id,
-            $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues());
+        if (!$cb_new_order($la_paras['_refund_id'], $account_id,
+            $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues()))
+            throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
         try {
             Log::info(__FUNCTION__.":wx:sending:". json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
             $result = \WxPayApi::refund($input);
             Log::info(__FUNCTION__.":wx:received:". json_encode($result, JSON_UNESCAPED_UNICODE));
             checkErrToThrow($result);        
         } catch (\Exception $e) {
-            $cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage(), $cachedItem); //TODO: return refund_id for some cases
+            $cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage()); //TODO: return refund_id for some cases
             throw $e;
         }
         $cb_order_update($la_paras['_refund_id'], 'SUCCESS',
-            $this->vendor_txn_to_rtt_txn($result, $account_id, 'FROM_REFUND'), $cachedItem);
+            $this->vendor_txn_to_rtt_txn($result, $account_id, 'FROM_REFUND', $la_paras));
 		return $result;
 	}
 

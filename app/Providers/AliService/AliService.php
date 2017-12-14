@@ -175,8 +175,9 @@ class AliService{
         $input['sign'] = md5Sign($signString, $this->consts['KEY']);
         $url = $this->consts['GATEWAY_URL']."?".createLinkstringUrlencode($input);
         $ret = [ 'out_trade_no' => $la_paras['_out_trade_no'], ];
-        $cachedItem = $cb_new_order($la_paras['_out_trade_no'], $account_id,
-            $this->consts['CHANNEL_NAME'], $la_paras, $input);
+        if (!$cb_new_order($la_paras['_out_trade_no'], $account_id,
+            $this->consts['CHANNEL_NAME'], $la_paras, $input))
+            throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
         try {
             Log::info("Send to AliPay server:".json_encode($input)."\n Encode Url:".$url);
             $result = getHttpResponseGET($url, null, $errmsg);
@@ -202,17 +203,17 @@ class AliService{
         catch(\Exception $e) {
             Log::DEBUG("enter wait because:".$e->getMessage());
             $ret['status'] = 'WAIT';
-            $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $e->getMessage(), $cachedItem);
+            $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $e->getMessage());
             return $ret;
         }
         if ($is_success=="T" && $result_code=="SUCCESS") {
             $ret['status'] = 'SUCCESS';
             $cb_order_update($la_paras['_out_trade_no'], 'SUCCESS',
-                $this->vendor_txn_to_rtt_txn($response, $account_id, 'FROM_AUTHPAY', $la_paras), $cachedItem);
+                $this->vendor_txn_to_rtt_txn($response, $account_id, 'FROM_AUTHPAY', $la_paras));
             return $ret;
         }
         $errmsg = $response["detail_error_code"] ??  $error ?? $non_biz_error ?? "Error msg missing!";
-        $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $errmsg, $cachedItem);
+        $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $errmsg);
         throw new RttException('AL_ERROR_BIZ', $errmsg);
     }
 
@@ -247,8 +248,9 @@ class AliService{
         $signString = getSignString($input);
         $input['sign'] = md5Sign($signString, $this->consts['KEY']);
         $url = $this->consts['GATEWAY_URL']."?".createLinkstringUrlencode($input);
-        $cachedItem = $cb_new_order($la_paras['_out_trade_no'], $account_id,
-            $this->consts['CHANNEL_NAME'], $la_paras, $input);
+        if (!$cb_new_order($la_paras['_out_trade_no'], $account_id,
+            $this->consts['CHANNEL_NAME'], $la_paras, $input))
+            throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
         try {
             Log::info("Send to AliPay server:".json_encode($input)."\n Encode Url:".$url);
             $result = getHttpResponseGET($url, null, $errmsg);
@@ -258,10 +260,10 @@ class AliService{
             $ret = parse_xml_check_err_throw($result, $this->consts['KEY']);
         }
         catch (\Exception $e) {
-            $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $e->getMessage(), $cachedItem);
+            $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $e->getMessage());
             throw $e;
         }
-        $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $ret, $cachedItem);
+        $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $ret);
         return ["out_trade_no"=>$la_paras['_out_trade_no'], "code_url"=>$ret["qr_code"]];
     }
 
@@ -277,8 +279,9 @@ class AliService{
         $signString = getSignString($input);
         $input['sign'] = md5Sign($signString, $this->consts['KEY']);
         $url = $this->consts['GATEWAY_URL']."?".createLinkstringUrlencode($input);
-        $cachedItem = $cb_new_order($la_paras['_refund_id'], $account_id,
-            $this->consts['CHANNEL_NAME'], $la_paras, $input);
+        if (!$cb_new_order($la_paras['_refund_id'], $account_id,
+            $this->consts['CHANNEL_NAME'], $la_paras, $input))
+            throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
         try {
             Log::info("Send to AliPay server:".json_encode($input)."\n Encode Url:".$url);
             $result = getHttpResponseGET($url, null, $errmsg);
@@ -288,11 +291,11 @@ class AliService{
             $ret = parse_xml_check_err_throw($result, $this->consts['KEY']);
         }
         catch (\Exception $e) {
-            $cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage(), $cachedItem);
+            $cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage());
             throw $e;
         }
         $cb_order_update($la_paras['_refund_id'], 'SUCCESS',
-            $this->vendor_txn_to_rtt_txn($ret, $account_id, 'FROM_REFUND', $la_paras), $cachedItem);
+            $this->vendor_txn_to_rtt_txn($ret, $account_id, 'FROM_REFUND', $la_paras));
         return $ret;
     }
 

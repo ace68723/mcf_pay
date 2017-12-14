@@ -90,20 +90,22 @@ class RttService{
         if (!empty($infoObj->currency_type) && $infoObj->currency_type != $la_paras['total_fee_currency'])
             throw new RttException("INVALID_PARAMETER", "currency_type");
         $la_paras['_out_trade_no'] = $this->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
-        $cachedItem = $this->sp_oc->cb_new_order($la_paras['_out_trade_no'], $account_id, 
-            $la_paras['vendor_channel'], $la_paras);
+        if (!($this->sp_oc->cb_new_order($la_paras['_out_trade_no'], $account_id, 
+            $la_paras['vendor_channel'], $la_paras)))
+            throw new RttException("SYSTEM_ERROR", "may be caused by duplicate _out_trade_no");
         return ['out_trade_no'=>$la_paras['_out_trade_no'],];
     }
 
     public function create_authpay($new_la_paras, $account_id) {
-        $cachedItem = $this->sp_oc->query_order_cache($new_la_paras['out_trade_no']);
-        if (empty($cachedItem['input']) || ($cachedItem['status']??null) != 'INIT')
+        if ('INIT' != $this->sp_oc->query_order_cache_field($new_la_paras['out_trade_no'], 'status'))
+            throw new RttException("INVALID_PARAMETER", "out_trade_no");
+        $la_paras = $this->sp_oc->query_order_cache_field($new_la_paras['out_trade_no'], 'input');
+        if (empty($la_paras))
             throw new RttException("INVALID_PARAMETER", "out_trade_no");
         //TODO remember to unset APP_DEBUG in production env, which will prevent outputing exception context message
         //to frontend, since the above message may be used to verify if an order exists.
         //Although timing attack may still work, it shouldn't be a problem,
         //considering its hardness and the limited order expire time...
-        $la_paras = $cachedItem['input'];
         if (($la_paras['_out_trade_no']??null) != $new_la_paras['out_trade_no'])
             throw new RttException("INVALID_PARAMETER", "out_trade_no"); //note that $la_paras['_out_trade_no'] is the real effecting parameter
         foreach (['scenario', 'total_fee_in_cent', 'total_fee_currency', 'vendor_channel'] as $pa_name) {
@@ -113,7 +115,8 @@ class RttService{
         $la_paras['auth_code'] = $new_la_paras['auth_code'];
         $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         $ret = $sp->create_authpay($la_paras, $account_id,
-            (function(...$args) {}), [$this->sp_oc,'cb_order_update']); //null cb_new_order do not memorize auth_code
+            (function(...$args) {return true;}), [$this->sp_oc,'cb_order_update']);
+        //null cb_new_order do not memorize auth_code
         return $ret;
     }
 
@@ -137,22 +140,22 @@ class RttService{
     }
 
     public function check_order_status($la_paras, $account_id){
-        $cached_order = $this->sp_oc->query_order_cache($la_paras['out_trade_no']);
-        if (empty($cached_order))
+        $status = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'status');
+        if (empty($status))
             throw new RttException('NOT_FOUND', ["ORDER",$la_paras['out_trade_no']]);
-        $status = $cached_order['status'];
         if ($la_paras['type'] == 'refresh' && $status != 'SUCCESS' ||
             $la_paras['type'] == 'force_remote') {
             $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
             $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
             //only success query gets here
-            $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id, 'DEFAULT', ($cached_order['input']??null));
+            $cached_input = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'input');
+            $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id, 'DEFAULT', $cached_input);
             $status = $txn['status'];//TODO ensure the state map in wx/ali service consists with rtt config
             if (!$this->is_defined_status($status)) {
                 Log::INFO('regard undefined status '. $status . ' as FAIL');
                 $status = 'FAIL';
             }
-            $this->sp_oc->cb_order_update($la_paras['out_trade_no'], $status, $txn, $cached_order);
+            $this->sp_oc->cb_order_update($la_paras['out_trade_no'], $status, $txn);
         }
         return $status;
     }

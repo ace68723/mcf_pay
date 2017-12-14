@@ -137,8 +137,7 @@ class PubAPIController extends Controller
         $la_paras = $this->parse_parameters($request, "create_order");
         $infoObj = $this->sp_rtt->get_account_info($account_id);
         $la_paras['_out_trade_no'] = $this->sp_rtt->generate_txn_ref_id($la_paras, $infoObj->ref_id, 'ORDER');
-        $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
-        $ret = $sp->create_order($la_paras, $account_id, $this->sp_rtt->cb_new_order);
+        $ret = $this->sp_rtt->create_order($la_paras, $account_id);
         return $this->format_success_ret($ret);
     }
 
@@ -147,8 +146,7 @@ class PubAPIController extends Controller
         $account_id = $request->user('custom_api')->account_id;
         $la_paras = $this->parse_parameters($request, "create_refund");
         $la_paras['_refund_id'] = $this->sp_rtt->generate_txn_ref_id($la_paras, null, 'REFUND');
-        $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
-        $ret = $sp->create_refund($la_paras, $account_id, $this->sp_rtt->cb_new_txn);
+        $ret = $this->sp_rtt->create_refund($la_paras, $account_id);
         return $this->format_success_ret($ret);
     }
     public function query_txn_single(Request $request)
