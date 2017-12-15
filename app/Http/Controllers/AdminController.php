@@ -24,6 +24,8 @@ class AdminController extends Controller
         $this->consts['ALLOWED_ROLES'] = [
             'get_merchants'=>[999],
             'get_merchant_info'=>[999],
+            'set_merchant_basic'=>[999],
+            'set_merchant_contract'=>[999],
         ];
         foreach(['basic','user','device','channel','contract'] as $name) {
             $this->consts['GET_FUNC_CATEGORY_MAP'][$name] = [$this->sp_mgt, 'get_merchant_info_'.$name];
@@ -65,6 +67,7 @@ class AdminController extends Controller
                 'default_value'=>$this->consts['DEFAULT_PAGESIZE'],
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+
         $this->consts['REQUEST_PARAS']['set_merchant_basic'] = [
             'account_id'=>[
                 'checker'=>['is_int', ],
@@ -79,13 +82,16 @@ class AdminController extends Controller
             'city'=>[ 'checker'=>['is_string', ], ],
             'province'=>[ 'checker'=>['is_string', ], ],
             'postal'=>[ 'checker'=>['is_string', ], ],
+            'timezone'=>[ 'checker'=>['is_string', ], ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+
         $this->consts['REQUEST_PARAS']['set_merchant_contract'] = [
             'account_id'=>[
                 'checker'=>['is_int', ],
                 'required'=>true,
             ],
             'contract_price'=>[ 'checker'=>['is_string', ], ],
+            'tip_mode'=>[ 'checker'=>['is_string', ], ],
             'remit_min_in_cent'=>[ 'checker'=>['is_int', ], ],
             'start_date'=>[ 'checker'=>['is_string', ], ],
             'end_date'=>[ 'checker'=>['is_string', ], ],

@@ -30,23 +30,31 @@ class MgtService{
         return ['total_count'=>$count, 'merchants'=>$merchants->toArray()];
     }
     public function get_merchant_info_basic($la_paras) {
-        $page_num = $la_paras['page_num'];
-        $page_size = $la_paras['page_size'];
-        $where = ['account_id'=>$la_paras['account_id']];
+        $where = ['account_id'=>$la_paras['account_id'], 'is_deleted'=>0];
         $results = DB::table('company_info')
-            ->where($where)
-            ->offset(($page_num-1)*$page_size)->limit($page_size)
-            ->first();
+            ->where($where)->first();
+        return (array)$results;
+    }
+    public function set_merchant_basic($la_paras) {
+        $where = ['account_id'=>$la_paras['account_id']];
+        $newObj = $la_paras;
+        unset($newObj['account_id']);
+        $results = DB::table('company_info')
+            ->where($where)->update($newObj); //TODO
         return (array)$results;
     }
     public function get_merchant_info_contract($la_paras) {
-        $page_num = $la_paras['page_num'];
-        $page_size = $la_paras['page_size'];
-        $where = ['account_id'=>$la_paras['account_id']];
+        $where = ['account_id'=>$la_paras['account_id'], 'is_deleted'=>0];
         $results = DB::table('account_contract')
-            ->where($where)
-            ->offset(($page_num-1)*$page_size)->limit($page_size)
-            ->first();
+            ->where($where)->first();
+        return (array)$results;
+    }
+    public function set_merchant_contract($la_paras) {
+        $where = ['account_id'=>$la_paras['account_id']];
+        $newObj = $la_paras;
+        unset($newObj['account_id']);
+        $results = DB::table('account_contract')
+            ->where($where)->update($newObj); //TODO
         return (array)$results;
     }
 
