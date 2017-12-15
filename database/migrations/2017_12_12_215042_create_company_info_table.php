@@ -25,7 +25,7 @@ class CreateCompanyInfoTable extends Migration
             $table->string('province', 16);
             $table->string('postal', 16);
             $table->string('timezone', 16);
-            $table->bigInteger('updated_at');
+            $table->timestamp('updated_at')->useCurrent();
 
             $table->primary('account_id');
         });

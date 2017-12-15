@@ -92,10 +92,13 @@ $app->register(App\Providers\UserAuthService\UserAuthServiceProvider::class);
 //$app->register(App\Providers\GenericService\GenericServiceProvider::class);
 
 
-$app->register(App\Providers\OrderCacheService\OrderCacheServiceProvider::class); //Rtt service depends on this, must be declared before?
+$app->register(App\Providers\OrderCacheService\OrderCacheServiceProvider::class); 
+//Rtt service depends on this, must be declared before?
+
 $app->register(App\Providers\RttService\RttServiceProvider::class);
 $app->register(App\Providers\WxService\WxServiceProvider::class);
 $app->register(App\Providers\AliService\AliServiceProvider::class);
+$app->register(App\Providers\MgtService\MgtServiceProvider::class); 
 
 $app->register(Illuminate\Redis\RedisServiceProvider::class);
 

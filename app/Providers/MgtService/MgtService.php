@@ -15,12 +15,17 @@ class MgtService{
     public function get_merchants($la_paras) {
         $page_num = $la_paras['page_num'];
         $page_size = $la_paras['page_size'];
-        $where = ['role', '=', 666];
+        $where = ['role'=>666];
         $count = DB::table('mcf_user_base')->where($where)->count();
         $merchants = DB::table('mcf_user_base')
             ->where($where)
             ->leftJoin('company_info', 'mcf_user_base.account_id','=','company_info.account_id')
-            ->offset(($page_num-1)*$page_size)->limit($page_size);
+            ->select('merchant_id',
+                    'mcf_user_base.account_id AS account_id', 
+                    'display_name',
+                    'legal_name',
+                    'cell')
+            ->offset(($page_num-1)*$page_size)->limit($page_size)->get();
         return $merchants->toArray();
     }
 

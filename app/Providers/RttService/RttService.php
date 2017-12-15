@@ -205,7 +205,6 @@ class RttService{
     public function txn_to_export(&$txn) {
         if (!is_array($txn)) {
             $txn = (array)$txn;
-            Log::DEBUG(__FUNCTION__.serialize($txn));
         }
         $new_txn = [
             'time'=>$txn['vendor_txn_time'],
