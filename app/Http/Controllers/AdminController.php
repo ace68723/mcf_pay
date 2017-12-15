@@ -25,6 +25,9 @@ class AdminController extends Controller
             'get_merchants'=>[999],
             'get_merchant_info'=>[999],
         ];
+        foreach(['basic','user','device','channel','contract'] as $name) {
+            $this->consts['GET_FUNC_CATEGORY_MAP'][$name] = [$this->sp_mgt, 'get_merchant_info_'.$name];
+        }
 
         $this->consts['REQUEST_PARAS'] = [];
         $this->consts['REQUEST_PARAS']['get_merchants'] = [
@@ -42,13 +45,13 @@ class AdminController extends Controller
         ];
         $this->consts['REQUEST_PARAS']['get_merchant_info'] = [
             'account_id'=>[
-                'checker'=>['is_string', ],
+                'checker'=>['is_int', ],
                 'required'=>true,
             ],
             'category'=>[
                 'checker'=>['is_string', ],
                 'required'=>true,
-                'description'=>'enum(basic,contract,channel,device,user)',
+                'description'=>'enum('.implode(',',array_keys($this->consts['GET_FUNC_CATEGORY_MAP'])).')',
             ],
             'page_num'=>[
                 'checker'=>['is_int', [1,'inf']],
@@ -102,6 +105,30 @@ class AdminController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $ret = $this->sp_mgt->get_merchants($la_paras);
+        return $this->format_success_ret($ret);
+    }
+    public function get_merchant_info(Request $request){
+        $userObj = $request->user('custom_mgt_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $func = $this->consts['GET_FUNC_CATEGORY_MAP'][$la_paras['category']] ?? null;
+        if (empty($func))
+            throw new RttException('INVALID_PARAMETER', 'category');
+        $ret = $func($la_paras);
+        return $this->format_success_ret($ret);
+    }
+    public function set_merchant_basic(Request $request){
+        $userObj = $request->user('custom_mgt_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $ret = $this->sp_mgt->set_merchant_basic($la_paras);
+        return $this->format_success_ret($ret);
+    }
+    public function set_merchant_contract(Request $request){
+        $userObj = $request->user('custom_mgt_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $ret = $this->sp_mgt->set_merchant_contract($la_paras);
         return $this->format_success_ret($ret);
     }
 

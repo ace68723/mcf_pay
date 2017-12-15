@@ -16,6 +16,7 @@ class CreateAccountContractTable extends Migration
         Schema::create('account_contract', function (Blueprint $table) {
             $table->integer('account_id');
             $table->integer('device_amount');
+            $table->string('tip_mode');
             $table->string('contract_price');
             $table->integer('remit_min_in_cent');
             $table->date('start_date');
@@ -25,7 +26,7 @@ class CreateAccountContractTable extends Migration
             $table->string('bank_instit');
             $table->string('bank_transit');
             $table->string('bank_account');
-            $table->bigInteger('updated_at');
+            $table->timestamp('updated_at')->useCurrent();
 
             $table->primary('account_id');
         });
