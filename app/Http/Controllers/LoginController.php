@@ -59,7 +59,11 @@ class LoginController extends Controller
             $la_paras = $this->parse_parameters($request, "login");
             $userObj = $this->sp_login->login($la_paras);
             $token = $this->sp_login->create_token($userObj);
-            $channels = $this->sp_rtt->get_vendor_channel_info($userObj->account_id, true);
+            if (empty($userObj->account_id) && $userObj->role==999) {
+                $channels = [];
+            }else {
+                $channels = $this->sp_rtt->get_vendor_channel_info($userObj->account_id, true);
+            }
         }
         catch (Exception $e) {
             Log::DEBUG($e->getMessage());

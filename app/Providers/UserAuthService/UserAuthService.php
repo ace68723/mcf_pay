@@ -37,7 +37,7 @@ class UserAuthService{
             throw new Exception('LOGIN_FAIL');
         $cmp_str = md5($la_paras['password'].$item->saltstring);
         if (env('APP_DEBUG') && $item->password == 'tobemodified') {
-            $this->set_pwd(item->uid, $cmp_str);
+            $this->set_pwd($item->uid, $cmp_str);
             $item->password = $cmp_str;
         }
         if (!hash_equals($item->password, $cmp_str))
@@ -51,7 +51,7 @@ class UserAuthService{
         return $item;
     }
     private function set_pwd($uid, $pwdHash) {
-        DB::table('mcf_user_base')->where('uid',$uid)->update(['password' => $pwdhash]);
+        DB::table('mcf_user_base')->where('uid',$uid)->update(['password' => $pwdHash]);
     }
     public function create_token($userObj) {
         $info = array(
