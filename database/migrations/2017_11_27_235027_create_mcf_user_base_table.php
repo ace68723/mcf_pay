@@ -18,11 +18,13 @@ class CreateMcfUserBaseTable extends Migration
             $table->string('merchant_id', 45);
             $table->string('username', 45);
             $table->string('password', 256);
-            $table->integer('account_id');
+            $table->integer('account_id')->nullable();
             $table->integer('role');
             $table->integer('is_deleted')->default(0);
             $table->string('saltstring', 64);
-            $table->bigInteger('create_time');
+            $table->timestamp('updated_at')->useCurrent();
+
+            $table->unique(['merchant_id','username']);
         });
     }
 

@@ -11,7 +11,6 @@ class UserAuthService{
 
     public $consts;
     public function __construct() {
-        $this->consts = array();
         $this->consts['token_expire_sec'] = 1800;
     }
 
@@ -37,7 +36,10 @@ class UserAuthService{
         if (empty($item) || empty($item->saltstring))
             throw new Exception('LOGIN_FAIL');
         $cmp_str = md5($la_paras['password'].$item->saltstring);
-        //Log::DEBUG($cmp_str);
+        if (env('APP_DEBUG') && $item->password == 'tobemodified') {
+            $this->set_pwd(item->uid, $cmp_str);
+            $item->password = $cmp_str;
+        }
         if (!hash_equals($item->password, $cmp_str))
             throw new Exception('LOGIN_FAIL');
         try {
@@ -47,6 +49,9 @@ class UserAuthService{
             Log::INFO('Update Login Failed:'.$e->getMessage());
         }
         return $item;
+    }
+    private function set_pwd($uid, $pwdHash) {
+        DB::table('mcf_user_base')->where('uid',$uid)->update(['password' => $pwdhash]);
     }
     public function create_token($userObj) {
         $info = array(

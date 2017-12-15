@@ -37,6 +37,7 @@ return [
     'guards' => [
         'custom_api' => ['driver' => 'custom_api'],
         'custom_token' => ['driver' => 'custom_token'],
+        'custom_mgt_token' => ['driver' => 'custom_mgt_token'],
     ],
 
     /*

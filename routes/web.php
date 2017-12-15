@@ -46,6 +46,20 @@ $router->group(['prefix'=>'api/v1/merchant','middleware'=>'auth:custom_token'], 
     }
     $router->get('/api_doc/', ['uses'=>'MCFController@api_doc_md']);
 });
+
+
+$router->group(['prefix'=>'api/v1/mgt','middleware'=>'auth:custom_mgt_token'], function ($router)
+{
+    $api_names = [
+        'get_merchants',
+    ];
+    foreach($api_names as $api_name) {
+        $router->post('/'.$api_name.'/', ['uses'=>'AdminController@'.$api_name]);
+    }
+    $router->get('/api_doc/', ['uses'=>'AdminController@api_doc_md']);
+});
+
+
 $router->post('/login/', ['middleware'=>'throttle:5,1', 'uses'=>'LoginController@login']); //5 times /1min
 
 
