@@ -21,16 +21,16 @@ class MCFController extends Controller
         $this->sp_rtt = app()->make('rtt_service');
 
         $this->consts['ALLOWED_ROLES'] = [
-            'precreate_authpay'=>[101,666],
-            'create_authpay'=>[101,666],
-            'create_order'=>[101,666],
-            'create_refund'=>[101,666],
-            'check_order_status'=>[101,666],
-            'get_exchange_rate'=>[101,666],
-            'query_txns_by_time'=>[666],
-            'get_hot_txns'=>[101, 666],
-            'get_company_info'=>[666],
-            'get_settlements'=>[666],
+            'precreate_authpay'=>[101,365,666],
+            'create_authpay'=>[101,365,666],
+            'create_order'=>[101,365,666],
+            'create_refund'=>[101,365,666],
+            'check_order_status'=>[101,365,666],
+            'get_exchange_rate'=>[101,365,666],
+            'query_txns_by_time'=>[365,666],
+            'get_hot_txns'=>[101,365, 666],
+            'get_company_info'=>[365,666],
+            'get_settlements'=>[365,666],
         ];
 
         $this->consts['REQUEST_PARAS']['precreate_authpay'] = [

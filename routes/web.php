@@ -55,6 +55,8 @@ $router->group(['prefix'=>'api/v1/mgt','middleware'=>'auth:custom_mgt_token'], f
         'get_merchant_info',
         'set_merchant_basic',
         'set_merchant_contract',
+        'set_merchant_device',
+        'add_merchant_user',
     ];
     foreach($api_names as $api_name) {
         $router->post('/'.$api_name.'/', ['uses'=>'AdminController@'.$api_name]);
