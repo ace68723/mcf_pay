@@ -396,6 +396,19 @@ class AliService{
             throw new RttException('AL_ERROR_VALIDATION', $errmsg);
         return $result;
     }
+    public function set_vendor_channel($account_id, $values) {
+        $values = array_intersect_key($values,
+            array_flip(['sub_mch_id','sub_mch_name','sub_mch_industry','rate','is_deleted']));
+        if (!empty($values))
+            DB::table('vendor_ali')->where('account_id','=',$account_id)->update($values);
+    }
+    public function get_vendor_channel_config($account_id) {
+        $res = DB::table('vendor_ali')->where('account_id','=',$account_id)->first();
+        if (!empty($res)) {
+            return array_intersect_key((array)$res, array_flip(['sub_mch_id','sub_mch_name','sub_mch_industry','rate']));
+        }
+        return [];
+    }
     private function create_request_common() {
         $input = array();
         $input['partner'] = $this->consts['PARTNER_ID'];

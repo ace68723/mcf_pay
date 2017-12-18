@@ -79,6 +79,34 @@ class MgtService{
             ->updateOrInsert(['device_id'=>$values['device_id']], $values);
         return $is_success;
     }
+    public function get_merchant_info_channel($la_paras) {
+        $sp_rtt = app()->make('rtt_service');
+        $account_id = $la_paras['account_id'];
+        $channels = $sp_rtt->get_vendor_channel_info($account_id, true);
+        $results = [];
+        foreach($channels as $channel) {
+            $channel = strtolower($channel);
+            $sp = $sp_rtt->resolve_channel_sp($account_id, $channel);
+            /*
+            $infoObj = DB::table('vendor_'.$channel)->where('account_id','=',$la_paras['account_id'])->first();
+            if (!empty($infoObj)) {
+                $a_info = (array) $infoObj;
+                $a_info = array_intersect_key($a_info, array_flip(['sub_mch_id','sub_mch_industry','sub_mch_name']));
+            }
+             */
+            $results[$channel] = $sp->get_vendor_channel_config($account_id);
+        }
+        return $results;
+    }
+    public function set_merchant_channel($la_paras) {
+        $cols = ['account_id', 'channel', 'sub_mch_id', 'sub_mch_name', 'sub_mch_industry', 'is_deleted', 'rate'];
+        $values = array_intersect_key($la_paras, array_flip($cols));
+        $account_id = $la_paras['account_id'];
+        $channel = strtolower($la_paras['channel']);
+        $sp_rtt = app()->make('rtt_service');
+        $sp_rtt->set_vendor_channel($account_id, $channel, $values);
+        return true;
+    }
     public function get_merchant_info_user($la_paras) {
         $page_num = $la_paras['page_num'];
         $page_size = $la_paras['page_size'];
@@ -101,15 +129,44 @@ class MgtService{
         }
         return $str;
     }
+    private function get_merchant_id($account_id) {
+        $where = ['account_id'=>$account_id,'role'=>666];
+        $rootObj = DB::table('mcf_user_base')->select('merchant_id')->where($where)->first();
+        if (empty($rootObj))
+            throw new RttException('INVALID_PARAMETER', 'cannot find root obj');
+        return $rootObj->merchant_id;
+    }
+    public function set_merchant_user($la_paras) {
+        $cols = ['username', 'account_id', 'role', 'is_deleted'];
+        $values = array_intersect_key($la_paras, array_flip($cols));
+        if (!in_array($values['role'], [101,365]))
+            throw new RttException('INVALID_PARAMETER', 'undefined role');
+        $values['merchant_id'] = $this->get_merchant_id($la_paras['account_id']);
+        $saltstring = bin2hex(random_bytes(32)); 
+        $password = $this->gen_pwd(8);
+        $values['password'] = md5($password.$saltstring);
+        $values['saltstring'] = $saltstring;
+        try{
+            $where = ['account_id'=>$la_paras['account_id'],'username'=>$la_paras['username']];
+            $is_success = DB::table('mcf_user_base')->where($where)->where('role','!=',666)
+                ->update($values);
+        }
+        catch(\Exception $e) {
+            throw new RttException('INVALID_PARAMETER', 'possibly duplicated username.');
+        }
+        if (!$is_success)
+            throw new RttException('SYSTEM_ERROR', 'update failed. possibly user not found');
+        return $password;
+    }
     public function add_merchant_user($la_paras) {
-        $cols = ['username','account_id', 'role'];
+        $cols = ['username', 'account_id', 'role'];
         $values = array_intersect_key($la_paras, array_flip($cols));
         if (!in_array($values['role'], [101,365]))
             throw new RttException('INVALID_PARAMETER', 'undefined role');
         $where = ['account_id'=>$la_paras['account_id'],'role'=>666];
         $rootObj = DB::table('mcf_user_base')->select('merchant_id')->where($where)->first();
         if (empty($rootObj))
-            throw new RttException('INVALID_PARAMETER', 'account_id');
+            throw new RttException('INVALID_PARAMETER', 'cannot find root obj');
         $values['merchant_id'] = $rootObj->merchant_id;
         $saltstring = bin2hex(random_bytes(32)); 
         $password = $this->gen_pwd(8);
@@ -119,9 +176,11 @@ class MgtService{
             DB::table('mcf_user_base')->insert($values);
         }
         catch(\Exception $e) {
-            throw new RttException('INVALID_PARAMETER', 'may be duplicate username.');
+            throw new RttException('INVALID_PARAMETER', 'possibly duplicated username.');
         }
         return $password;
+    }
+    public function create_new_account($la_paras) {
     }
 
 }

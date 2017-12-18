@@ -25,6 +25,7 @@ class CreateMcfUserBaseTable extends Migration
             $table->timestamp('updated_at')->useCurrent();
 
             $table->unique(['merchant_id','username']);
+            $table->unique(['account_id','username']);
         });
     }
 

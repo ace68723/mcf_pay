@@ -15,10 +15,7 @@ class RttService{
         $this->consts = array();
         $this->consts['OUR_NAME'] = "MCF";
         $this->consts['CHANNELS'] = ['WX'=>0x1, 'ALI'=>0x2,];
-        $this->consts['CHANNELS_REV'] = [];
-        foreach($this->consts['CHANNELS'] as $key=>$value) {
-            $this->consts['CHANNELS_REV'][$value] = $key;
-        }
+        $this->consts['CHANNELS_REV'] = array_flip($this->consts['CHANNELS']);
         $this->consts['DEFAULT_PAGESIZE'] = 20;
         $this->sp_oc = app()->make('order_cache_service');
     }
@@ -37,6 +34,29 @@ class RttService{
             return $channels;
         }
         return $res;
+    }
+    public function set_vendor_channel($account_id, $channel, $values) {
+        if (empty($this->consts['CHANNELS'][strtoupper($channel)]))
+            throw new RttException('INVALID_PARAMETER', 'channel not exists');
+        $mask = $this->consts["CHANNELS"][strtoupper($channel)] ?? 0;
+        $sp = app()->make(strtolower($channel).'_service');
+        $sp->set_vendor_channel($account_id, $values);
+        $is_deleted = $values['is_deleted'] ?? false;
+        $res = $this->get_vendor_channel_info($account_id);
+        if ($is_deleted) {
+            if (($res->vendor_channel ?? 0) & $mask) {
+                DB::table('account_vendor')
+                    ->where('account_id','=',$account_id)
+                    ->update(['vendor_channel'=>$res->vendor_channel ^ $mask]);
+            }
+        }
+        else {
+            if (!(($res->vendor_channel ?? 0) & $mask)) {
+                DB::table('account_vendor')
+                    ->where('account_id','=',$account_id)
+                    ->update(['vendor_channel'=>$res->vendor_channel | $mask]);
+            }
+        }
     }
 
     public function resolve_channel_sp($account_id, $channel) {
