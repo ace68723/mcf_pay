@@ -148,7 +148,7 @@ class MgtService{
         $values['saltstring'] = $saltstring;
         try{
             $where = ['account_id'=>$la_paras['account_id'],'username'=>$la_paras['username']];
-            $is_success = DB::table('mcf_user_base')->where($where)->where('role','!=',666)
+            $is_success = DB::table('mcf_user_base')->where($where)->where('role','<>',666)
                 ->update($values);
         }
         catch(\Exception $e) {

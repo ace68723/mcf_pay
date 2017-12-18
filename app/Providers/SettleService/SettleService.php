@@ -13,18 +13,44 @@ class SettleService{
         $this->consts = array();
     }
 
-    public function get_possible_settlements($la_paras) {
+    public function get_candidate_settle($la_paras) {
         $page_num = $la_paras['page_num'];
         $page_size = $la_paras['page_size'];
-        DB::raw(
-            'SELECT * FROM (
-            )'
-        );
+        $rawStr = <<<rawstr
+    SELECT t4.account_id AS account_id, t3.mch_id AS merchant_id, t4.amount_in_cent AS amount_in_cent
+        FROM (SELECT txn_base.account_id AS account_id, sum(txn_fee_in_cent*(1-2*is_refund)) AS amount_in_cent
+        FROM txn_base
+        LEFT JOIN 
+        (SELECT t1.account_id, max(end_time) AS last_time FROM (
+            SELECT distinct(account_id) FROM txn_base
+            ) AS t1
+            LEFT JOIN settlement on settlement.account_id = t1.account_id
+            GROUP BY t1.account_id
+        ) AS t2
+        ON txn_base.account_id = t2.account_id 
+        WHERE last_time IS NULL OR vendor_txn_time>=last_time 
+        GROUP BY txn_base.account_id
+        ) AS t4
+    LEFT JOIN 
+        (SELECT account_id, ANY_VALUE(merchant_id) AS mch_id FROM mcf_user_base GROUP BY account_id
+        ) AS t3
+        ON t4.account_id = t3.account_id
+    LEFT JOIN 
+        (SELECT account_id, remit_min_in_cent FROM account_contract
+        ) AS t5
+        ON t4.account_id = t5.account_id
+    WHERE amount_in_cent >= t5.remit_min_in_cent
+    ORDER BY amount_in_cent DESC
+rawstr;
+        $rawStr .= ' LIMIT '.$page_size;
+        $rawStr .= ' OFFSET '.($page_size*($page_num-1));
+        $result = DB::select(DB::raw($rawStr));
+        return $result;
     }
     public function get_settlements($la_paras, $account_id) {
         $page_num = $la_paras['page_num'];
         $page_size = $la_paras['page_size'];
-        $where = ['account_id'=>$account_id, 'is_deleted'=>0];
+        $where = ['account_id'=>$account_id];
         $count = DB::table('settlement')->where($where)->count();
         $results = DB::table('settlement')
             ->where($where)
