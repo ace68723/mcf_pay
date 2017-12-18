@@ -41,11 +41,13 @@ class LoginController extends Controller
             ],
             'version'=>[
                 'checker'=>['is_string', 10],
-                'required'=>true,
+                'required'=>false,
+                'default_value'=>"",
             ],
             'latlng'=>[
                 'checker'=>['is_string', 32],
-                'required'=>true,
+                'required'=>false,
+                'default_value'=>"0,0",
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
