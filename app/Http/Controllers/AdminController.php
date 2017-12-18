@@ -30,6 +30,7 @@ class AdminController extends Controller
             'set_merchant_user'=>[999],
             'add_merchant_user'=>[999],
             'set_merchant_channel'=>[999],
+            'get_merchant_settlement'=>[999],
         ];
         foreach(['basic','user','device','channel','contract'] as $name) {
             $this->consts['GET_FUNC_CATEGORY_MAP'][$name] = [$this->sp_mgt, 'get_merchant_info_'.$name];
@@ -175,6 +176,12 @@ class AdminController extends Controller
                 'checker'=>['is_int', ],
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+        $this->consts['REQUEST_PARAS']['get_merchant_settlement'] = [
+            'account_id'=>[
+                'checker'=>['is_int', ],
+                'required'=>true,
+            ],
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
         if (!$this->check_api_def())
             throw new RttException('SYSTEM_ERROR', "ERROR SETTING IN API SCHEMA");
@@ -237,6 +244,13 @@ class AdminController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $ret = $this->sp_mgt->add_merchant_user($la_paras);
+        return $this->format_success_ret($ret);
+    }
+    public function get_merchant_settlement(Request $request){
+        $userObj = $request->user('custom_mgt_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $ret = app()->make('settle_service')->settle($la_paras);
         return $this->format_success_ret($ret);
     }
 

@@ -89,6 +89,7 @@ $app->routeMiddleware([
 $app->register(App\Providers\AuthServiceProvider::class);
 
 $app->register(App\Providers\UserAuthService\UserAuthServiceProvider::class);
+$app->register(App\Providers\SettleService\SettleServiceProvider::class);
 //$app->register(App\Providers\GenericService\GenericServiceProvider::class);
 
 

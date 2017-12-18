@@ -367,7 +367,7 @@ class MCFController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
-        $ret = $this->sp_rtt->get_settlements($la_paras, $account_id);
+        $ret = app()->make('settle_service')->get_settlements($la_paras, $account_id);
         return $this->format_success_ret($ret);
     }
 
