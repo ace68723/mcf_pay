@@ -17,8 +17,10 @@ class CreateSettleDetailTable extends Migration
             $table->integer('settle_id');
             $table->integer('vendor_channel');
             $table->integer('amount_in_cent');
-            $table->string('amount_currency',16);
-            $table->integer('txn_nums');
+            $table->integer('comm_in_cent');
+            $table->string('currency',16);
+            $table->integer('txn_num');
+            $table->integer('rate');
 
             $table->unique(['settle_id','vendor_channel']);
         });

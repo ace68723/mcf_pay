@@ -102,7 +102,7 @@ class Controller extends BaseController
     public function api_doc_md($prefix='api/v1/merchant') {
         $output = "";
         foreach($this->consts['REQUEST_PARAS'] as $api_spec_name=>$api_spec) {
-            $output .= "##".$api_spec_name."\n\n";
+            $output .= "\n##".$api_spec_name."\n\n";
             $output .= "|  Tables  |       说明       | 默认值  |\n";
             $output .= "| :------: | :------------: | :--: |\n";
             $output .= "|   URL    | /".$prefix.'/'.$api_spec_name."/ |      |\n";
@@ -125,6 +125,7 @@ Body参数:
 
 doc;
             $table_header = <<<headerStr
+
 | Tables             | 类型及其范围      | 必填   | 说明                            | 默认值/样例           |
 | ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
 

@@ -20,12 +20,13 @@ class CreateSettlementTable extends Migration
             $table->bigInteger('end_time');
             $table->bigInteger('settle_time');
             $table->integer('amount_in_cent');
-            $table->string('amount_currency', 16);
-            $table->integer('txn_nums');
+            $table->integer('comm_in_cent');
+            $table->string('currency', 16);
+            $table->integer('txn_num');
             $table->integer('is_remitted');
             $table->bigInteger('remitted_at');
             $table->string('remitted_by', 16);
-            $table->string('notes');
+            $table->string('notes')->nullable();
             $table->bigInteger('updated_at');
 
         });

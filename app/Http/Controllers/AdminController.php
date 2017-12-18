@@ -31,6 +31,8 @@ class AdminController extends Controller
             'add_merchant_user'=>[999],
             'set_merchant_channel'=>[999],
             'get_merchant_settlement'=>[999],
+            'get_candidate_settle'=>[999],
+            'add_settle'=>[999],
         ];
         foreach(['basic','user','device','channel','contract'] as $name) {
             $this->consts['GET_FUNC_CATEGORY_MAP'][$name] = [$this->sp_mgt, 'get_merchant_info_'.$name];
@@ -181,6 +183,42 @@ class AdminController extends Controller
                 'checker'=>['is_int', ],
                 'required'=>true,
             ],
+            'page_num'=>[
+                'checker'=>['is_int', [1,'inf']],
+                'required'=>false,
+                'default_value'=>1,
+                'description'=> 'starts from 1',
+            ],
+            'page_size'=>[
+                'checker'=>['is_int', [1,50]],
+                'required'=>false,
+                'default_value'=>$this->consts['DEFAULT_PAGESIZE'],
+            ],
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+        $this->consts['REQUEST_PARAS']['get_candidate_settle'] = [
+            'page_num'=>[
+                'checker'=>['is_int', [1,'inf']],
+                'required'=>false,
+                'default_value'=>1,
+                'description'=> 'starts from 1',
+            ],
+            'page_size'=>[
+                'checker'=>['is_int', [1,50]],
+                'required'=>false,
+                'default_value'=>$this->consts['DEFAULT_PAGESIZE'],
+            ],
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+        $this->consts['REQUEST_PARAS']['add_settle'] = [
+            'account_id'=>[
+                'checker'=>['is_int', ],
+                'required'=>true,
+            ],
+            'start_time'=>[
+                'checker'=>['is_int', ],
+            ],
+            'end_time'=>[
+                'checker'=>['is_int', ],
+            ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
         if (!$this->check_api_def())
@@ -247,6 +285,20 @@ class AdminController extends Controller
         return $this->format_success_ret($ret);
     }
     public function get_merchant_settlement(Request $request){
+        $userObj = $request->user('custom_mgt_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $ret = app()->make('settle_service')->get_settlements($la_paras, $la_paras['account_id']);
+        return $this->format_success_ret($ret);
+    }
+    public function get_candidate_settle(Request $request){
+        $userObj = $request->user('custom_mgt_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $ret = app()->make('settle_service')->get_candidate_settle($la_paras);
+        return $this->format_success_ret($ret);
+    }
+    public function add_settle(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
