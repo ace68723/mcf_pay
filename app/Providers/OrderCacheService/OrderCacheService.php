@@ -46,6 +46,7 @@ trait ByRedisFacade{
     }
 
     public function cb_order_update($order_id, $status, $newResp=null) {
+        Log::DEBUG(__FUNCTION__.': order:'.$order_id. " status changed to :".$status);
         if (!$this->is_defined_status($status)) {
             Log::info(__FUNCTION__.': undefined status:'.$status);
             return ;

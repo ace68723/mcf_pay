@@ -349,7 +349,6 @@ class Notify extends \WxPayNotify
     public $sp;
     public function __construct($sp) {
         $this->sp = $sp;
-        parent::__construct();
     }
 	public function Queryorder($transaction_id, $sub_mch_id, &$result)
     {

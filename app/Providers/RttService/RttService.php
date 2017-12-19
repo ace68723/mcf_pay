@@ -283,13 +283,13 @@ class RttService{
     }
 
     public function notify($sp, $out_trade_no, $vendor_txn) {
-        $key = $out_trade_no;
+        Log::DEBUG(__FUNCTION__. ":".$out_trade_no);
         $status = $this->sp_oc->query_order_cache_field($out_trade_no, 'status');
         if (empty($status) || !in_array($status,['INIT','WAIT'])) return;
         $account_id = $this->sp_oc->query_order_cache_field($out_trade_no, 'account_id');
         if (is_null($account_id)) return;
         $cached_input = $this->sp_oc->query_order_cache_field($out_trade_no, 'input');
-        $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id, 'FROM_NOTIFY', $input, $cached_input);
+        $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id, 'FROM_NOTIFY', $cached_input);
         $this->sp_oc->cb_order_update($out_trade_no, 'SUCCESS', $txn);
     }
 
