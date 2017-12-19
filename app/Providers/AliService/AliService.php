@@ -409,7 +409,7 @@ class AliService{
     public function handle_notify($request) {
         $input = $request->all();
 		Log::DEBUG("call back:ali:" . json_encode($input, JSON_UNESCAPED_UNICODE));
-        return 'SUCCESS';
+        return 'success';
     }
     private function create_request_common() {
         $input = array();
