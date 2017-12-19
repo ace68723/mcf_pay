@@ -32,7 +32,7 @@ trait ByRedisFacade{
         }
         $status = 'INIT';
         $item = [
-            //'account_id'=>$account_id,
+            'account_id'=>$account_id,
             //'channel_name'=>$channel_name,
             'input'=>$input,
             //'req'=>$req, //seems not used. remove this for efficiency
@@ -40,7 +40,7 @@ trait ByRedisFacade{
             'status'=>$status,
         ];
         //Redis::setex($key, $this->consts['ORDER_CACHE_MINS'][$status]*60, serialize($item));
-        Redis::HMSET($key, 'input', serialize($item['input']), 'resp', serialize($item['resp']), 'status', $status);
+        Redis::HMSET($key, 'account_id', serialize($account_id), 'input', serialize($item['input']), 'resp', serialize($item['resp']), 'status', $status);
         Redis::EXPIRE($key, $this->consts['ORDER_CACHE_MINS'][$status]*60); //no need to use transactions here
         return true;
     }

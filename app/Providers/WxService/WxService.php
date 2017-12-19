@@ -32,9 +32,9 @@ class WxService
         $this->consts['CHANNEL_NAME'] = 'wx'; 
         $this->consts['CHANNEL_FLAG'] = app()->make('rtt_service')
             ->consts['CHANNELS'][strtoupper($this->consts['CHANNEL_NAME'])];
-        //$this->consts['DEFAULT_CURRENCY'] = "CAD";
         //$this->consts['NOTIFY_URL'] = "http://paysdk.weixin.qq.com/example/notify.php";
-        $this->consts['NOTIFY_URL'] = "http://www.rttpay.com/index.php/api/v1/test";
+        //$this->consts['NOTIFY_URL'] = "http://www.rttpay.com/index.php/api/v1/test";
+        $this->consts['NOTIFY_URL'] = "https://mcfpayapi.ca/notify/wx";
         $this->consts['DEFAULT_EXPIRE_SEC'] = 3600;
         $this->consts['SCENARIO_MAP'] = [
             'NATIVE'=>'NATIVE',
@@ -80,6 +80,7 @@ class WxService
             ['device_id', 'device_id'],
             ['user_id', '_uid'],
         ];
+        $this->consts['TO_RTT_TXN']['FROM_NOTIFY'] = $this->consts['TO_RTT_TXN']['DEFAULT'];
         $this->consts['TO_RTT_TXN']['FROM_REFUND'] = [
             ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
             ['ref_id', 'out_refund_no'], 
@@ -338,14 +339,19 @@ class WxService
     }
 
     public function handle_notify($needSignOutput) {
-        $notifyObj = new Notify();
+        $notifyObj = new Notify($this);
         $notifyObj->Handle($needSignOutput);
     }
 }
 
 class Notify extends \WxPayNotify
 {
-	public function Queryorder($transaction_id, $sub_mch_id)
+    public $sp;
+    public function __construct($sp) {
+        $this->sp = $sp;
+        parent::__construct();
+    }
+	public function Queryorder($transaction_id, $sub_mch_id, &$result)
     {
 		$input = new \WxPayOrderQuery();
 		$input->SetTransaction_id($transaction_id);
@@ -372,10 +378,16 @@ class Notify extends \WxPayNotify
 			return false;
 		}
 		//查询订单，判断订单真实性
-		if(!$this->Queryorder($data["transaction_id"], $data["sub_mch_id"])){
+		if(!$this->Queryorder($data["transaction_id"], $data["sub_mch_id"], $result)){
 			$msg = "订单查询失败";
 			return false;
 		}
-		return true;
+        try {
+            app()->make('rtt_service')->notify($this->sp,$data['out_trade_no'],$result);
+        }
+        catch(\Exception $e) {
+            Log::DEBUG(__FUNCTION__.":parent process throws exception:".$e->getMessage());
+        }
+        return true;
 	}
 }

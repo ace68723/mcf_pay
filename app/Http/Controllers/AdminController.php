@@ -171,9 +171,11 @@ class AdminController extends Controller
             ],
             'sub_mch_industry'=>[
                 'checker'=>['is_int', ],
+                'description'=>'4 digits code. Food(5812),Shopping(5311),Hotel(7011),Taxi(4121). For the full list, please refer to https://global.alipay.com/help/online/81',
             ],
             'rate'=>[
                 'checker'=>['is_int', ],
+                'description'=>'in 1/10000',
             ],
             'is_deleted'=>[
                 'checker'=>['is_int', ],
