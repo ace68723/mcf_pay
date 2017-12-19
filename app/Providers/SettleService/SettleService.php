@@ -56,7 +56,13 @@ rawstr;
             ->where($where)
             ->offset(($page_num-1)*$page_size)->limit($page_size)
             ->get();
-        return $results->toArray();
+        return ['total_count'=>$count, 'recs'=>$results->toArray()];
+    }
+    public function set_settlements($la_paras) {
+        $settle_id = $la_paras['settle_id'];
+        $cols = ['is_remitted', 'note'];
+        $values = array_intersect_key($la_paras, array_flip($cols));
+        DB::table('settlement')->where('settle_id','=',$settle_id)->update($values);
     }
     public function settle($la_paras) {
         $account_id = $la_paras['account_id'];
@@ -110,7 +116,10 @@ rawstr;
                     'rate'=>$rate,
                 ];
             }
+            if ($settle['txn_num'] == 0)
+                throw new RttException('SYSTEM_ERROR', 'no transaction to settle');
             $settle_id = DB::table('settlement')->insertGetId($settle);
+            $settle['settle_id'] = $settle_id;
             foreach($details as $detail) {
                 $detail['settle_id']=$settle_id;
                 DB::table('settle_detail')->insert($detail);

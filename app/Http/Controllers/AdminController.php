@@ -33,6 +33,7 @@ class AdminController extends Controller
             'get_merchant_settlement'=>[999],
             'get_candidate_settle'=>[999],
             'add_settle'=>[999],
+            'set_settlement'=>[999],
         ];
         foreach(['basic','user','device','channel','contract'] as $name) {
             $this->consts['GET_FUNC_CATEGORY_MAP'][$name] = [$this->sp_mgt, 'get_merchant_info_'.$name];
@@ -213,10 +214,24 @@ class AdminController extends Controller
                 'checker'=>['is_int', ],
                 'required'=>true,
             ],
+            /*
             'start_time'=>[
                 'checker'=>['is_int', ],
             ],
+             */
             'end_time'=>[
+                'checker'=>['is_int', ],
+            ],
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+        $this->consts['REQUEST_PARAS']['set_settlement'] = [
+            'settle_id'=>[
+                'checker'=>['is_int', ],
+                'required'=>true,
+            ],
+            'note'=>[
+                'checker'=>['is_string', ],
+            ],
+            'is_remitted'=>[
                 'checker'=>['is_int', ],
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
@@ -303,6 +318,13 @@ class AdminController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $ret = app()->make('settle_service')->settle($la_paras);
+        return $this->format_success_ret($ret);
+    }
+    public function set_settlement(Request $request){
+        $userObj = $request->user('custom_mgt_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $ret = app()->make('settle_service')->set_settlement($la_paras);
         return $this->format_success_ret($ret);
     }
 
