@@ -228,6 +228,7 @@ class RttService{
         }
         $new_txn = [
             'time'=>$txn['vendor_txn_time'],
+            'ref_id'=>$txn['ref_id'],
             'is_refund'=>$txn['is_refund'],
             'amount_in_cent'=>$txn['txn_fee_in_cent'],
             'amount_currency'=>$txn['txn_fee_currency'],

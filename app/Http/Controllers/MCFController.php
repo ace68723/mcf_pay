@@ -384,6 +384,7 @@ class MCFController extends Controller
             'cell'=>$ret->cell,
             'address'=>$ret->address,
             'display_name'=>$ret->display_name,
+            'timezone'=>$ret->timezone,
         ]);
     }
 
