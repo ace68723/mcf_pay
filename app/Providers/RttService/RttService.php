@@ -3,7 +3,7 @@ namespace App\Providers\RttService;
 
 use Log;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Http\Request;
 use App\Exceptions\RttException;
 
@@ -246,6 +246,30 @@ class RttService{
 
     public function is_defined_status($status) {
         return $this->sp_oc->is_defined_status($status);
+    }
+
+    public function check_device_id($account_id, $device_id) {
+        if (empty($device_id))
+            throw new RttException('INVALID_PARAMETER', 'device_id');
+        if ($device_id == 'FROM_WEB') return true;
+        $key = 'deviceSet:'.$account_id;
+        if (!Redis::EXISTS($key)) {
+            $this->update_device($account_id);
+        }
+        if (!Redis::SISMEMBER($key, $device_id))
+            throw new RttException('INVALID_PARAMETER', 'device_id');
+        return true;
+    }
+    public function update_device($account_id) {
+        Log::DEBUG(__FUNCTION__.":".$account_id);
+        $key = 'deviceSet:'.$account_id;
+        if (Redis::EXISTS($key)) Redis::DEL($key);
+        $devices = DB::table('device')->select('device_id')
+            ->where('account_id','=',$account_id)
+            ->where('is_deleted','=',0)
+            ->get()->toArray();
+        if (!empty($devices))
+            Redis::SADD($key, ...(array_map(function($x){return $x->device_id;},$devices)));
     }
 
     public function download_bills($start_date, $end_date) {

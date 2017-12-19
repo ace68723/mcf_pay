@@ -284,6 +284,7 @@ class MCFController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $this->sp_rtt->check_device_id($account_id, $la_paras['device_id']);
         $la_paras['scenario'] = 'AUTHPAY';
         $la_paras['_uid'] = $userObj->uid;
         $la_paras['_username'] = $userObj->username;
@@ -296,6 +297,7 @@ class MCFController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $this->sp_rtt->check_device_id($account_id, $la_paras['device_id']);
         $la_paras['scenario'] = 'AUTHPAY'; 
         $la_paras['_uid'] = $userObj->uid;
         $la_paras['_username'] = $userObj->username;
@@ -311,6 +313,7 @@ class MCFController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $this->sp_rtt->check_device_id($account_id, $la_paras['device_id']);
         $la_paras['scenario'] = 'NATIVE';
         $la_paras['_uid'] = $userObj->uid;
         $la_paras['_username'] = $userObj->username;
@@ -326,6 +329,7 @@ class MCFController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $this->sp_rtt->check_device_id($account_id, $la_paras['device_id']);
         $la_paras['_uid'] = $userObj->uid;
         $la_paras['_username'] = $userObj->username;
         $ret = $this->sp_rtt->create_refund($la_paras, $account_id);

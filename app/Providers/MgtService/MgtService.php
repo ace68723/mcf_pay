@@ -75,8 +75,17 @@ class MgtService{
         $where = ['account_id'=>$la_paras['account_id']];
         $cols = ['account_id','device_id','is_deleted'];
         $values = array_intersect_key($la_paras, array_flip($cols));
+        $old_item = DB::table('device')->select('account_id')->where('device_id',$values['device_id'])->first();
+        $old_account = $old_item->account_id ?? null;
         $is_success = DB::table('device')
             ->updateOrInsert(['device_id'=>$values['device_id']], $values);
+        if ($is_success) {
+            $sp = app()->make('rtt_service');
+            $account_id = $values['account_id'];
+            $sp->update_device($account_id);
+            if (!empty($old_account) && $old_account != $account_id)
+                $sp->update_device($old_account);
+        }
         return $is_success;
     }
     public function get_merchant_info_channel($la_paras) {
