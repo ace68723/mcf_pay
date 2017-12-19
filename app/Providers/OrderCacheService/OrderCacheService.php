@@ -96,24 +96,42 @@ trait ByRedisFacade{
         return ($field == 'status')? $ret : unserialize($ret);
     }
 
-    public function get_hot_txns($account_id, $offset, $limit) {
+    public function get_hot_txns($account_id, $page_num, $page_size) {
+        $offset = ($page_num-1)*$page_size;
         $idx_id = "index:".$account_id;
         if (!Redis::EXISTS($idx_id))
-            return ['total_count'=>0, 'txns'=>[]];
-        $txns = Redis::ZREVRANGE($idx_id, $offset, $offset+$limit-1);
+            return ['total_page'=>0,
+            'total_count'=>0,
+            'page_num'=>1,
+            'page_size'=>$page_size,
+            'recs'=>[]];
+        $txns = Redis::ZREVRANGE($idx_id, $offset, $offset+$page_size-1);
         array_walk($txns, function(&$x) {$x = unserialize($x);});
         $count = Redis::ZCARD($idx_id);
-        return ['total_count'=>$count, 'txns'=>$txns];
+        return ['total_page'=>ceil($count/$page_size),
+            'total_count'=>$count,
+            'page_num'=>$page_num,
+            'page_size'=>$page_size,
+            'recs'=>$txns];
     }
-    public function query_txns_by_time($account_id, $start_time, $end_time, $offset, $limit) {
+    public function query_txns_by_time($account_id, $start_time, $end_time, $page_num, $page_size) {
+        $offset = ($page_num-1)*$page_size;
         $idx_id = "index:".$account_id;
         if (!Redis::EXSITS($idx_id))
-            return ['total_count'=>0, 'txns'=>[]];
+            return ['total_page'=>0,
+            'total_count'=>0,
+            'page_num'=>1,
+            'page_size'=>$page_size,
+            'recs'=>[]];
         $end_time = '('.$end_time;
-        $txns = Redis::ZREVRANGEBYSCORE($idx_id, $end_time, $start_time, 'LIMIT '.$offset . ' '. $limit);
+        $txns = Redis::ZREVRANGEBYSCORE($idx_id, $end_time, $start_time, 'LIMIT '.$offset . ' '. $page_size);
         array_walk($txns, function(&$x) {$x = unserialize($x);});
         $count = Redis::ZREVRANGEBYSCORE($idx_id, $start_time, $end_time);
-        return ['total_count'=>$count, 'txns'=>$txns];
+        return ['total_page'=>ceil($count/$page_size),
+            'total_count'=>$count,
+            'page_num'=>$page_num,
+            'page_size'=>$page_size,
+            'recs'=>$txns];
     }
 
     public function is_defined_status($status) {

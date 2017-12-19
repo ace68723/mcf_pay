@@ -181,10 +181,9 @@ class RttService{
     }
 
     public function get_hot_txns($la_paras, $account_id) {
-        $page_num = $la_paras['page_num'] ?? 0;
+        $page_num = $la_paras['page_num'] ?? 1;
         $page_size = $la_paras['page_size'];
-        $offset = ($page_num-1)*$page_size;
-        return $this->sp_oc->get_hot_txns($account_id, $offset, $page_size);
+        return $this->sp_oc->get_hot_txns($account_id, $page_num, $page_size);
     }
     public function get_settlements($la_paras, $account_id){
         $where_cond = [
@@ -192,6 +191,7 @@ class RttService{
         ];
         $count = DB::table('settlement')->where($where_cond)->count();
         $page_size =$la_paras['page_size']??$this->consts['DEFAULT_PAGESIZE']; 
+        $page_num = $la_paras['page_num']??1;
         $offset = ($la_paras['page_num']-1)*$page_size;
         $result = DB::table('settlement')
             ->where($where_cond)
@@ -199,7 +199,11 @@ class RttService{
             ->offset($offset)
             ->limit($page_size)
             ->get();
-        return ['total_count'=>$count, 'settlements'=>$result->toArray()];
+        return ['total_page'=>ceil($count/$page_size),
+            'total_count'=>$count,
+            'page_num'=>$page_num,
+            'page_size'=>$page_size,
+            'recs'=>$result->toArray()];
     }
     public function query_txns_by_time($la_paras, $account_id){
         $where_cond = [
@@ -211,7 +215,8 @@ class RttService{
             $where_cond[] = ['vendor_txn_time', '<', $la_paras['end_time']];
         $count = DB::table('txn_base')->where($where_cond)->count();
         $page_size =$la_paras['page_size']??$this->consts['DEFAULT_PAGESIZE']; 
-        $offset = ($la_paras['page_num']-1)*$page_size;
+        $page_num = $la_paras['page_num']??1;
+        $offset = ($page_num-1)*$page_size;
         $result = DB::table('txn_base')
             ->leftJoin('mcf_user_base', 'txn_base.user_id','=','mcf_user_base.uid')
             ->where($where_cond)
@@ -219,7 +224,11 @@ class RttService{
             ->offset($offset)
             ->limit($page_size)
             ->get();
-        return ['total_count'=>$count, 'txns'=>$result->toArray()];
+        return ['total_page'=>ceil($count/$page_size),
+            'total_count'=>$count,
+            'page_num'=>$page_num,
+            'page_size'=>$page_size,
+            'recs'=>$result->toArray()];
     }
 
     public function txn_to_export(&$txn) {

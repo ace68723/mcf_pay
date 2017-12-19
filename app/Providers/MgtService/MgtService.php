@@ -28,7 +28,11 @@ class MgtService{
                     'legal_name', 'cell'])
             ->offset(($page_num-1)*$page_size)->limit($page_size)
             ->get();
-        return ['total_count'=>$count, 'recs'=>$merchants->toArray()];
+        return ['total_page'=>ceil($count/$page_size),
+            'total_count'=>$count,
+            'page_num'=>$page_num,
+            'page_size'=>$page_size,
+            'recs'=>$merchants->toArray()];
     }
     public function get_merchant_info_basic($la_paras) {
         $where = ['account_id'=>$la_paras['account_id'], 'is_deleted'=>0];
@@ -69,7 +73,11 @@ class MgtService{
             ->where($where)
             ->offset(($page_num-1)*$page_size)->limit($page_size)
             ->get();
-        return ['total_count'=>$count, 'recs'=>$results->toArray()];
+        return ['total_page'=>ceil($count/$page_size),
+            'total_count'=>$count,
+            'page_num'=>$page_num,
+            'page_size'=>$page_size,
+            'recs'=>$results->toArray()];
     }
     public function set_merchant_device($la_paras) {
         $where = ['account_id'=>$la_paras['account_id']];
@@ -127,7 +135,11 @@ class MgtService{
             ->where($where)
             ->offset(($page_num-1)*$page_size)->limit($page_size)
             ->get();
-        return ['total_count'=>$count, 'recs'=>$results->toArray()];
+        return ['total_page'=>ceil($count/$page_size),
+            'total_count'=>$count,
+            'page_num'=>$page_num,
+            'page_size'=>$page_size,
+            'recs'=>$results->toArray()];
     }
     private function gen_pwd($len, $keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
     {

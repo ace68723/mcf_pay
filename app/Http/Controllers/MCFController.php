@@ -251,9 +251,9 @@ class MCFController extends Controller
 
         // ------------------------------------------------------
         $this->consts['RETURN_PARAS']['query_txns_by_time'] = [
-            'total_count'=>[
+            'total_page'=>[
                 'type'=>'int',
-                'description'=> '满足查询条件的记录总数',
+                'description'=> '满足查询条件的记录页数',
             ],
             'txns'=>[
                 'type'=>'array',
@@ -352,7 +352,7 @@ class MCFController extends Controller
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $ret = $this->sp_rtt->get_hot_txns($la_paras, $account_id);
-        array_walk($ret['txns'], [$this->sp_rtt, 'txn_to_export']);
+        array_walk($ret['recs'], [$this->sp_rtt, 'txn_to_export']);
         return $this->format_success_ret($ret);
     }
 
@@ -362,7 +362,7 @@ class MCFController extends Controller
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $ret = $this->sp_rtt->query_txns_by_time($la_paras, $account_id);
-        array_walk($ret['txns'], [$this->sp_rtt, 'txn_to_export']);
+        array_walk($ret['recs'], [$this->sp_rtt, 'txn_to_export']);
         return $this->format_success_ret($ret);
     }
 

@@ -56,7 +56,11 @@ rawstr;
             ->where($where)
             ->offset(($page_num-1)*$page_size)->limit($page_size)
             ->get();
-        return ['total_count'=>$count, 'recs'=>$results->toArray()];
+        return ['total_page'=>ceil($count/$page_size),
+            'total_count'=>$count,
+            'page_num'=>$page_num,
+            'page_size'=>$page_size,
+            'recs'=>$results->toArray()];
     }
     public function set_settlements($la_paras) {
         $settle_id = $la_paras['settle_id'];

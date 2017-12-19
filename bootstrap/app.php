@@ -99,6 +99,7 @@ $app->register(App\Providers\OrderCacheService\OrderCacheServiceProvider::class)
 $app->register(App\Providers\RttService\RttServiceProvider::class);
 $app->register(App\Providers\WxService\WxServiceProvider::class);
 $app->register(App\Providers\AliService\AliServiceProvider::class);
+$app->register(App\Providers\TestService\TestServiceProvider::class);
 $app->register(App\Providers\MgtService\MgtServiceProvider::class);
 
 $app->register(Illuminate\Redis\RedisServiceProvider::class);
