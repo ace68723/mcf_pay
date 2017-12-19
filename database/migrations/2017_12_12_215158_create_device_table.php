@@ -16,7 +16,7 @@ class CreateDeviceTable extends Migration
         Schema::create('device', function (Blueprint $table) {
             $table->string('device_id');
             $table->integer('account_id');
-            $table->integer('is_deleted');
+            $table->integer('is_deleted')->default(0);
             $table->bigInteger('updated_at');
 
             $table->primary('device_id');

@@ -25,6 +25,7 @@ class CreateCompanyInfoTable extends Migration
             $table->string('province', 16);
             $table->string('postal', 16);
             $table->string('timezone', 16);
+            $table->integer('is_deleted')->default(0);
             $table->timestamp('updated_at')->useCurrent();
 
             $table->primary('account_id');
