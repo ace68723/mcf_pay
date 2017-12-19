@@ -54,7 +54,7 @@ class AliService{
         $this->consts['PARTNER_ID'] = env('CHANNEL_ALI_PARTNER_ID');
         $this->consts['KEY'] = env('CHANNEL_ALI_KEY');
         //$this->consts['DEFAULT_CURRENCY'] = "CAD";
-        $this->consts['NOTIFY_URL'] = "http://www.rttpay.com/index.php/api/v1/test";
+        $this->consts['NOTIFY_URL'] = "https://mcfpayapi.ca/notify/ali";
         $this->consts['DEFAULT_EXPIRE_SEC'] = 1200; //"<integer>[m|h|d]";
         $this->consts['SCENARIO_MAP'] = array( //rtt to vendor scenario
             'NATIVE'=>"OVERSEAS_MBARCODE_PAY",
@@ -333,9 +333,6 @@ class AliService{
         return parse_xml_check_err_throw($result, $this->consts['KEY']);
     }
 
-    public function handle_notify($needSignOutput) {
-    }
-
     public function vendor_txn_to_rtt_txn($vendor_txn, $account_id, $sc_selector='DEFAULT', $moreInfo=null) {
         $is_refund = $sc_selector == 'FROM_REFUND';
         $ret = [
@@ -408,6 +405,11 @@ class AliService{
             return array_intersect_key((array)$res, array_flip(['sub_mch_id','sub_mch_name','sub_mch_industry','rate']));
         }
         return [];
+    }
+    public function handle_notify($request) {
+        $input = $request->all();
+		Log::DEBUG("call back:ali:" . json_encode($input, JSON_UNESCAPED_UNICODE));
+        return 'SUCCESS';
     }
     private function create_request_common() {
         $input = array();

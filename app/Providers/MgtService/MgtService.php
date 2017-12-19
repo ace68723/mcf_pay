@@ -19,7 +19,7 @@ class MgtService{
     public function get_merchants($la_paras) {
         $page_num = $la_paras['page_num'];
         $page_size = $la_paras['page_size'];
-        $where = ['role'=>666, 'is_deleted'=>0];
+        $where = ['role'=>666, 'mcf_user_base.is_deleted'=>0];
         $count = DB::table('mcf_user_base')->where($where)->count();
         $merchants = DB::table('mcf_user_base')
             ->where($where)

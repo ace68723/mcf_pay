@@ -75,5 +75,5 @@ $router->post('/login/', ['middleware'=>'throttle:5,1', 'uses'=>'LoginController
 
 
 $router->post('/notify/wx/', ['uses'=>'PubAPIController@handle_notify_wx']);
-$router->post('/notify/ali/', ['uses'=>'PubAPIController@handle_notify_ali']);
+$router->get('/notify/ali', ['uses'=>'PubAPIController@handle_notify_ali']);
 

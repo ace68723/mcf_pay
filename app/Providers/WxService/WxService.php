@@ -338,7 +338,7 @@ class WxService
         return [];
     }
 
-    public function handle_notify($needSignOutput) {
+    public function handle_notify($request, $needSignOutput) {
         $notifyObj = new Notify($this);
         $notifyObj->Handle($needSignOutput);
     }
@@ -356,7 +356,6 @@ class Notify extends \WxPayNotify
 		$input->SetTransaction_id($transaction_id);
         $input->SetSub_mch_id($sub_mch_id);
 		$result = \WxPayApi::orderQuery($input);
-		Log::DEBUG("query:" . json_encode($result, JSON_UNESCAPED_UNICODE));
 		if(array_key_exists("return_code", $result)
 			&& array_key_exists("result_code", $result)
 			&& $result["return_code"] == "SUCCESS"
