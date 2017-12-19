@@ -137,6 +137,7 @@ class AliService{
             ['device_id', 'device_id'],
             ['user_id','_uid'],
         ];
+        $this->consts['TO_RTT_TXN']['TO_REFUND'] = $this->consts['TO_RTT_TXN']['DEFAULT'];
     }
 
     private function get_account_info($account_id, $b_emptyAsException = true){
