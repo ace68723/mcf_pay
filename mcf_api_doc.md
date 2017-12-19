@@ -1,5 +1,5 @@
 
-##precreate_authpay
+## precreate_authpay
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -29,7 +29,7 @@ Body参数:
 | description | string(32) | 否 | 商品标题，将显示在顾客端 |  Supported by MCF |
 
 
-##create_authpay
+## create_authpay
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -60,7 +60,7 @@ Body参数:
 | auth_code | string(128) | 是 | 顾客授权码 | ---------------- |
 
 
-##create_order
+## create_order
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -90,7 +90,7 @@ Body参数:
 | description | string(32) | 否 | 商品标题，将显示在顾客端 |  Supported by MCF |
 
 
-##check_order_status
+## check_order_status
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -118,7 +118,7 @@ Body参数:
 | out_trade_no | string(64) | 是 | MCF开头的交易单号 | ---------------- |
 
 
-##get_hot_txns
+## get_hot_txns
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -145,7 +145,7 @@ Body参数:
 | page_size | int(1,50) | 否 | page size | 20 |
 
 
-##get_settlements
+## get_settlements
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -172,7 +172,7 @@ Body参数:
 | page_size | int(1,50) | 否 | page size | 20 |
 
 
-##query_txns_by_time
+## query_txns_by_time
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -201,7 +201,7 @@ Body参数:
 | page_size | int(1,50) | 否 | page size | 20 |
 
 
-##create_refund
+## create_refund
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -234,7 +234,7 @@ Body参数:
 | out_trade_no | string(64) | 是 | MCF开头的交易单号 | ---------------- |
 
 
-##get_exchange_rate
+## get_exchange_rate
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -261,7 +261,7 @@ Body参数:
 | currency_type | string(16) | 是 | ---------------- | ---------------- |
 
 
-##get_company_info
+## get_company_info
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |

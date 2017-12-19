@@ -1,5 +1,5 @@
 
-##get_merchants
+## get_merchants
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -26,7 +26,7 @@ Body参数:
 | page_num | int(1,inf) | 否 | starts from 1 | 1 | 
 
 
-##get_merchant_info
+## get_merchant_info
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -55,7 +55,7 @@ Body参数:
 | page_size | int(1,50) | 否 | ---------------- | 20 | 
 
 
-##set_merchant_basic
+## set_merchant_basic
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -91,7 +91,7 @@ Body参数:
 | timezone | string | 否 | ---------------- | ---------------- | 
 
 
-##set_merchant_contract
+## set_merchant_contract
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -127,7 +127,7 @@ Body参数:
 | is_deleted | int | 否 | ---------------- | ---------------- | 
 
 
-##set_merchant_device
+## set_merchant_device
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -155,7 +155,7 @@ Body参数:
 | is_deleted | int | 否 | ---------------- | ---------------- | 
 
 
-##set_merchant_user
+## set_merchant_user
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -184,7 +184,7 @@ Body参数:
 | is_deleted | int | 否 | ---------------- | ---------------- | 
 
 
-##add_merchant_user
+## add_merchant_user
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -212,7 +212,7 @@ Body参数:
 | role | int(101,365) | 是 | ---------------- | ---------------- | 
 
 
-##set_merchant_channel
+## set_merchant_channel
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -244,7 +244,7 @@ Body参数:
 | is_deleted | int | 否 | ---------------- | ---------------- | 
 
 
-##get_merchant_settlement
+## get_merchant_settlement
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -272,7 +272,7 @@ Body参数:
 | page_size | int(1,50) | 否 | ---------------- | 20 | 
 
 
-##get_candidate_settle
+## get_candidate_settle
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -299,7 +299,7 @@ Body参数:
 | page_size | int(1,50) | 否 | ---------------- | 20 | 
 
 
-##add_settle
+## add_settle
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
@@ -326,7 +326,7 @@ Body参数:
 | end_time | int | 否 | ---------------- | ---------------- | 
 
 
-##set_settlement
+## set_settlement
 
 |  Tables  |       说明       | 默认值  |
 | :------: | :------------: | :--: |
