@@ -300,7 +300,6 @@ class AliService{
     }
 
     public function query_charge_single($la_paras, $account_id){
-        //$vendor_ali_info = $this->get_account_info($account_id);
         $input = $this->create_request_common();
         $input['service'] = "alipay.acquire.overseas.query";
         $input['partner_trans_id'] = $la_paras['out_trade_no'];
@@ -409,7 +408,30 @@ class AliService{
     public function handle_notify($request) {
         $input = $request->all();
 		Log::DEBUG("call back:ali:" . json_encode($input, JSON_UNESCAPED_UNICODE));
-        return 'success';
+        if (my_check_sign($input, ($input["sign"]??null), $this->consts['KEY'])
+            && !empty($input['out_trade_no'])) 
+        {
+            $out_trade_no = $input['out_trade_no'];
+            $sp = app()->make('rtt_service');
+            $status = $sp->sp_oc->query_order_cache_field($out_trade_no,'status');
+            if (empty($status) || !in_array($status,['INIT','WAIT']))
+                //return 'status:'.$status;
+                return 'status:'.$status;
+            try {
+                $result = $this->query_charge_single(['out_trade_no'=>$out_trade_no],null);
+            }
+            catch(\Exception $e) {
+                Log::DEBUG(__FUNCTION__.":query failed:".$e->getMessage());
+                return;
+            }
+            try {
+                $sp->notify($sp,$out_trade_no,$result);
+            }
+            catch(\Exception $e) {
+                Log::DEBUG(__FUNCTION__.":parent process throws exception:".$e->getMessage());
+            }
+            return 'success';
+        }
     }
     private function create_request_common() {
         $input = array();
