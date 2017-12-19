@@ -425,7 +425,7 @@ class AliService{
                 return;
             }
             try {
-                $sp->notify($sp,$out_trade_no,$result);
+                $sp->notify($this,$out_trade_no,$result);
             }
             catch(\Exception $e) {
                 Log::DEBUG(__FUNCTION__.":parent process throws exception:".$e->getMessage());
