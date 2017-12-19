@@ -46,6 +46,10 @@ class MgtService{
         unset($newObj['account_id']);
         $is_success = DB::table('company_info')
             ->where($where)->update($newObj); //TODO
+        if (!$is_success) {
+            $newObj['account_id'] = $la_paras['account_id'];
+            $is_success = DB::table('company_info')->insert($newObj); //TODO
+        }
         return $is_success;
     }
     public function get_merchant_info_contract($la_paras) {
@@ -60,6 +64,10 @@ class MgtService{
         unset($newObj['account_id']);
         $is_success = DB::table('account_contract')
             ->where($where)->update($newObj); //TODO
+        if (!$is_success) {
+            $newObj['account_id'] = $la_paras['account_id'];
+            $is_success = DB::table('account_contract')->insert($newObj); //TODO
+        }
         return $is_success;
     }
     public function get_merchant_info_device($la_paras) {
