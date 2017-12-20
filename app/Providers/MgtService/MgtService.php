@@ -42,32 +42,19 @@ class MgtService{
     }
     public function set_merchant_basic($la_paras) {
         $where = ['account_id'=>$la_paras['account_id']];
-        $newObj = $la_paras;
-        unset($newObj['account_id']);
-        $is_success = DB::table('company_info')
-            ->where($where)->update($newObj); //TODO
-        if (!$is_success) {
-            $newObj['account_id'] = $la_paras['account_id'];
-            $is_success = DB::table('company_info')->insert($newObj); //TODO
-        }
+        $is_success = DB::table('company_info')->updateOrInsert($where,$la_paras);
         return $is_success;
     }
     public function get_merchant_info_contract($la_paras) {
-        $where = ['account_id'=>$la_paras['account_id'], 'is_deleted'=>0];
+        //$where = ['account_id'=>$la_paras['account_id'], 'is_deleted'=>0];
+        $where = ['account_id'=>$la_paras['account_id']];
         $results = DB::table('account_contract')
             ->where($where)->first();
         return (array)$results;
     }
     public function set_merchant_contract($la_paras) {
         $where = ['account_id'=>$la_paras['account_id']];
-        $newObj = $la_paras;
-        unset($newObj['account_id']);
-        $is_success = DB::table('account_contract')
-            ->where($where)->update($newObj); //TODO
-        if (!$is_success) {
-            $newObj['account_id'] = $la_paras['account_id'];
-            $is_success = DB::table('account_contract')->insert($newObj); //TODO
-        }
+        $is_success = DB::table('account_contract')->updateOrInsert($where,$la_paras);
         return $is_success;
     }
     public function get_merchant_info_device($la_paras) {
@@ -112,13 +99,6 @@ class MgtService{
         foreach($channels as $channel) {
             $channel = strtolower($channel);
             $sp = $sp_rtt->resolve_channel_sp($account_id, $channel);
-            /*
-            $infoObj = DB::table('vendor_'.$channel)->where('account_id','=',$la_paras['account_id'])->first();
-            if (!empty($infoObj)) {
-                $a_info = (array) $infoObj;
-                $a_info = array_intersect_key($a_info, array_flip(['sub_mch_id','sub_mch_industry','sub_mch_name']));
-            }
-             */
             $results[$channel] = $sp->get_vendor_channel_config($account_id);
         }
         return $results;

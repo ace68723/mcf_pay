@@ -80,7 +80,7 @@ trait ByRedisFacade{
                         Log::INFO(__FUNCTION__.": cannot get the account_id of txn ".$key);
                     }
                     unset($txn['username']);
-                    DB::table('txn_base')->updateOrInsert( ['ref_id'=>$txn['ref_id']], $txn);
+                    DB::table('txn_base')->updateOrInsert(['ref_id'=>$txn['ref_id']], $txn);
                 }
             }
             //Redis::multi();

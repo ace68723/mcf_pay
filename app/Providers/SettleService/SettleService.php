@@ -32,7 +32,7 @@ class SettleService{
         GROUP BY txn_base.account_id
         ) AS t4
     LEFT JOIN 
-        (SELECT account_id, ANY_VALUE(merchant_id) AS mch_id FROM mcf_user_base GROUP BY account_id
+        (SELECT account_id, MIN(merchant_id) AS mch_id FROM mcf_user_base GROUP BY account_id
         ) AS t3
         ON t4.account_id = t3.account_id
     LEFT JOIN 
