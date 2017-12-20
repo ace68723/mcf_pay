@@ -132,7 +132,7 @@ class MgtService{
     private function gen_pwd($len, $keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
     {
         $str = '';
-        $max = strlen($keyspace);
+        $max = strlen($keyspace)-1;
         for ($i = 0; $i < $len; ++$i) {
             $str .= $keyspace[random_int(0, $max)];
         }

@@ -17,16 +17,16 @@ class SettleService{
         $page_num = $la_paras['page_num'];
         $page_size = $la_paras['page_size'];
         $rawStr = <<<rawstr
-    SELECT t4.account_id AS account_id, t3.mch_id AS merchant_id, t4.amount_in_cent AS amount_in_cent
-        FROM (SELECT txn_base.account_id AS account_id, sum(txn_fee_in_cent*(1-2*is_refund)) AS amount_in_cent
+    SELECT t4.account_id AS account_id, t3.mch_id AS merchant_id, t4.amount_in_cent AS amount_in_cent, t4.last_time
+    FROM (SELECT txn_base.account_id AS account_id, sum(txn_fee_in_cent*(1-2*is_refund)) AS amount_in_cent, max(last_time) AS last_time
         FROM txn_base
         LEFT JOIN 
-        (SELECT t1.account_id, max(end_time) AS last_time FROM (
-            SELECT distinct(account_id) FROM txn_base
-            ) AS t1
-            LEFT JOIN settlement on settlement.account_id = t1.account_id
-            GROUP BY t1.account_id
-        ) AS t2
+            (SELECT t1.account_id, max(end_time) AS last_time FROM (
+                SELECT distinct(account_id) FROM txn_base
+                ) AS t1
+                LEFT JOIN settlement on settlement.account_id = t1.account_id
+                GROUP BY t1.account_id
+            ) AS t2
         ON txn_base.account_id = t2.account_id 
         WHERE last_time IS NULL OR vendor_txn_time>=last_time 
         GROUP BY txn_base.account_id
@@ -62,11 +62,11 @@ rawstr;
             'page_size'=>$page_size,
             'recs'=>$results->toArray()];
     }
-    public function set_settlements($la_paras) {
+    public function set_settlement($la_paras) {
         $settle_id = $la_paras['settle_id'];
-        $cols = ['is_remitted', 'note'];
+        $cols = ['is_remitted', 'notes'];
         $values = array_intersect_key($la_paras, array_flip($cols));
-        DB::table('settlement')->where('settle_id','=',$settle_id)->update($values);
+        return DB::table('settlement')->where('settle_id','=',$settle_id)->update($values);
     }
     public function settle($la_paras) {
         $account_id = $la_paras['account_id'];

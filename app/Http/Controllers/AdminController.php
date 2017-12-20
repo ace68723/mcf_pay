@@ -230,7 +230,7 @@ class AdminController extends Controller
                 'checker'=>['is_int', ],
                 'required'=>true,
             ],
-            'note'=>[
+            'notes'=>[
                 'checker'=>['is_string', ],
             ],
             'is_remitted'=>[
