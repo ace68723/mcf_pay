@@ -51,10 +51,6 @@ class LoginController extends Controller
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
         $this->consts['REQUEST_PARAS']['mgt_login'] = [
-            'merchantID'=>[
-                'checker'=>['is_string', 32],
-                'required'=>true,
-            ],
             'username'=>[
                 'checker'=>['is_string', 32],
                 'required'=>true,

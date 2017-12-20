@@ -19,12 +19,12 @@ class MgtService{
     public function get_merchants($la_paras) {
         $page_num = $la_paras['page_num'];
         $page_size = $la_paras['page_size'];
-        $where = ['role'=>666, 'mcf_user_base.is_deleted'=>0];
-        $count = DB::table('mcf_user_base')->where($where)->count();
-        $merchants = DB::table('mcf_user_base')
+        $where = ['account_base.is_deleted'=>0];
+        $count = DB::table('account_base')->where($where)->count();
+        $merchants = DB::table('account_base')
             ->where($where)
-            ->leftJoin('company_info', 'mcf_user_base.account_id','=','company_info.account_id')
-            ->select(['merchant_id', 'mcf_user_base.account_id AS account_id', 'display_name',
+            ->leftJoin('company_info', 'account_base.account_id','=','company_info.account_id')
+            ->select(['merchant_id', 'account_base.account_id AS account_id', 'display_name',
                     'legal_name', 'cell'])
             ->offset(($page_num-1)*$page_size)->limit($page_size)
             ->get();
@@ -115,10 +115,11 @@ class MgtService{
     public function get_merchant_info_user($la_paras) {
         $page_num = $la_paras['page_num'];
         $page_size = $la_paras['page_size'];
-        $where = ['account_id'=>$la_paras['account_id'], 'is_deleted'=>0];
-        $select = ['merchant_id','username','account_id','role'];
+        $where = ['mcf_user_base.account_id'=>$la_paras['account_id'], 'mcf_user_base.is_deleted'=>0];
+        $select = ['merchant_id','username','mcf_user_base.account_id AS account_id','role'];
         $count = DB::table('mcf_user_base')->where($where)->count();
         $results = DB::table('mcf_user_base')
+            ->leftJoin('account_base', 'account_base.account_id','=','mcf_user_base.account_id')
             ->select($select)
             ->where($where)
             ->offset(($page_num-1)*$page_size)->limit($page_size)
@@ -139,10 +140,10 @@ class MgtService{
         return $str;
     }
     private function get_merchant_id($account_id) {
-        $where = ['account_id'=>$account_id,'role'=>666];
-        $rootObj = DB::table('mcf_user_base')->select('merchant_id')->where($where)->first();
+        $where = ['account_id'=>$account_id];
+        $rootObj = DB::table('account_base')->select('merchant_id')->where($where)->first();
         if (empty($rootObj))
-            throw new RttException('INVALID_PARAMETER', 'cannot find root obj');
+            throw new RttException('INVALID_PARAMETER', 'cannot find merchant');
         return $rootObj->merchant_id;
     }
     public function set_merchant_user($la_paras) {
@@ -150,15 +151,13 @@ class MgtService{
         $values = array_intersect_key($la_paras, array_flip($cols));
         if (!empty($values['role']) && !in_array($values['role'], [101,365]))
             throw new RttException('INVALID_PARAMETER', 'undefined role');
-        $values['merchant_id'] = $this->get_merchant_id($la_paras['account_id']);
         $saltstring = bin2hex(random_bytes(32)); 
         $password = $this->gen_pwd(8);
         $values['password'] = md5($password.$saltstring);
         $values['saltstring'] = $saltstring;
         try{
             $where = ['account_id'=>$la_paras['account_id'],'username'=>$la_paras['username']];
-            $is_success = DB::table('mcf_user_base')->where($where)->where('role','<>',666)
-                ->update($values);
+            $is_success = DB::table('mcf_user_base')->where($where)->update($values);
         }
         catch(\Exception $e) {
             throw new RttException('INVALID_PARAMETER', 'possibly duplicated username.');
@@ -170,13 +169,8 @@ class MgtService{
     public function add_merchant_user($la_paras) {
         $cols = ['username', 'account_id', 'role'];
         $values = array_intersect_key($la_paras, array_flip($cols));
-        if (!in_array($values['role'], [101,365]))
+        if (!in_array($values['role'], [101,666]))
             throw new RttException('INVALID_PARAMETER', 'undefined role');
-        $where = ['account_id'=>$la_paras['account_id'],'role'=>666];
-        $rootObj = DB::table('mcf_user_base')->select('merchant_id')->where($where)->first();
-        if (empty($rootObj))
-            throw new RttException('INVALID_PARAMETER', 'cannot find root obj');
-        $values['merchant_id'] = $rootObj->merchant_id;
         $saltstring = bin2hex(random_bytes(32)); 
         $password = $this->gen_pwd(8);
         $values['password'] = md5($password.$saltstring);

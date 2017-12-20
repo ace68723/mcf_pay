@@ -150,7 +150,7 @@ class AdminController extends Controller
                 'required'=>true,
             ],
             'role'=>[
-                'checker'=>['is_int', [101,365] ],
+                'checker'=>['is_int', [101,666] ],
                 'required'=>true,
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters

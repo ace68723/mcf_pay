@@ -17,7 +17,7 @@ class SettleService{
         $page_num = $la_paras['page_num'];
         $page_size = $la_paras['page_size'];
         $rawStr = <<<rawstr
-    SELECT t4.account_id AS account_id, t3.mch_id AS merchant_id, t4.amount_in_cent AS amount_in_cent, t4.last_time
+    SELECT t4.account_id AS account_id, t3.merchant_id AS merchant_id, t4.amount_in_cent AS amount_in_cent, t4.last_time
     FROM (SELECT txn_base.account_id AS account_id, sum(txn_fee_in_cent*(1-2*is_refund)) AS amount_in_cent, max(last_time) AS last_time
         FROM txn_base
         LEFT JOIN 
@@ -32,12 +32,10 @@ class SettleService{
         GROUP BY txn_base.account_id
         ) AS t4
     LEFT JOIN 
-        (SELECT account_id, MIN(merchant_id) AS mch_id FROM mcf_user_base GROUP BY account_id
-        ) AS t3
+        account_base AS t3
         ON t4.account_id = t3.account_id
     LEFT JOIN 
-        (SELECT account_id, remit_min_in_cent FROM account_contract
-        ) AS t5
+        account_contract AS t5
         ON t4.account_id = t5.account_id
     WHERE amount_in_cent >= t5.remit_min_in_cent
     ORDER BY amount_in_cent DESC
