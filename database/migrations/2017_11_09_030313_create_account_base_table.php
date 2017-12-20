@@ -17,14 +17,16 @@ class CreateAccountBaseTable extends Migration
             $table->increments('id');
             $table->integer('account_id');
             $table->integer('is_deleted')->default(0);
-            $table->string('ref_id', 8);
+            $table->string('ref_id', 6);
             $table->string('currency_type', 16);
-            //$table->string('name',128);
+            $table->string('merchant_id',32);
             //$table->string('status',16);
             $table->string('changed_by', 32);
             $table->bigInteger('changed_at');
 
             $table->unique('account_id');
+            $table->unique('merchant_id');
+            $table->unique('ref_id');
         });
     }
 

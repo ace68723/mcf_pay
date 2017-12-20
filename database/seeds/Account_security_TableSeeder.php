@@ -17,7 +17,6 @@ class Account_security_TableSeeder extends Seeder
                 'account_id'=>$i, 
                 'account_key'=>str_random(32), 
                 'account_secret'=>str_random(32), 
-                'status'=>'NORMAL', 
                 'changed_by'=>'test_seeder',
             ]);
         }

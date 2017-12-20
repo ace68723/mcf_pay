@@ -17,7 +17,7 @@ class CreateAccountSecurityTable extends Migration
             $table->integer('account_id');
             $table->string('account_key');
             $table->string('account_secret');
-            $table->string('status', 16);
+            $table->integer('is_deleted')->default(0);
             $table->string('changed_by', 32);
             $table->bigInteger('changed_at');
 

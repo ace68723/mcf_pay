@@ -15,7 +15,6 @@ class CreateMcfUserBaseTable extends Migration
     {
         Schema::create('mcf_user_base', function (Blueprint $table) {
             $table->increments('uid');
-            $table->string('merchant_id', 45);
             $table->string('username', 45);
             $table->string('password', 256);
             $table->integer('account_id')->nullable();
@@ -24,7 +23,6 @@ class CreateMcfUserBaseTable extends Migration
             $table->string('saltstring', 64);
             $table->timestamp('updated_at')->useCurrent();
 
-            $table->unique(['merchant_id','username']);
             $table->unique(['account_id','username']);
         });
     }

@@ -14,24 +14,28 @@ class Account_base_TableSeeder extends Seeder
         //
         DB::table('account_base')->insert([
             'account_id'=>1, 
+            'merchant_id'=>'merchant1', 
             'ref_id'=>'YMHL', 
             'currency_type'=>'CAD',
             'changed_by'=>'test_seeder', 
         ]);
         DB::table('account_base')->insert([
             'account_id'=>2, 
+            'merchant_id'=>'merchant2', 
             'ref_id'=>'TESTAL', 
             'currency_type'=>'CAD',
             'changed_by'=>'test_seeder', 
         ]);
         DB::table('account_base')->insert([
             'account_id'=>3, 
+            'merchant_id'=>'testMerchant', 
             'ref_id'=>'TESTBO', 
             'currency_type'=>'CAD',
             'changed_by'=>'test_seeder', 
         ]);
         DB::table('account_base')->insert([
             'account_id'=>4, 
+            'merchant_id'=>'testMerchantOnly', 
             'ref_id'=>'TESTNU', 
             'currency_type'=>'CAD',
             'changed_by'=>'test_seeder', 

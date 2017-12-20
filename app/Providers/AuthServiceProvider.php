@@ -40,7 +40,9 @@ class AuthServiceProvider extends ServiceProvider
                 empty($request->input('sign'))) 
                 return null;
             $secInfo =  DB::table('account_security')
-                ->where('account_key', '=', $request->input('account_key'))->first();
+                ->where('account_key', '=', $request->input('account_key'))
+                ->where('is_deleted','=',0)
+                ->first();
             if (empty($secInfo) || empty($secInfo->account_secret))
                 return null;
 
