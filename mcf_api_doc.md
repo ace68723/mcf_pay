@@ -22,11 +22,11 @@ Body参数:
 
 | Tables             | 类型及其范围      | 必填   | 说明                            | 默认值/样例           |
 | ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
-| vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- |
-| device_id | string(64) | 是 | ---------------- | ---------------- |
-| total_fee_in_cent | int | 是 | 标价金额，以分为单位的整数 | ---------------- |
-| total_fee_currency | string(16) | 是 | 标价金额的币种 | ---------------- |
-| description | string(32) | 否 | 商品标题，将显示在顾客端 |  Supported by MCF |
+| vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- | 
+| device_id | string(64) | 是 | ---------------- | ---------------- | 
+| total_fee_in_cent | int | 是 | 标价金额，以分为单位的整数 | ---------------- | 
+| total_fee_currency | string(16) | 是 | 标价金额的币种 | ---------------- | 
+| description | string(32) | 否 | 商品标题，将显示在顾客端 |  Supported by MCF | 
 
 
 ## create_authpay
@@ -52,12 +52,12 @@ Body参数:
 
 | Tables             | 类型及其范围      | 必填   | 说明                            | 默认值/样例           |
 | ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
-| vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- |
-| device_id | string(64) | 是 | ---------------- | ---------------- |
-| total_fee_in_cent | int | 是 | 标价金额，以分为单位的整数 | ---------------- |
-| total_fee_currency | string(16) | 是 | 标价金额的币种 | ---------------- |
-| out_trade_no | string(64) | 是 | MCF开头的交易单号 | ---------------- |
-| auth_code | string(128) | 是 | 顾客授权码 | ---------------- |
+| vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- | 
+| device_id | string(64) | 是 | ---------------- | ---------------- | 
+| total_fee_in_cent | int | 是 | 标价金额，以分为单位的整数 | ---------------- | 
+| total_fee_currency | string(16) | 是 | 标价金额的币种 | ---------------- | 
+| out_trade_no | string(64) | 是 | MCF开头的交易单号 | ---------------- | 
+| auth_code | string(128) | 是 | 顾客授权码 | ---------------- | 
 
 
 ## create_order
@@ -83,11 +83,11 @@ Body参数:
 
 | Tables             | 类型及其范围      | 必填   | 说明                            | 默认值/样例           |
 | ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
-| vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- |
-| device_id | string(64) | 是 | ---------------- | ---------------- |
-| total_fee_in_cent | int | 是 | 标价金额，以分为单位的整数 | ---------------- |
-| total_fee_currency | string(16) | 是 | 标价金额的币种 | ---------------- |
-| description | string(32) | 否 | 商品标题，将显示在顾客端 |  Supported by MCF |
+| vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- | 
+| device_id | string(64) | 是 | ---------------- | ---------------- | 
+| total_fee_in_cent | int | 是 | 标价金额，以分为单位的整数 | ---------------- | 
+| total_fee_currency | string(16) | 是 | 标价金额的币种 | ---------------- | 
+| description | string(32) | 否 | 商品标题，将显示在顾客端 |  Supported by MCF | 
 
 
 ## check_order_status
@@ -113,9 +113,9 @@ Body参数:
 
 | Tables             | 类型及其范围      | 必填   | 说明                            | 默认值/样例           |
 | ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
-| vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- |
-| type | string(16) | 是 | enum("long_pulling","refresh","force_remote"), long_pulling仅查询缓存，refresh当缓存miss或者交易状态非成功时去支付渠道端查询，forece_remote强制去远端查询 | ---------------- |
-| out_trade_no | string(64) | 是 | MCF开头的交易单号 | ---------------- |
+| vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- | 
+| type | string(16) | 是 | enum("long_pulling","refresh","force_remote"), long_pulling仅查询缓存，refresh当缓存miss或者交易状态非成功时去支付渠道端查询，forece_remote强制去远端查询 | ---------------- | 
+| out_trade_no | string(64) | 是 | MCF开头的交易单号 | ---------------- | 
 
 
 ## get_hot_txns
@@ -141,8 +141,8 @@ Body参数:
 
 | Tables             | 类型及其范围      | 必填   | 说明                            | 默认值/样例           |
 | ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
-| page_num | int(1,inf) | 否 | starts from 1 | 1 |
-| page_size | int(1,50) | 否 | page size | 20 |
+| page_num | int(1,inf) | 否 | starts from 1 | 1 | 
+| page_size | int(1,50) | 否 | page size | 20 | 
 
 
 ## get_settlements
@@ -168,8 +168,8 @@ Body参数:
 
 | Tables             | 类型及其范围      | 必填   | 说明                            | 默认值/样例           |
 | ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
-| page_num | int(1,inf) | 否 | starts from 1 | 1 |
-| page_size | int(1,50) | 否 | page size | 20 |
+| page_num | int(1,inf) | 否 | starts from 1 | 1 | 
+| page_size | int(1,50) | 否 | page size | 20 | 
 
 
 ## query_txns_by_time
@@ -195,10 +195,10 @@ Body参数:
 
 | Tables             | 类型及其范围      | 必填   | 说明                            | 默认值/样例           |
 | ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
-| start_time | int | 是 | 开始时间的unix timestamp, inclusive | ---------------- |
-| end_time | int | 是 | 结束时间的unix timestamp, exclusive | ---------------- |
-| page_num | int(1,inf) | 否 | starts from 1 | 1 |
-| page_size | int(1,50) | 否 | page size | 20 |
+| start_time | int | 是 | 开始时间的unix timestamp, inclusive | ---------------- | 
+| end_time | int | 是 | 结束时间的unix timestamp, exclusive | ---------------- | 
+| page_num | int(1,inf) | 否 | starts from 1 | 1 | 
+| page_size | int(1,50) | 否 | page size | 20 | 
 
 
 ## create_refund
@@ -224,14 +224,14 @@ Body参数:
 
 | Tables             | 类型及其范围      | 必填   | 说明                            | 默认值/样例           |
 | ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
-| vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- |
-| device_id | string(64) | 是 | ---------------- | ---------------- |
-| refund_no | int(1,1) | 是 | 第几笔退款，目前仅支持1笔退款 | ---------------- |
-| refund_fee_in_cent | int | 是 | 退款金额，以分为单位的整数 | ---------------- |
-| refund_fee_currency | string(16) | 是 | 退款币种，必须与标价金额的币种一致 | ---------------- |
-| total_fee_in_cent | int | 是 | 标价金额，以分为单位的整数 | ---------------- |
-| total_fee_currency | string(16) | 是 | 标价金额的币种 | ---------------- |
-| out_trade_no | string(64) | 是 | MCF开头的交易单号 | ---------------- |
+| vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- | 
+| device_id | string(64) | 是 | ---------------- | ---------------- | 
+| refund_no | int(1,1) | 是 | 第几笔退款，目前仅支持1笔退款 | ---------------- | 
+| refund_fee_in_cent | int | 是 | 退款金额，以分为单位的整数 | ---------------- | 
+| refund_fee_currency | string(16) | 是 | 退款币种，必须与标价金额的币种一致 | ---------------- | 
+| total_fee_in_cent | int | 是 | 标价金额，以分为单位的整数 | ---------------- | 
+| total_fee_currency | string(16) | 是 | 标价金额的币种 | ---------------- | 
+| out_trade_no | string(64) | 是 | MCF开头的交易单号 | ---------------- | 
 
 
 ## get_exchange_rate
@@ -257,8 +257,8 @@ Body参数:
 
 | Tables             | 类型及其范围      | 必填   | 说明                            | 默认值/样例           |
 | ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
-| vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- |
-| currency_type | string(16) | 是 | ---------------- | ---------------- |
+| vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- | 
+| currency_type | string(16) | 是 | ---------------- | ---------------- | 
 
 
 ## get_company_info
@@ -282,5 +282,4 @@ Body参数:
 
 Body参数:
 无
-
 
