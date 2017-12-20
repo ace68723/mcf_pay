@@ -59,6 +59,16 @@ class LoginController extends Controller
                 'checker'=>['is_string', 64],
                 'required'=>true,
             ],
+            'version'=>[
+                'checker'=>['is_string', 10],
+                'required'=>false,
+                'default_value'=>"",
+            ],
+            'latlng'=>[
+                'checker'=>['is_string', 32],
+                'required'=>false,
+                'default_value'=>"0,0",
+            ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
         if (!$this->check_api_def())
