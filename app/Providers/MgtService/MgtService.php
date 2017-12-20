@@ -184,6 +184,19 @@ class MgtService{
         return $password;
     }
     public function create_new_account($la_paras) {
+        $merchant_id = $la_paras['merchant_id'];
+        $currency_type = $la_paras['currency_type'];
+        DB::beginTransaction();
+        /*
+        try {
+            DB::table('account_base')->insertGetId([
+                'merchant_id'=>$merchant_id, 
+                'currency_type'=>$currency_type,
+            ]);
+        }
+        catch(\Exception $e) {
+        }
+         */
     }
 
 }

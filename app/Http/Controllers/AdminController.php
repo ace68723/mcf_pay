@@ -34,6 +34,8 @@ class AdminController extends Controller
             'get_candidate_settle'=>[999],
             'add_settle'=>[999],
             'set_settlement'=>[999],
+            'query_txns_by_time'=>[999],
+            'get_hot_txns'=>[999],
         ];
         foreach(['basic','user','device','channel','contract'] as $name) {
             $this->consts['GET_FUNC_CATEGORY_MAP'][$name] = [$this->sp_mgt, 'get_merchant_info_'.$name];
@@ -238,6 +240,52 @@ class AdminController extends Controller
                 'checker'=>['is_int', ],
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+        $this->consts['REQUEST_PARAS']['query_txns_by_time'] = [
+            'account_id'=>[
+                'checker'=>['is_int'],
+                'required'=>true,
+            ],
+            'start_time'=>[
+                'checker'=>['is_int'],
+                'required'=>true,
+                'description'=> '开始时间的unix timestamp, inclusive',
+            ],
+            'end_time'=>[
+                'checker'=>['is_int'],
+                'required'=>true,
+                'description'=> '结束时间的unix timestamp, exclusive',
+            ],
+            'page_num'=>[
+                'checker'=>['is_int', [1,'inf']],
+                'required'=>false,
+                'default_value'=>1,
+                'description'=> 'starts from 1',
+            ],
+            'page_size'=>[
+                'checker'=>['is_int', [1,50]],
+                'required'=>false,
+                'default_value'=>$this->consts['DEFAULT_PAGESIZE'],
+                'description'=> 'page size',
+            ],
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+        $this->consts['REQUEST_PARAS']['get_hot_txns'] = [
+            'account_id'=>[
+                'checker'=>['is_int'],
+                'required'=>true,
+            ],
+            'page_num'=>[
+                'checker'=>['is_int', [1,'inf']],
+                'required'=>false,
+                'default_value'=>1,
+                'description'=> 'starts from 1',
+            ],
+            'page_size'=>[
+                'checker'=>['is_int', [1,50]],
+                'required'=>false,
+                'default_value'=>$this->consts['DEFAULT_PAGESIZE'],
+                'description'=> 'page size',
+            ],
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
         if (!$this->check_api_def())
             throw new RttException('SYSTEM_ERROR', "ERROR SETTING IN API SCHEMA");
@@ -331,4 +379,25 @@ class AdminController extends Controller
         return $this->format_success_ret($ret);
     }
 
+    public function get_hot_txns(Request $request){
+        $userObj = $request->user('custom_mgt_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $account_id = $la_paras['account_id'];
+        $sp_rtt = app()->make('rtt_service');
+        $ret = $sp_rtt->get_hot_txns($la_paras, $account_id);
+        array_walk($ret['recs'], [$sp_rtt, 'txn_to_export']);
+        return $this->format_success_ret($ret);
+    }
+
+    public function query_txns_by_time(Request $request){
+        $userObj = $request->user('custom_mgt_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $account_id = $la_paras['account_id'];
+        $sp_rtt = app()->make('rtt_service');
+        $ret = $sp_rtt->query_txns_by_time($la_paras, $account_id);
+        array_walk($ret['recs'], [$sp_rtt, 'txn_to_export']);
+        return $this->format_success_ret($ret);
+    }
 }
