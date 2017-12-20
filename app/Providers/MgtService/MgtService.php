@@ -148,7 +148,7 @@ class MgtService{
     public function set_merchant_user($la_paras) {
         $cols = ['username', 'account_id', 'role', 'is_deleted'];
         $values = array_intersect_key($la_paras, array_flip($cols));
-        if (!in_array($values['role'], [101,365]))
+        if (!empty($values['role']) && !in_array($values['role'], [101,365]))
             throw new RttException('INVALID_PARAMETER', 'undefined role');
         $values['merchant_id'] = $this->get_merchant_id($la_paras['account_id']);
         $saltstring = bin2hex(random_bytes(32)); 
