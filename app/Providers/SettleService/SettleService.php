@@ -16,8 +16,9 @@ class SettleService{
     public function get_candidate_settle($la_paras) {
         $page_num = $la_paras['page_num'];
         $page_size = $la_paras['page_size'];
-        $rawStr = <<<rawstr
-    SELECT t4.account_id AS account_id, t3.merchant_id AS merchant_id, t4.amount_in_cent AS amount_in_cent, t4.last_time
+        $cntStr = 'SELECT count(t4.account_id) AS cnt ';
+        $getStr = 'SELECT t4.account_id AS account_id, t3.merchant_id AS merchant_id, t4.amount_in_cent AS amount_in_cent, t4.last_time ';
+        $commonStr = <<<rawstr
     FROM (SELECT txn_base.account_id AS account_id, sum(txn_fee_in_cent*(1-2*is_refund)) AS amount_in_cent, max(last_time) AS last_time
         FROM txn_base
         LEFT JOIN 
@@ -38,12 +39,19 @@ class SettleService{
         account_contract AS t5
         ON t4.account_id = t5.account_id
     WHERE amount_in_cent >= t5.remit_min_in_cent
-    ORDER BY amount_in_cent DESC
 rawstr;
-        $rawStr .= ' LIMIT '.$page_size;
-        $rawStr .= ' OFFSET '.($page_size*($page_num-1));
-        $result = DB::select(DB::raw($rawStr));
-        return $result;
+        $cntStr .= $commonStr;
+        $count = DB::select(DB::raw($cntStr))[0]->cnt;
+        $getStr .= $commonStr;
+        $getStr .= ' ORDER BY amount_in_cent DESC ';
+        $getStr .= ' LIMIT '.$page_size;
+        $getStr .= ' OFFSET '.($page_size*($page_num-1));
+        $result = DB::select(DB::raw($getStr));
+        return ['total_page'=>ceil($count/$page_size),
+            'total_count'=>$count,
+            'page_num'=>$page_num,
+            'page_size'=>$page_size,
+            'recs'=>$result];
     }
     public function get_settlements($la_paras, $account_id=null) {
         $page_num = $la_paras['page_num'];
