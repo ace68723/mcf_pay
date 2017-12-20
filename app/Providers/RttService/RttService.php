@@ -53,8 +53,8 @@ class RttService{
         else {
             if (!(($res->vendor_channel ?? 0) & $mask)) {
                 DB::table('account_vendor')
-                    ->where('account_id','=',$account_id)
-                    ->update(['vendor_channel'=>$res->vendor_channel | $mask]);
+                    ->updateOrInsert(['account_id'=>$account_id],
+                        ['vendor_channel'=>($res->vendor_channel??0) | $mask]);
             }
         }
     }

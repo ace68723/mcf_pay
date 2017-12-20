@@ -186,17 +186,29 @@ class MgtService{
     public function create_new_account($la_paras) {
         $merchant_id = $la_paras['merchant_id'];
         $currency_type = $la_paras['currency_type'];
+        if (DB::table('account_base')->where('merchant_id','=',$merchant_id)->exists()) {
+            throw new RttException('INVALID_PARAMETER', 'duplicated merchant_id.');
+        }
         DB::beginTransaction();
-        /*
         try {
-            DB::table('account_base')->insertGetId([
-                'merchant_id'=>$merchant_id, 
+            $account_id = DB::table('account_base')->max('account_id');
+            if (empty($account_id)) $account_id = 0;
+            $account_id += 1;
+            $ref_id = substr(md5($account_id.':'.$merchant_id), 0, 6);
+            DB::table('account_base')->insert([
+                'account_id'=>$account_id,
+                'ref_id'=>$ref_id,
+                'merchant_id'=>$merchant_id,
                 'currency_type'=>$currency_type,
             ]);
+            DB::commit();
         }
         catch(\Exception $e) {
+            DB::rollBack();
+            Log::INFO(__FUNCTION__.":".$e->getMessage());
+            throw new RttException('SYSTEM_ERROR', $e->getMessage());
         }
-         */
+        return ['account_id'=>$account_id];
     }
 
 }

@@ -397,7 +397,7 @@ class AliService{
         $values = array_intersect_key($values,
             array_flip(['sub_mch_id','sub_mch_name','sub_mch_industry','rate','is_deleted']));
         if (!empty($values))
-            DB::table('vendor_ali')->where('account_id','=',$account_id)->update($values);
+            DB::table('vendor_ali')->updateOrInsert(['account_id'=>$account_id],$values);
     }
     public function get_vendor_channel_config($account_id) {
         $res = DB::table('vendor_ali')->where('account_id','=',$account_id)->first();

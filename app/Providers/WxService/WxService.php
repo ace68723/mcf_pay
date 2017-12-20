@@ -328,7 +328,7 @@ class WxService
     public function set_vendor_channel($account_id, $values) {
         $values = array_intersect_key($values, array_flip(['sub_mch_id','rate','is_deleted']));
         if (!empty($values))
-            DB::table('vendor_wx')->where('account_id','=',$account_id)->update($values);
+            DB::table('vendor_wx')->updateOrInsert(['account_id'=>$account_id],$values);
     }
     public function get_vendor_channel_config($account_id) {
         $res = DB::table('vendor_wx')->where('account_id','=',$account_id)->first();
