@@ -47,13 +47,14 @@ rawstr;
         $result = DB::select(DB::raw($rawStr));
         return $result;
     }
-    public function get_settlements($la_paras, $account_id) {
+    public function get_settlements($la_paras, $account_id=null) {
         $page_num = $la_paras['page_num'];
         $page_size = $la_paras['page_size'];
-        $where = ['account_id'=>$account_id];
+        $where = empty($account_id)?[]:['account_id'=>$account_id];
         $count = DB::table('settlement')->where($where)->count();
         $results = DB::table('settlement')
             ->where($where)
+            ->orderBy('settle_time','DESC')
             ->offset(($page_num-1)*$page_size)->limit($page_size)
             ->get();
         return ['total_page'=>ceil($count/$page_size),

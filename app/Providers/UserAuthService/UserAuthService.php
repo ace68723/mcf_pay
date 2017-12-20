@@ -25,13 +25,35 @@ class UserAuthService{
         }
         return $info;
     }
-    public function login($la_paras) {
+    public function mgt_login($la_paras) {
         $item = DB::table('mcf_user_base')
+            ->select([ 'is_deleted', 'username', 'uid', 'saltstring', 'password', ])
             ->where([
-                'merchant_id'=>$la_paras['merchantID'],
                 'username'=>$la_paras['username'],
                 'is_deleted'=> 0,
             ])
+            ->first();
+        if (empty($item) || empty($item->saltstring))
+            throw new Exception('LOGIN_FAIL');
+        $cmp_str = md5($la_paras['password'].$item->saltstring);
+        if (env('APP_DEBUG') && $item->password == 'tobemodified') {
+            $this->set_pwd($item->uid, $cmp_str);
+            $item->password = $cmp_str;
+        }
+        if (!hash_equals($item->password, $cmp_str))
+            throw new Exception('LOGIN_FAIL');
+        unset($item->password);
+        return $item;
+    }
+    public function login($la_paras) {
+        $item = DB::table('account_base')
+            ->leftJoin('mcf_user_base', 'mcf_user_base.account_id','=','account_base.account_id')
+            ->select(DB::raw('merchant_id, mcf_user_base.account_id AS account_id, (mcf_user_base.is_deleted + account_base.is_deleted) AS is_deleted, username, uid, saltstring, password, role'))
+            ->where([
+                'merchant_id'=>$la_paras['merchantID'],
+                'username'=>$la_paras['username'],
+            ])
+            ->having('is_deleted','=',0)
             ->first();
         if (empty($item) || empty($item->saltstring))
             throw new Exception('LOGIN_FAIL');
@@ -48,10 +70,20 @@ class UserAuthService{
         catch (Exception $e) {
             Log::INFO('Update Login Failed:'.$e->getMessage());
         }
+        unset($item->password);
         return $item;
     }
     private function set_pwd($uid, $pwdHash) {
         DB::table('mcf_user_base')->where('uid',$uid)->update(['password' => $pwdHash]);
+    }
+    public function mgt_create_token($userObj) {
+        $info = array(
+            'uid'=>$userObj->uid,
+            'role'=>$userObj->role,
+            'username'=>$userObj->username,
+            'expire'=>time()+$this->consts['token_expire_sec'],
+        );
+        return JWT::encode($info, env('APP_KEY'));
     }
     public function create_token($userObj) {
         $info = array(

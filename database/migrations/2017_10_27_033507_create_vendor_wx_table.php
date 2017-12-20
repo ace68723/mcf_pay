@@ -18,7 +18,7 @@ class CreateVendorWxTable extends Migration
             $table->integer('account_id');
             $table->integer('rate');
             $table->string('sub_mch_id',32);
-            $table->integer('is_deleted')->default(0);
+            $table->unsignedInteger('is_deleted')->default(0);
             $table->string('changed_by', 32);
             $table->bigInteger('changed_at');
 

@@ -26,7 +26,6 @@ class Mcf_user_base_TableSeeder extends Seeder
             'saltstring'=>bin2hex(random_bytes(32)), 
         ]);
         DB::table('mcf_user_base')->insert([
-            'merchant_id'=>'mcfAdmin', 
             'username'=>'admin', 
             'password'=>'tobemodified', 
             'role'=>999, 

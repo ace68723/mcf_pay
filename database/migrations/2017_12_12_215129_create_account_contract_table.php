@@ -21,7 +21,7 @@ class CreateAccountContractTable extends Migration
             $table->integer('remit_min_in_cent');
             $table->date('start_date');
             $table->date('end_date');
-            $table->integer('is_deleted')->default(0);
+            $table->unsignedInteger('is_deleted')->default(0);
             $table->string('note');
             $table->string('bank_instit');
             $table->string('bank_transit');

@@ -50,25 +50,48 @@ class LoginController extends Controller
                 'default_value'=>"0,0",
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+        $this->consts['REQUEST_PARAS']['mgt_login'] = [
+            'merchantID'=>[
+                'checker'=>['is_string', 32],
+                'required'=>true,
+            ],
+            'username'=>[
+                'checker'=>['is_string', 32],
+                'required'=>true,
+            ],
+            'password'=>[
+                'checker'=>['is_string', 64],
+                'required'=>true,
+            ],
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
         if (!$this->check_api_def())
             throw new RttException('SYSTEM_ERROR', "ERROR SETTING IN API SCHEMA");
     }
 
-    public function login(Request $request)
+    public function mgt_login(Request $request)
     {
         try {
-            $la_paras = $this->parse_parameters($request, "login");
-            $userObj = $this->sp_login->login($la_paras);
-            $token = $this->sp_login->create_token($userObj);
-            if (empty($userObj->account_id) && $userObj->role==999) {
-                $channels = [];
-            }else {
-                $channels = $this->sp_rtt->get_vendor_channel_info($userObj->account_id, true);
-            }
+            $la_paras = $this->parse_parameters($request, __FUNCTION__);
+            $userObj = $this->sp_login->mgt_login($la_paras);
+            $token = $this->sp_login->mgt_create_token($userObj);
         }
         catch (Exception $e) {
             Log::DEBUG($e->getMessage());
+            return response('Login Failed.', 401);
+        }
+        return ['token'=>$token, 'role'=>$userObj->role];
+    }
+    public function login(Request $request)
+    {
+        try {
+            $la_paras = $this->parse_parameters($request, __FUNCTION__);
+            $userObj = $this->sp_login->login($la_paras);
+            $token = $this->sp_login->create_token($userObj);
+            $channels = $this->sp_rtt->get_vendor_channel_info($userObj->account_id, true);
+        }
+        catch (Exception $e) {
+            Log::DEBUG($e->getFile().$e->getLine().$e->getMessage());
             return response('Login Failed.', 401);
         }
         return ['token'=>$token, 'role'=>$userObj->role, 'channel'=>$channels];

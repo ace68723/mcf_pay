@@ -184,7 +184,8 @@ class AdminController extends Controller
         $this->consts['REQUEST_PARAS']['get_merchant_settlement'] = [
             'account_id'=>[
                 'checker'=>['is_int', ],
-                'required'=>true,
+                'required'=>false,
+                'description'=> 'query all accounts if left null',
             ],
             'page_num'=>[
                 'checker'=>['is_int', [1,'inf']],
@@ -305,7 +306,7 @@ class AdminController extends Controller
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
-        $ret = app()->make('settle_service')->get_settlements($la_paras, $la_paras['account_id']);
+        $ret = app()->make('settle_service')->get_settlements($la_paras, $la_paras['account_id']??null);
         return $this->format_success_ret($ret);
     }
     public function get_candidate_settle(Request $request){

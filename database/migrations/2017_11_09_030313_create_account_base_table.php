@@ -16,7 +16,7 @@ class CreateAccountBaseTable extends Migration
         Schema::create('account_base', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('account_id');
-            $table->integer('is_deleted')->default(0);
+            $table->unsignedInteger('is_deleted')->default(0);
             $table->string('ref_id', 6);
             $table->string('currency_type', 16);
             $table->string('merchant_id',32);

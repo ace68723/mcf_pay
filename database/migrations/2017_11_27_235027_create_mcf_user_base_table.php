@@ -19,7 +19,7 @@ class CreateMcfUserBaseTable extends Migration
             $table->string('password', 256);
             $table->integer('account_id')->nullable();
             $table->integer('role');
-            $table->integer('is_deleted')->default(0);
+            $table->unsignedInteger('is_deleted')->default(0);
             $table->string('saltstring', 64);
             $table->timestamp('updated_at')->useCurrent();
 
