@@ -130,8 +130,10 @@ class MgtService{
             'page_size'=>$page_size,
             'recs'=>$results->toArray()];
     }
-    private function gen_pwd($len, $keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
+    private function gen_pwd($len, $keyspace = null)
     {
+        //$keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        if (empty($keyspace)) return str_random($len);
         $str = '';
         $max = strlen($keyspace)-1;
         for ($i = 0; $i < $len; ++$i) {
@@ -152,7 +154,7 @@ class MgtService{
         if (!empty($values['role']) && !in_array($values['role'], [101,365]))
             throw new RttException('INVALID_PARAMETER', 'undefined role');
         $saltstring = bin2hex(random_bytes(32)); 
-        $password = $this->gen_pwd(8);
+        $password = $la_paras['password'] ?? $this->gen_pwd(8);
         $values['password'] = md5($password.$saltstring);
         $values['saltstring'] = $saltstring;
         try{
@@ -172,7 +174,7 @@ class MgtService{
         if (!in_array($values['role'], [101,666]))
             throw new RttException('INVALID_PARAMETER', 'undefined role');
         $saltstring = bin2hex(random_bytes(32)); 
-        $password = $this->gen_pwd(8);
+        $password = $la_paras['password'] ?? $this->gen_pwd(8);
         $values['password'] = md5($password.$saltstring);
         $values['saltstring'] = $saltstring;
         try{
@@ -191,15 +193,20 @@ class MgtService{
         }
         DB::beginTransaction();
         try {
-            $account_id = DB::table('account_base')->max('account_id');
-            if (empty($account_id)) $account_id = 0;
-            $account_id += 1;
+            $account_id1 = DB::table('account_base')->max('account_id');
+            $account_id2 = DB::table('account_security')->max('account_id');
+            $account_id = max($account_id1, $account_id2, 0) + 1;
             $ref_id = substr(md5($account_id.':'.$merchant_id), 0, 6);
             DB::table('account_base')->insert([
                 'account_id'=>$account_id,
                 'ref_id'=>$ref_id,
                 'merchant_id'=>$merchant_id,
                 'currency_type'=>$currency_type,
+            ]);
+            DB::table('account_security')->insert([
+                'account_id'=>$account_id, 
+                'account_key'=>str_random(32), 
+                'account_secret'=>str_random(32), 
             ]);
             DB::commit();
         }
