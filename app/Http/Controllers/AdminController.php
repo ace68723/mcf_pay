@@ -37,6 +37,7 @@ class AdminController extends Controller
             'query_txns_by_time'=>[999],
             'get_hot_txns'=>[999],
             'create_new_account'=>[999],
+            'set_account'=>[999],
         ];
         foreach(['basic','user','device','channel','contract'] as $name) {
             $this->consts['GET_FUNC_CATEGORY_MAP'][$name] = [$this->sp_mgt, 'get_merchant_info_'.$name];
@@ -306,6 +307,20 @@ class AdminController extends Controller
                 'default_value'=>'CAD',
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+        $this->consts['REQUEST_PARAS']['set_account'] = [
+            'account_id'=>[
+                'checker'=>['is_int'],
+                'required'=>true,
+            ],
+            'merchant_id'=>[
+                'checker'=>['is_string'],
+                'required'=>false,
+            ],
+            'is_deleted'=>[
+                'checker'=>['is_int',],
+                'required'=>false,
+            ],
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
         if (!$this->check_api_def())
             throw new RttException('SYSTEM_ERROR', "ERROR SETTING IN API SCHEMA");
@@ -425,6 +440,13 @@ class AdminController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $ret = $this->sp_mgt->create_new_account($la_paras);
+        return $this->format_success_ret($ret);
+    }
+    public function set_account(Request $request){
+        $userObj = $request->user('custom_mgt_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $ret = $this->sp_mgt->set_account($la_paras);
         return $this->format_success_ret($ret);
     }
 }

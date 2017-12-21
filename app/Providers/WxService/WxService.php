@@ -256,10 +256,10 @@ class WxService
 
     public function query_refund_single($la_paras, $account_id) {
         $vendor_wx_info = $this->get_account_info($account_id);
-        if (empty($la_paras['refund_id']))
+        if (empty($la_paras['ref_id']))
             throw new RttException('SYSTEM_ERROR', "Refund_id Missing");
 	    $input = new \WxPayRefundQuery();
-		$input->SetOut_refund_no($la_paras['refund_id']);
+		$input->SetOut_refund_no($la_paras['ref_id']);
         $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
         Log::DEBUG("query_refund_single_wx:sending:" . json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
 		$result = \WxPayApi::refundQuery($input);

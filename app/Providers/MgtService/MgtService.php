@@ -217,5 +217,18 @@ class MgtService{
         }
         return ['account_id'=>$account_id];
     }
+    public function set_account($la_paras) {
+        $account_id = $la_paras['account_id'];
+        try{
+            $is_updated = DB::table('account_base')
+                ->where('account_id',$account_id)
+                ->update(array_only($la_paras,['merchant_id','is_deleted']));
+        }
+        catch(\Exception $e) {
+            Log::DEBUG(__FUNCTION__.":". $e->getMessage());
+            throw new RttException('SYSTEM_ERROR', 'prossibly duplicate merchant_id.');
+        }
+        return $is_updated;
+    }
 
 }

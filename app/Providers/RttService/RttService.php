@@ -14,7 +14,7 @@ class RttService{
     {
         $this->consts = array();
         $this->consts['OUR_NAME'] = "MCF";
-        $this->consts['CHANNELS'] = ['WX'=>0x1, 'ALI'=>0x2,];
+        $this->consts['CHANNELS'] = ['WX'=>0x1, 'ALI'=>0x2,'TEST'=>0x80];
         $this->consts['CHANNELS_REV'] = array_flip($this->consts['CHANNELS']);
         $this->consts['DEFAULT_PAGESIZE'] = 20;
         $this->sp_oc = app()->make('order_cache_service');
@@ -159,6 +159,27 @@ class RttService{
         return $ret;
     }
 
+    public function check_refund_status($la_paras, $account_id){
+        $status = $this->sp_oc->query_order_cache_field($la_paras['ref_id'], 'status');
+        if (empty($status))
+            throw new RttException('NOT_FOUND', ["REFUND",$la_paras['ref_id']]);
+        if ($la_paras['type'] == 'refresh' && $status != 'SUCCESS'
+            && strtolower($la_paras['vendor_channel'])=='wx') {
+            //TODO: under construction...
+            $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
+            $vendor_txn = $sp->query_refund_single($la_paras, $account_id);
+            //only success query gets here
+            $cached_input = $this->sp_oc->query_order_cache_field($la_paras['ref_id'], 'input');
+            $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id, 'FROM_REFUND', $cached_input);
+            $status = $txn['status'];//TODO ensure the state map in wx/ali service consists with rtt config
+            if (!$this->is_defined_status($status)) {
+                Log::INFO('regard undefined status '. $status . ' as FAIL');
+                $status = 'FAIL';
+            }
+            $this->sp_oc->cb_order_update($la_paras['ref_id'], $status, $txn);
+        }
+        return $status;
+    }
     public function check_order_status($la_paras, $account_id){
         $status = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'status');
         if (empty($status))

@@ -66,6 +66,7 @@ $router->group(['prefix'=>'api/v1/mgt','middleware'=>'auth:custom_mgt_token'], f
         'query_txns_by_time',
         'get_hot_txns',
         'create_new_account',
+        'set_account',
     ];
     foreach($api_names as $api_name) {
         $router->post('/'.$api_name.'/', ['uses'=>'AdminController@'.$api_name]);

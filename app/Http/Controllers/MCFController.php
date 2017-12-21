@@ -26,6 +26,7 @@ class MCFController extends Controller
             'create_order'=>[101,365,666],
             'create_refund'=>[101,365,666],
             'check_order_status'=>[101,365,666],
+            'check_refund_status'=>[101,365,666],
             'get_exchange_rate'=>[101,365,666],
             'query_txns_by_time'=>[365,666],
             'get_hot_txns'=>[101,365, 666],
@@ -134,6 +135,23 @@ class MCFController extends Controller
                 'checker'=>['is_string', 64],
                 'required'=>true,
                 'description'=> 'MCF开头的交易单号',
+            ],
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+        $this->consts['REQUEST_PARAS']['check_refund_status'] = [
+            'vendor_channel'=>[
+                'checker'=>['is_string', 8],
+                'required'=>true,
+                'description'=> '付款渠道，目前支持wx或者ali',
+            ],
+            'type'=>[
+                'checker'=>['is_string', 16],
+                'required'=>true,
+                'description'=> 'enum("long_pulling","refresh"), long_pulling仅查询缓存, refresh当缓存miss或者交易状态非成功时去支付渠道端查询',
+            ],
+            'ref_id'=>[
+                'checker'=>['is_string', 64],
+                'required'=>true,
+                'description'=> 'MCF开头,R1结尾的退款单号',
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
@@ -343,6 +361,16 @@ class MCFController extends Controller
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $status = $this->sp_rtt->check_order_status($la_paras, $account_id);
+        return $this->format_success_ret($status);
+    }
+
+    public function check_refund_status(Request $request)
+    {
+        $userObj = $request->user('custom_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $account_id = $userObj->account_id;
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $status = $this->sp_rtt->check_refund_status($la_paras, $account_id);
         return $this->format_success_ret($status);
     }
 
