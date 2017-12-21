@@ -224,15 +224,16 @@ class WxService
         $input->SetOp_user_id(\WxPayConfig_MCHID);
         $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
         if (!$cb_new_order($la_paras['_refund_id'], $account_id,
-            $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues()))
+            $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues())) {
             throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
+        }
         try {
             Log::info(__FUNCTION__.":wx:sending:". json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
             $result = \WxPayApi::refund($input);
             Log::info(__FUNCTION__.":wx:received:". json_encode($result, JSON_UNESCAPED_UNICODE));
             checkErrToThrow($result);        
         } catch (\Exception $e) {
-            $cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage()); //TODO: return refund_id for some cases
+            $cb_order_update($la_paras['_refund_id'], 'WAIT', $e->getMessage());
             throw $e;
         }
         $cb_order_update($la_paras['_refund_id'], 'SUCCESS',

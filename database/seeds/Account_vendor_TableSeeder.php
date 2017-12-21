@@ -15,6 +15,6 @@ class Account_vendor_TableSeeder extends Seeder
         DB::table('account_vendor')->insert(['account_id'=>1, 'vendor_channel'=>0x1]);
         DB::table('account_vendor')->insert(['account_id'=>2, 'vendor_channel'=>0x2]);
         DB::table('account_vendor')->insert(['account_id'=>3, 'vendor_channel'=>0x3]);
-        DB::table('account_vendor')->insert(['account_id'=>4, 'vendor_channel'=>0x0]);
+        DB::table('account_vendor')->insert(['account_id'=>4, 'vendor_channel'=>0x8000]);
     }
 }

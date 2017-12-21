@@ -281,8 +281,9 @@ class AliService{
         $input['sign'] = md5Sign($signString, $this->consts['KEY']);
         $url = $this->consts['GATEWAY_URL']."?".createLinkstringUrlencode($input);
         if (!$cb_new_order($la_paras['_refund_id'], $account_id,
-            $this->consts['CHANNEL_NAME'], $la_paras, $input))
-            throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
+            $this->consts['CHANNEL_NAME'], $la_paras, $input)) {
+            Log::INFO("Allowing repeating refund. refund_id:".$la_paras['_refund_id']);
+        }
         try {
             Log::info("Send to AliPay server:".json_encode($input)."\n Encode Url:".$url);
             $result = getHttpResponseGET($url, null, $errmsg);
@@ -292,7 +293,7 @@ class AliService{
             $ret = parse_xml_check_err_throw($result, $this->consts['KEY']);
         }
         catch (\Exception $e) {
-            $cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage());
+            $cb_order_update($la_paras['_refund_id'], 'WAIT', $e->getMessage());
             throw $e;
         }
         $cb_order_update($la_paras['_refund_id'], 'SUCCESS',

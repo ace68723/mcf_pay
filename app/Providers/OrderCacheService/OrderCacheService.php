@@ -25,11 +25,6 @@ class OrderCacheService{
 trait ByRedisFacade{
     public function cb_new_order($order_id, $account_id, $channel_name, $input, $req=null, $resp=null) {
         $key = "order:".$order_id;
-        if (Redis::EXISTS($key)) {
-            Log::DEBUG('cache new order failed because of duplicate order_id '.
-                $order_id . ', this may happen for refund/authpay');
-            return false;
-        }
         $status = 'INIT';
         $item = [
             'account_id'=>$account_id,
@@ -39,8 +34,18 @@ trait ByRedisFacade{
             'resp'=>$resp,
             'status'=>$status,
         ];
-        //Redis::setex($key, $this->consts['ORDER_CACHE_MINS'][$status]*60, serialize($item));
+        if (Redis::EXISTS($key)) {
+            Log::DEBUG('cache new order failed because of duplicate order_id '.
+                $order_id . ', this may happen for refund/authpay');
+            return false;
+        }
         Redis::HMSET($key, 'account_id', serialize($account_id), 'input', serialize($item['input']), 'resp', serialize($item['resp']), 'status', $status);
+        /*
+        Redis::HSETNX($key, 'account_id', serialize($account_id));
+        Redis::HSETNX($key, 'input', serialize($item['input']));
+        Redis::HSETNX($key, 'resp', serialize($item['resp']));
+        Redis::HSETNX($key, 'status', $status);
+         */
         Redis::EXPIRE($key, $this->consts['ORDER_CACHE_MINS'][$status]*60); //no need to use transactions here
         return true;
     }
@@ -54,7 +59,11 @@ trait ByRedisFacade{
         $key = "order:".$order_id;
         $old_status = $this->query_order_cache_field($order_id, 'status'); 
         if (empty($old_status)) {
-            Log::info(__FUNCTION__.': updating non-exist order:'.$order_id);
+            Log::info(__FUNCTION__.':updating non-exist order:'.$order_id);
+            return;
+        }
+        if ($old_status == 'SUCCESS') {
+            Log::info(__FUNCTION__.':block updating status from:'.$old_status.' to:'.$status.".ID:".$order_id);
             return;
         }
         if ($old_status != $status) {

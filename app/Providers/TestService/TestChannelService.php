@@ -8,13 +8,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Exceptions\RttException;
 
-class TestService{
+class TestChannelService{
 
     public $consts;
     public function __construct(){
         $this->consts = array();
         $this->consts['VENDOR_TZ'] = "Asia/Shanghai";
-        $this->consts['CHANNEL_NAME'] = "test"; 
+        $this->consts['CHANNEL_NAME'] = "tc"; 
         $this->consts['CHANNEL_FLAG'] = app()->make('rtt_service')
             ->consts['CHANNELS'][strtoupper($this->consts['CHANNEL_NAME'])];
         $this->consts['TXN_ATTRS'] = [
@@ -84,13 +84,35 @@ class TestService{
     private function get_account_info($account_id, $b_emptyAsException = true){
         return null;
     }
+    private function make_txn($input)
+    {
+        return [
+            'ref_id'=>$input['ref_id'] ?? $input['out_trade_no'] ?? $input['_out_trade_no'],
+            'vendor_channel'=>$this->consts['CHANNEL_FLAG'],
+            'ref_id'=>$input['ref_id'] ?? $input['out_trade_no'] ?? $input['_out_trade_no'],
+            'vendor_txn_time'=>time(),
+            'txn_scenario'=>'NATIVE',
+            'txn_fee_in_cent'=>$input['total_fee_in_cent'],
+            'txn_fee_currency'=>$input['total_fee_currency'] ?? 'CAD',
+            'paid_fee_in_cent'=>$input['total_fee_in_cent'],
+            'paid_fee_currency'=>$input['total_fee_currency'] ?? 'CAD',
+            'exchange_rate'=>'1',
+            'customer_id'=>'test_customer',
+            'status'=>'SUCCESS',
+            'device_id'=>$input['device_id'],
+            'user_id'=>$input['_uid'],
+        ];
+    }
 
     public function create_authpay($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update){
         $ret = [ 'out_trade_no' => $la_paras['_out_trade_no'], ];
         if (!$cb_new_order($la_paras['_out_trade_no'], $account_id,
-            $this->consts['CHANNEL_NAME'], $la_paras, $input))
+            $this->consts['CHANNEL_NAME'], $la_paras, null))
             throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
         try {
+            $response = $this->make_txn($la_paras);
+            $is_success = 'T';
+            $result_code = 'SUCCESS';
         }
         catch(\Exception $e) {
             $ret['status'] = 'WAIT';
@@ -108,17 +130,7 @@ class TestService{
     }
 
     public function create_order($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update){
-        if (!$cb_new_order($la_paras['_out_trade_no'], $account_id,
-            $this->consts['CHANNEL_NAME'], $la_paras, $input))
-            throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
-        try {
-        }
-        catch (\Exception $e) {
-            $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $e->getMessage());
-            throw $e;
-        }
-        $cb_order_update($la_paras['_out_trade_no'], 'WAIT', $ret);
-        return ["out_trade_no"=>$la_paras['_out_trade_no'], "code_url"=>$ret["qr_code"]];
+        return $this->create_authpay($la_paras, $account_id, $cb_new_order, $cb_order_update);
     }
 
     public function create_refund($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update){
@@ -126,7 +138,9 @@ class TestService{
             $this->consts['CHANNEL_NAME'], $la_paras, $input))
             throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
         try {
-            $ret = ventor_txn[];
+            $ret = DB::table('txn_base')->where('ref_id',$la_paras['out_trade_no'])->first();
+            if (empty($ret) || $ret->total_fee_in_cent < $la_paras['refund_fee_in_cent'] || $la_paras['refund_no']!=1)
+                throw new RttException('SYSTEM_ERROR', 'order not exists');
         }
         catch (\Exception $e) {
             $cb_order_update($la_paras['_refund_id'], 'FAIL', $e->getMessage());
@@ -134,13 +148,14 @@ class TestService{
         }
         $cb_order_update($la_paras['_refund_id'], 'SUCCESS',
             $this->vendor_txn_to_rtt_txn($ret, $account_id, 'FROM_REFUND', $la_paras));
-        return $ret;
+        return 'SUCCESS';
     }
 
     public function query_charge_single($la_paras, $account_id){
         $out_trade_no = $la_paras['out_trade_no'];
-        DB::table('txn_base')->where
-        return ;
+        $result = DB::table('txn_base')->where('ref_id',$out_trade_no)->first();
+        if (empty($result)) return null;
+        return (array) $result;
     }
 
     public function vendor_txn_to_rtt_txn($vendor_txn, $account_id, $sc_selector='DEFAULT', $moreInfo=null) {

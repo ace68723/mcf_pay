@@ -14,7 +14,7 @@ class RttService{
     {
         $this->consts = array();
         $this->consts['OUR_NAME'] = "MCF";
-        $this->consts['CHANNELS'] = ['WX'=>0x1, 'ALI'=>0x2,'TEST'=>0x80];
+        $this->consts['CHANNELS'] = ['WX'=>0x1, 'ALI'=>0x2,'TC'=>0x8000];
         $this->consts['CHANNELS_REV'] = array_flip($this->consts['CHANNELS']);
         $this->consts['DEFAULT_PAGESIZE'] = 20;
         $this->sp_oc = app()->make('order_cache_service');

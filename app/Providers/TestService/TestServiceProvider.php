@@ -14,8 +14,8 @@ class TestServiceProvider extends ServiceProvider
     public function register()
     {
 
-        $this->app->singleton('test_service', function ($app) {
-            return new TestService(); // You can even put some params here
+        $this->app->singleton('tc_service', function ($app) {
+            return new TestChannelService(); // You can even put some params here
         });
     }
 }

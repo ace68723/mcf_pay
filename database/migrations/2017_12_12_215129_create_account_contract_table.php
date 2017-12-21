@@ -18,7 +18,7 @@ class CreateAccountContractTable extends Migration
             $table->integer('device_amount');
             $table->string('tip_mode');
             $table->string('contract_price');
-            $table->integer('remit_min_in_cent');
+            $table->integer('remit_min_in_cent')->default(100);
             $table->date('start_date');
             $table->date('end_date');
             $table->unsignedInteger('is_deleted')->default(0);
