@@ -14,7 +14,7 @@ class WxServiceProvider extends ServiceProvider
     public function register()
     {
 
-        $this->app->singleton('wx_service', function ($app) {
+        $this->app->singleton('wx_vendor_service', function ($app) {
             return new WxService(); // You can even put some params here
         });
     }

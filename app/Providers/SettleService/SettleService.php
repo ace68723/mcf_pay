@@ -63,11 +63,16 @@ rawstr;
             ->orderBy('settle_time','DESC')
             ->offset(($page_num-1)*$page_size)->limit($page_size)
             ->get();
+        $ret = $results->toArray();
+        array_walk($ret, function(&$x){
+            $x->pay_in_cent=$x->amount_in_cent-$x->comm_in_cent;
+        });
         return ['total_page'=>ceil($count/$page_size),
             'total_count'=>$count,
             'page_num'=>$page_num,
             'page_size'=>$page_size,
-            'recs'=>$results->toArray()];
+            'recs'=>$ret,
+        ];
     }
     public function set_settlement($la_paras) {
         $settle_id = $la_paras['settle_id'];
@@ -77,7 +82,7 @@ rawstr;
     }
     public function settle($la_paras) {
         $account_id = $la_paras['account_id'];
-        $end_time = $la_paras['end_time'] ?? time() - 24*60*60;
+        $end_time = $la_paras['end_time'] ?? time() - 1*60*60;
         //$start_time = $la_paras['start_time'] ?? 0;
         $sp_rtt = app()->make('rtt_service');
         $currency = DB::table('account_base')->select('currency_type')
@@ -94,6 +99,7 @@ rawstr;
                 ->select(DB::raw('vendor_channel, count(*) as txn_num, sum(txn_fee_in_cent*(1-2*is_refund)) as amount_in_cent'))
                 ->groupby('vendor_channel')
                 ->get()->toArray();
+            Log::DEBUG("get number of records:".count($result));
             $settle = [
                 'amount_in_cent'=>0,
                 'comm_in_cent'=>0,
@@ -112,8 +118,8 @@ rawstr;
             $details = [];
             foreach($result as $rec) {
                 $channel = strtolower($sp_rtt->consts['CHANNELS_REV'][$rec->vendor_channel]);
-                $channelInfo = DB::table('vendor_'.$channel)->where('account_id','=',$account_id)->first();
-                $rate = intval($channelInfo->rate);
+                $vendor_sp = app()->make($channel."_vendor_service");
+                $rate = $vendor_sp->get_rate_in_e_4($account_id);
                 $rec->comm_in_cent = round($rec->amount_in_cent*$rate/10000);
                 $settle['amount_in_cent'] += intval($rec->amount_in_cent);
                 $settle['comm_in_cent'] += $rec->comm_in_cent;

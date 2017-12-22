@@ -147,6 +147,10 @@ class AliService{
             throw new RttException('SYSTEM_ERROR', "Missing Vendor Ali Entry. account_id:".$account_id);
         return $ret;
     }
+    public function get_rate_in_e_4($account_id){
+        $ret = $this->get_account_info($account_id);
+        return intval($ret->rate);
+    }
 
     public function create_authpay($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update){
         $vendor_ali_info = $this->get_account_info($account_id);

@@ -39,7 +39,7 @@ class RttService{
         if (empty($this->consts['CHANNELS'][strtoupper($channel)]))
             throw new RttException('INVALID_PARAMETER', 'channel not exists');
         $mask = $this->consts["CHANNELS"][strtoupper($channel)] ?? 0;
-        $sp = app()->make(strtolower($channel).'_service');
+        $sp = app()->make(strtolower($channel).'_vendor_service');
         $sp->set_vendor_channel($account_id, $values);
         $is_deleted = $values['is_deleted'] ?? false;
         $res = $this->get_vendor_channel_info($account_id);
@@ -67,7 +67,7 @@ class RttService{
         if (!$b_only_channel_name)
             return strtolower($channel);
          */
-        $sp_name = strtolower($channel) ."_service";
+        $sp_name = strtolower($channel) ."_vendor_service";
         if (!app()->bound($sp_name))
             throw new RttException('CHANNEL_NOT_SUPPORTED', ['channel'=>$channel]);
         $sp = app()->make($sp_name);
@@ -242,7 +242,7 @@ class RttService{
             'is_refund'=>$txn['is_refund'],
             'amount_in_cent'=>$txn['txn_fee_in_cent'],
             'amount_currency'=>$txn['txn_fee_currency'],
-            'vendor_channel'=>$this->consts['CHANNELS_REV'][$txn['vendor_channel']],
+            'vendor_channel'=>$this->consts['CHANNELS_REV'][$txn['vendor_channel']]??'unknown',
             'username'=>$txn['username']??'unknown',
         ];
         $txn = $new_txn;

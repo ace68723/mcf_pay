@@ -427,11 +427,4 @@ class MCFController extends Controller
         return $this->format_success_ret($ret);
     }
 
-    public function handle_notify_wx(Request $request)
-    {
-        $sp = app()->make('wx_service');
-        if (empty($sp)) return ;
-        $sp->handle_notify(false);
-    }
-    //
 }

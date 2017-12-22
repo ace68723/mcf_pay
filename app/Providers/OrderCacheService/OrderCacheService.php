@@ -92,10 +92,12 @@ trait ByRedisFacade{
                     DB::table('txn_base')->updateOrInsert(['ref_id'=>$txn['ref_id']], $txn);
                 }
             }
-            //Redis::multi();
-            //Redis::exec();
-            Redis::HSET($key, 'status', $status);
-            Redis::EXPIRE($key, $this->consts['ORDER_CACHE_MINS'][$status]*60); //no need to use transactions here
+            Redis::WATCH($key); //optimistic lock
+            $old_status=Redis::HGET($key, 'status');
+            Redis::MULTI();
+            if ($old_status != $status && $old_status != 'SUCCESS') Redis::HSET($key, 'status', $status);
+            Redis::EXPIRE($key, $this->consts['ORDER_CACHE_MINS'][$status]*60);
+            Redis::EXEC();
         }
     }
 

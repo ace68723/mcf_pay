@@ -14,7 +14,7 @@ class AliServiceProvider extends ServiceProvider
     public function register()
     {
 
-        $this->app->singleton('ali_service', function ($app) {
+        $this->app->singleton('ali_vendor_service', function ($app) {
             return new AliService(); // You can even put some params here
         });
     }

@@ -128,6 +128,9 @@ class TestChannelService{
         $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $errmsg);
         throw new RttException('AL_ERROR_BIZ', $errmsg);
     }
+    public function get_rate_in_e_4($account_id){
+        return 100;//1%
+    }
 
     public function create_order($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update){
         return $this->create_authpay($la_paras, $account_id, $cb_new_order, $cb_order_update);

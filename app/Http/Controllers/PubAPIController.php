@@ -188,13 +188,13 @@ class PubAPIController extends Controller
 
     public function handle_notify_wx(Request $request)
     {
-        $sp = app()->make('wx_service');
+        $sp = app()->make('wx_vendor_service');
         if (empty($sp)) return ;
         $sp->handle_notify($request, false);
     }
     public function handle_notify_ali(Request $request)
     {
-        $sp = app()->make('ali_service');
+        $sp = app()->make('ali_vendor_service');
         if (empty($sp)) return ;
         return $sp->handle_notify($request);
     }
