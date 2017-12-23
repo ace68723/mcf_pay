@@ -118,6 +118,34 @@ Body参数:
 | out_trade_no | string(64) | 是 | MCF开头的交易单号 | ---------------- | 
 
 
+## check_refund_status
+
+|  Tables  |       说明       | 默认值  |
+| :------: | :------------: | :--: |
+|   URL    | /api/v1/merchant/check_refund_status/ |      |
+| HTTP请求方式 |      POST      |      |
+|  是否需要登录  |       是        |      |
+|  授权访问限制  |     Token      |      |
+|  授权范围()  |      单次请求      |      |
+|   支持格式   |  JSON (utf-8)  |      |
+
+表头参数:
+
+| Tables       | 类型及其范围 | 说明               | 默认值  |
+| ------------ | ------ | ---------------- | ---- |
+| Content-Type | string | application/json |      |
+| Auth-Token | string | 登陆时返回的token |      |
+
+
+Body参数:
+
+| Tables             | 类型及其范围      | 必填   | 说明                            | 默认值/样例           |
+| ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
+| vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- | 
+| type | string(16) | 是 | enum("long_pulling","refresh"), long_pulling仅查询缓存, refresh当缓存miss或者交易状态非成功时去支付渠道端查询 | ---------------- | 
+| ref_id | string(64) | 是 | MCF开头,R1结尾的退款单号 | ---------------- | 
+
+
 ## get_hot_txns
 
 |  Tables  |       说明       | 默认值  |
