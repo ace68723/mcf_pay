@@ -156,20 +156,22 @@ class RttService{
         $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         $ret = $sp->create_refund($la_paras, $account_id,
             [$this->sp_oc,'cb_new_order'], [$this->sp_oc,'cb_order_update']);
+        $ret = $sp->vendor_txn_to_rtt_txn($ret, $account_id, 'FROM_REFUND', $la_paras);
+        $ret['username'] = $la_paras['_username'] ?? "unknown";
         return $ret;
     }
 
     public function check_refund_status($la_paras, $account_id){
-        $status = $this->sp_oc->query_order_cache_field($la_paras['ref_id'], 'status');
+        $status = $this->sp_oc->query_order_cache_field($la_paras['refund_id'], 'status');
         if (empty($status))
-            throw new RttException('NOT_FOUND', ["REFUND",$la_paras['ref_id']]);
+            throw new RttException('NOT_FOUND', ["REFUND",$la_paras['refund_id']]);
         if ($la_paras['type'] == 'refresh' && $status != 'SUCCESS'
             && strtolower($la_paras['vendor_channel'])=='wx') {
             //TODO: under construction...
             $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
             $vendor_txn = $sp->query_refund_single($la_paras, $account_id);
             //only success query gets here
-            $cached_input = $this->sp_oc->query_order_cache_field($la_paras['ref_id'], 'input');
+            $cached_input = $this->sp_oc->query_order_cache_field($la_paras['refund_id'], 'input');
             $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id, 'FROM_REFUND', $cached_input);
             $status = $txn['status'];//TODO ensure the state map in wx/ali service consists with rtt config
             if (!$this->is_defined_status($status)) {

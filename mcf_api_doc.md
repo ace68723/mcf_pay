@@ -1,4 +1,16 @@
 
+ * [precreate_authpay](#precreate_authpay)
+ * [create_authpay](#create_authpay)
+ * [create_order](#create_order)
+ * [check_order_status](#check_order_status)
+ * [check_refund_status](#check_refund_status)
+ * [get_hot_txns](#get_hot_txns)
+ * [get_settlements](#get_settlements)
+ * [query_txns_by_time](#query_txns_by_time)
+ * [create_refund](#create_refund)
+ * [get_exchange_rate](#get_exchange_rate)
+ * [get_company_info](#get_company_info)
+
 ## precreate_authpay
 
 |  Tables  |       说明       | 默认值  |
@@ -143,7 +155,7 @@ Body参数:
 | ------------------ | ----------- | ---- | ----------------------------- | ---------------- |
 | vendor_channel | string(8) | 是 | 付款渠道，目前支持wx或者ali | ---------------- | 
 | type | string(16) | 是 | enum("long_pulling","refresh"), long_pulling仅查询缓存, refresh当缓存miss或者交易状态非成功时去支付渠道端查询 | ---------------- | 
-| ref_id | string(64) | 是 | MCF开头,R1结尾的退款单号 | ---------------- | 
+| refund_id | string(64) | 是 | MCF开头,R1结尾的退款单号 | ---------------- | 
 
 
 ## get_hot_txns

@@ -148,7 +148,7 @@ class MCFController extends Controller
                 'required'=>true,
                 'description'=> 'enum("long_pulling","refresh"), long_pulling仅查询缓存, refresh当缓存miss或者交易状态非成功时去支付渠道端查询',
             ],
-            'ref_id'=>[
+            'refund_id'=>[
                 'checker'=>['is_string', 64],
                 'required'=>true,
                 'description'=> 'MCF开头,R1结尾的退款单号',
@@ -351,6 +351,7 @@ class MCFController extends Controller
         $la_paras['_uid'] = $userObj->uid;
         $la_paras['_username'] = $userObj->username;
         $ret = $this->sp_rtt->create_refund($la_paras, $account_id);
+        $this->sp_rtt->txn_to_export($ret);
         return $this->format_success_ret($ret);
     }
 

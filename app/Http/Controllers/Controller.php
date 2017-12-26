@@ -102,6 +102,10 @@ class Controller extends BaseController
     public function api_doc_md($prefix='api/v1/merchant') {
         $output = "";
         foreach($this->consts['REQUEST_PARAS'] as $api_spec_name=>$api_spec) {
+            $output .= "\n * [".$api_spec_name."](#".$api_spec_name.")";
+        }
+        $output .= "\n";
+        foreach($this->consts['REQUEST_PARAS'] as $api_spec_name=>$api_spec) {
             $output .= "\n## ".$api_spec_name."\n\n";
             $output .= "|  Tables  |       说明       | 默认值  |\n";
             $output .= "| :------: | :------------: | :--: |\n";
