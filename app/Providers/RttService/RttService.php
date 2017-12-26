@@ -154,6 +154,11 @@ class RttService{
     public function create_refund($la_paras, $account_id){
         $la_paras['_refund_id'] = $this->generate_txn_ref_id($la_paras, null, 'REFUND');
         $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
+        $status = $this->sp_oc->query_order_cache_field($la_paras['_refund_id'], 'status');
+        if (!empty($status) && $status == 'SUCCESS') {
+            $txn = $this->sp_oc->query_order_cache_field($la_paras['_refund_id'], 'resp');
+            return $txn;
+        }
         $ret = $sp->create_refund($la_paras, $account_id,
             [$this->sp_oc,'cb_new_order'], [$this->sp_oc,'cb_order_update']);
         $ret = $sp->vendor_txn_to_rtt_txn($ret, $account_id, 'FROM_REFUND', $la_paras);
