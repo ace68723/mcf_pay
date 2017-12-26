@@ -30,6 +30,7 @@ class MCFController extends Controller
             'get_exchange_rate'=>[101,365,666],
             'query_txns_by_time'=>[365,666],
             'get_hot_txns'=>[101,365, 666],
+            'get_txn_by_id'=>[101,365, 666],
             'get_company_info'=>[365,666],
             'get_settlements'=>[365,666],
         ];
@@ -167,6 +168,14 @@ class MCFController extends Controller
                 'required'=>false,
                 'default_value'=>$this->sp_rtt->consts['DEFAULT_PAGESIZE'],
                 'description'=> 'page size',
+            ],
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+
+        $this->consts['REQUEST_PARAS']['get_txn_by_id'] = [
+            'ref_id'=>[
+                'checker'=>['is_string', 64],
+                'required'=>true,
+                'description'=> 'out_trade_no or refund_id',
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
@@ -382,6 +391,15 @@ class MCFController extends Controller
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
         $ret = $this->sp_rtt->get_hot_txns($la_paras, $account_id);
         array_walk($ret['recs'], [$this->sp_rtt, 'txn_to_export']);
+        return $this->format_success_ret($ret);
+    }
+    public function get_txn_by_id(Request $request){
+        $userObj = $request->user('custom_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $account_id = $userObj->account_id;
+        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $ret = $this->sp_rtt->get_txn_by_id($la_paras, $account_id);
+        $this->sp_rtt->txn_to_export($ret);
         return $this->format_success_ret($ret);
     }
 

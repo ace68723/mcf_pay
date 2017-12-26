@@ -208,6 +208,24 @@ class RttService{
         $page_size = $la_paras['page_size'];
         return $this->sp_oc->get_hot_txns($account_id, $page_num, $page_size);
     }
+    public function get_txn_by_id($la_paras, $account_id) {
+        $id = $la_paras['ref_id'];
+        $status = $this->sp_oc->query_order_cache_field($id, 'status');
+        if (!empty($status) && $status != 'SUCCESS')
+            throw new RttException('NOT_FOUND','TRANSACTION NOT EXIST');
+        if (!empty($status)) {
+            $txn = $this->sp_oc->query_order_cache_field($id, 'resp');
+        }
+        else {
+            $txn = DB::table('txn_base')
+                ->leftJoin('mcf_user_base', 'txn_base.user_id','=','mcf_user_base.uid')
+                ->where("ref_id",$id)->first();
+            if (empty($txn))
+                throw new RttException('NOT_FOUND','TRANSACTION NOT EXIST');
+            $txn = (array) $txn;
+        }
+        return $txn;
+    }
     public function query_txns_by_time($la_paras, $account_id){
         $where_cond = [
             ['txn_base.account_id', '=', $account_id],
@@ -244,6 +262,8 @@ class RttService{
             'is_refund'=>$txn['is_refund'],
             'amount_in_cent'=>$txn['txn_fee_in_cent'],
             'amount_currency'=>$txn['txn_fee_currency'],
+            'paid_fee_in_cent'=>$txn['paid_fee_in_cent'],
+            'paid_fee_currency'=>$txn['paid_fee_currency'],
             'vendor_channel'=>$this->consts['CHANNELS_REV'][$txn['vendor_channel']]??'unknown',
             'username'=>$txn['username']??'unknown',
         ];
