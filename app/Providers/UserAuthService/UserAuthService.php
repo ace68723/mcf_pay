@@ -50,7 +50,7 @@ class UserAuthService{
             ->leftJoin('mcf_user_base', 'mcf_user_base.account_id','=','account_base.account_id')
             ->select(DB::raw('merchant_id, mcf_user_base.account_id AS account_id, (mcf_user_base.is_deleted + account_base.is_deleted) AS is_deleted, username, uid, saltstring, password, role'))
             ->where([
-                'merchant_id'=>$la_paras['merchantID'],
+                'merchant_id'=>$la_paras['merchant_id'],
                 'username'=>$la_paras['username'],
             ])
             ->having('is_deleted','=',0)
@@ -99,7 +99,7 @@ class UserAuthService{
         DB::table('mcf_user_login')
             ->updateOrInsert(['uid'=>$userObj->uid],[
                 'version'=>$la_paras['version'],
-                'merchant_id'=>$la_paras['merchantID'],
+                'merchant_id'=>$la_paras['merchant_id'],
                 'lastlogin'=>time(),//new \Datetime(),
                 'lat'=>explode(',',$la_paras['latlng'])[0],
                 'lng'=>explode(',',$la_paras['latlng'])[1],

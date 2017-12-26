@@ -27,7 +27,7 @@ class LoginController extends Controller
         //    'salt_str', 'account_key', 'sign', 'sign_type',
         ];
         $this->consts['REQUEST_PARAS']['login'] = [
-            'merchantID'=>[
+            'merchant_id'=>[
                 'checker'=>['is_string', 32],
                 'required'=>true,
             ],

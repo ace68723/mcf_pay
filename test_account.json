@@ -1,10 +1,10 @@
 [{
-	"merchantID":"testMerchant",
+	"merchant_id":"testMerchant",
 	"username":"testUser",
 	"password":"testonly?123?"
 },
 {
-	"merchantID":"testMerchant",
+	"merchant_id":"testMerchant",
 	"username":"testAdmin",
 	"password":"testonly?123?"
 } ]
