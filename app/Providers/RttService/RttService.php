@@ -223,6 +223,7 @@ class RttService{
         }
         else {
             $txn = DB::table('txn_base')
+                ->select('txn_base.*','mcf_user_base.username')
                 ->leftJoin('mcf_user_base', 'txn_base.user_id','=','mcf_user_base.uid')
                 ->where("ref_id",$id)->first();
             if (empty($txn))
@@ -244,6 +245,7 @@ class RttService{
         $page_num = $la_paras['page_num']??1;
         $offset = ($page_num-1)*$page_size;
         $result = DB::table('txn_base')
+            ->select('txn_base.*','mcf_user_base.username')
             ->leftJoin('mcf_user_base', 'txn_base.user_id','=','mcf_user_base.uid')
             ->where($where_cond)
             ->orderBy('vendor_txn_time','DESC')
@@ -276,7 +278,10 @@ class RttService{
     }
 
     public function get_company_info($account_id) {
-        $ret = DB::table('company_info')->where('account_id','=', $account_id)->first();
+        $ret = DB::table('company_info')
+            ->select('company_info.*', 'account_contract.tip_mode')
+            ->leftJoin('account_contract', 'account_contract.account_id','=','company_info.account_id')
+            ->where('company_info.account_id','=', $account_id)->first();
         if (empty($ret))
             throw new RttException('SYSTEM_ERROR', 'company_info not found');
         return $ret;

@@ -432,6 +432,7 @@ class MCFController extends Controller
             'address'=>$ret->address,
             'display_name'=>$ret->display_name,
             'timezone'=>$ret->timezone,
+            'tip_mode'=>$ret->tip_mode ?? null,
         ]);
     }
 
