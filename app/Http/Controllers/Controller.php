@@ -221,10 +221,11 @@ headerStr;
         if (count($la_paras) > $para_count) {
             throw new RttException('INVALID_PARAMETER', "has undefined parameter. find ".count($la_paras).'parameters while only defined '.$para_count);
         }
-        if ($api_name != 'login') //TODO
-            Log::DEBUG("parsed:".json_encode($ret));
-        else 
+        if ($api_name == 'login') //TODO
             Log::DEBUG("parsed parameters for login");
+        elseif (!in_array($api_name, ['check_order_status','check_refund_status'])) { 
+            Log::DEBUG("parsed:".json_encode($ret));
+        }
         return $ret;
     }
     public function check_role($role, $api_name) {
