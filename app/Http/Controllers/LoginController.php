@@ -86,7 +86,8 @@ class LoginController extends Controller
             Log::DEBUG($e->getMessage());
             return response('Login Failed.', 401);
         }
-        return ['token'=>$token, 'role'=>$userObj->role];
+        return ['ev_error'=>'0', 'ev_message'=>"",
+            'token'=>$token, 'role'=>$userObj->role];
     }
     public function login(Request $request)
     {
@@ -100,7 +101,8 @@ class LoginController extends Controller
             Log::DEBUG($e->getFile().$e->getLine().$e->getMessage());
             return response('Login Failed.', 401);
         }
-        return ['token'=>$token, 'role'=>$userObj->role, 'channel'=>$channels];
+        return ['ev_error'=>'0', 'ev_message'=>"",
+            'token'=>$token, 'role'=>$userObj->role, 'channel'=>$channels];
     }
 
 }

@@ -237,6 +237,7 @@ headerStr;
     public function format_success_ret($data) {
         return [
             'ev_error'=>0,
+            'ev_message'=>"",
             'ev_data'=>$data,
         ];
     }
