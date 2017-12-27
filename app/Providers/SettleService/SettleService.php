@@ -11,8 +11,12 @@ class SettleService{
     public $consts;
     public function __construct() {
         $this->consts = array();
+        $this->consts['COOLING_TIME_SEC'] = 1*1*1*60;
     }
 
+    private function calc_stop_time() {
+        return time() - $this->consts['COOLING_TIME_SEC'];
+    }
     public function get_candidate_settle($la_paras) {
         $page_num = $la_paras['page_num'];
         $page_size = $la_paras['page_size'];
@@ -29,7 +33,10 @@ class SettleService{
                 GROUP BY t1.account_id
             ) AS t2
         ON txn_base.account_id = t2.account_id 
-        WHERE last_time IS NULL OR vendor_txn_time>=last_time 
+        WHERE (last_time IS NULL OR vendor_txn_time>=last_time) AND 
+rawstr;
+        $commonStr .= '(vendor_txn_time < '. ($this->calc_stop_time()) . ') ';
+        $commonStr .= <<<rawstrsec
         GROUP BY txn_base.account_id
         ) AS t4
     LEFT JOIN 
@@ -39,7 +46,7 @@ class SettleService{
         account_contract AS t5
         ON t4.account_id = t5.account_id
     WHERE amount_in_cent >= t5.remit_min_in_cent
-rawstr;
+rawstrsec;
         $cntStr .= $commonStr;
         $count = DB::select(DB::raw($cntStr))[0]->cnt;
         $getStr .= $commonStr;
@@ -82,7 +89,7 @@ rawstr;
     }
     public function settle($la_paras) {
         $account_id = $la_paras['account_id'];
-        $end_time = $la_paras['end_time'] ?? time() - 1*60*60;
+        $end_time = $la_paras['end_time'] ?? $this->calc_stop_time();
         //$start_time = $la_paras['start_time'] ?? 0;
         $sp_rtt = app()->make('rtt_service');
         $currency = DB::table('account_base')->select('currency_type')

@@ -176,7 +176,7 @@ class TestChannelService{
     public function set_vendor_channel($account_id, $values) {
     }
     public function get_vendor_channel_config($account_id) {
-        return [];
+        return ['rate'=>$this->get_rate_in_e_4($account_id)];
     }
     private function create_request_common() {
         $input = array();
