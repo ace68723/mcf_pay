@@ -239,8 +239,9 @@ headerStr;
             Log::DEBUG("parsed parameters for login");
             //Log::DEBUG("parsed:".json_encode($ret));
         }
-        elseif (!in_array($api_name, ['check_order_status','check_refund_status'])) { 
-            Log::DEBUG("parsed:".json_encode($ret));
+        //elseif (!in_array($api_name, ['check_order_status','check_refund_status'])) { 
+        else { 
+            Log::DEBUG("called ".$api_name." parsed:".json_encode($ret));
         }
         return $ret;
     }
