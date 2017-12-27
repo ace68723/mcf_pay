@@ -170,6 +170,9 @@ headerStr;
             throw new RttException('SYSTEM_ERROR', 'EMPTY_API_DEFINITION for '.$api_name);
         $ret = array();
         $la_paras = $request->json()->all();
+        if ($api_name != 'login'){ //TODO
+            Log::DEBUG("called ".$api_name." received:".json_encode($la_paras));
+        }
         $para_count = 0;
         $resolve_func_and_call = function ($func_spec, $value) {
             $b_extra_para = is_array($func_spec) && count($func_spec)>=2;
