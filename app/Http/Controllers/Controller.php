@@ -171,7 +171,7 @@ headerStr;
         $ret = array();
         $la_paras = $request->json()->all();
         $para_count = 0;
-        function resolve_func_and_call($func_spec, $value) {
+        $resolve_func_and_call = function ($func_spec, $value) {
             $b_extra_para = is_array($func_spec) && count($func_spec)>=2;
             $func = is_array($func_spec)? $func_spec[0]: $func_spec;
             if ($b_extra_para && $func == 'is_int') {
@@ -188,18 +188,18 @@ headerStr;
             else 
                 $value = $b_extra_para ? $func($value, $func_spec[1]):$func($value);
             return $value;
-        }
+        };
         foreach ($api_paras_def as $key=>$item) {
             $rename = $item['rename'] ?? $key;
             if (array_key_exists($key, $la_paras)) {
                 $para_count += 1;
                 if (isset($item['checker'])) {
-                    if (!resolve_func_and_call($item['checker'], $la_paras[$key]))
+                    if (!$resolve_func_and_call($item['checker'], $la_paras[$key]))
                         throw new RttException('INVALID_PARAMETER', " check failed:".$key);
                 }
                 $value = $la_paras[$key];
                 if (isset($item['converter'])) {
-                    $value = resolve_func_and_call($item['converter'], $value);
+                    $value = $resolve_func_and_call($item['converter'], $value);
                 }
                 $ret[$rename] = $value;
             }
@@ -209,7 +209,7 @@ headerStr;
             elseif (array_key_exists('default_value', $item)) {
                 $value = $item['default_value'];
                 if (isset($item['converter'])) {
-                    $value = resolve_func_and_call($item['converter'], $value);
+                    $value = $resolve_func_and_call($item['converter'], $value);
                 }
                 $ret[$rename] = $value;
             }
@@ -221,8 +221,10 @@ headerStr;
         if (count($la_paras) > $para_count) {
             throw new RttException('INVALID_PARAMETER', "has undefined parameter. find ".count($la_paras).'parameters while only defined '.$para_count);
         }
-        if ($api_name == 'login') //TODO
+        if ($api_name == 'login'){ //TODO
             Log::DEBUG("parsed parameters for login");
+            //Log::DEBUG("parsed:".json_encode($ret));
+        }
         elseif (!in_array($api_name, ['check_order_status','check_refund_status'])) { 
             Log::DEBUG("parsed:".json_encode($ret));
         }
