@@ -24,9 +24,19 @@ class LoginTest extends TestCase
 
             // wrong format
             $wrong = $payload[$kind];
-            $unset($wrong['username']);
+            unset($wrong['username']);
             $resp = $this->json('POST',$url[$kind],$wrong)->response;
             $this->assertEquals(401, $resp->status());
+
+            if ($kind == 'mgt') {
+                // Test Throttle: Too Many Attempts
+                $resp = $this->json('POST',$url[$kind], $payload[$kind])->response;
+                $this->assertEquals(429, $resp->status());
+                sleep(61);
+                $resp = $this->json('POST',$url[$kind], $payload[$kind])->response;
+                $this->assertEquals(200, $resp->status());
+                sleep(60);
+            }
 
             // wrong pwd
             $wrong = $payload[$kind];
@@ -40,19 +50,21 @@ class LoginTest extends TestCase
             $resp = $this->json('POST',$url[$kind],$wrong)->response;
             $this->assertEquals(401, $resp->status());
 
-            // wrong merchant
-            $wrong = $payload[$kind];
-            $wrong['merchant_id'] = str_random(4);
-            $resp = $this->json('POST',$url[$kind],$wrong)->response;
-            $this->assertEquals(401, $resp->status());
+            if ($kind == 'merchant') {
+                // wrong merchant
+                $wrong = $payload[$kind];
+                $wrong['merchant_id'] = str_random(4);
+                $resp = $this->json('POST',$url[$kind],$wrong)->response;
+                $this->assertEquals(401, $resp->status());
 
+                // Test Throttle: Too Many Attempts
+                $resp = $this->json('POST',$url[$kind], $payload[$kind])->response;
+                $this->assertEquals(429, $resp->status());
+                sleep(61);
+                $resp = $this->json('POST',$url[$kind], $payload[$kind])->response;
+                $this->assertEquals(200, $resp->status());
+            }
 
-            // Test Throttle: Too Many Attempts
-            $resp = $this->json('POST','/login', $payload[$kind])->response;
-            $this->assertEquals(429, $resp->status());
-            sleep(60);
-            $resp = $this->json('POST','/login', $payload[$kind])->response;
-            $this->assertEquals(200, $resp->status());
         }
     }
 }

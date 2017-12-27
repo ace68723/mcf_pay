@@ -45,7 +45,11 @@ class ThrottleRequests
         $key = $this->resolveRequestSignature($request);
         $maxAttempts = $this->resolveMaxAttempts($request, $maxAttempts);
         if ($this->limiter->tooManyAttempts($key, $maxAttempts, $decayMinutes)) {
-            return response('Too Many Attempts', 429);
+            $retryAfter = $this->getTimeUntilNextRetry($key);
+            return $this->addHeaders(response('Too Many Attempts', 429), $maxAttempts,
+                $this->calculateRemainingAttempts($key, $maxAttempts, $retryAfter),
+                $retryAfter
+            );
             //throw $this->buildException($key, $maxAttempts);
         }
         $this->limiter->hit($key, $decayMinutes);

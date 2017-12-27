@@ -183,7 +183,20 @@ headerStr;
                 $value = $new_value;
             }
             elseif ($b_extra_para && $func == 'is_string') {
-                $value = is_string($value) && strlen($value)<=$func_spec[1];
+                $new_value = is_string($value);
+                if ($new_value) {
+                    $len = strlen($value);
+                    if (is_array($func_spec[1])) {
+                        if (is_int($func_spec[1][0]))
+                            $new_value = $new_value && $len>=$func_spec[1][0];
+                        if (is_int($func_spec[1][1]))
+                            $new_value = $new_value && $len<=$func_spec[1][1];
+                    }
+                    else {
+                        $new_value = $new_value && $len<=$func_spec[1];
+                    }
+                }
+                $value = $new_value;
             }
             else 
                 $value = $b_extra_para ? $func($value, $func_spec[1]):$func($value);
@@ -195,7 +208,8 @@ headerStr;
                 $para_count += 1;
                 if (isset($item['checker'])) {
                     if (!$resolve_func_and_call($item['checker'], $la_paras[$key]))
-                        throw new RttException('INVALID_PARAMETER', " check failed:".$key);
+                        throw new RttException('INVALID_PARAMETER',
+                            "check failed:".$key.", checker:".json_encode($item['checker']));
                 }
                 $value = $la_paras[$key];
                 if (isset($item['converter'])) {

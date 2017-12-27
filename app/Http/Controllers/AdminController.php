@@ -136,7 +136,7 @@ class AdminController extends Controller
                 'required'=>true,
             ],
             'password'=>[
-                'checker'=>['is_string'],
+                'checker'=>['is_string', [6,'inf']],
                 'required'=>false,
             ],
             'role'=>[
@@ -158,7 +158,7 @@ class AdminController extends Controller
                 'required'=>true,
             ],
             'password'=>[
-                'checker'=>['is_string'],
+                'checker'=>['is_string', [6,'inf']],
                 'required'=>false,
             ],
             'role'=>[
