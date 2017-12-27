@@ -191,6 +191,15 @@ class RttService{
         $status = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'status');
         if (empty($status))
             throw new RttException('NOT_FOUND', ["ORDER",$la_paras['out_trade_no']]);
+        if ($la_paras['type'] == 'pending') {
+            for ($i=0; $i<300; $i++) {
+                sleep(1);
+                $status = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'status');
+                if ($status != 'WAIT')
+                    break;
+            }
+            return $status;
+        }
         if ($la_paras['type'] == 'refresh' && $status != 'SUCCESS' ||
             $la_paras['type'] == 'force_remote') {
             $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
