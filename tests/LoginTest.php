@@ -20,7 +20,7 @@ class LoginTest extends TestCase
             // Success Test
             $resp = $this->json('POST', $url[$kind], $payload[$kind])->response;
             $this->assertEquals(200, $resp->status());
-            $this->seeJson(['ev_error'=>'0']);
+            $this->seeJson(['ev_error'=>0]);
 
             // wrong format
             $wrong = $payload[$kind];

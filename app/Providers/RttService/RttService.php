@@ -285,8 +285,9 @@ class RttService{
             'amount_currency'=>$txn['txn_fee_currency'],
             'paid_fee_in_cent'=>$txn['paid_fee_in_cent'],
             'paid_fee_currency'=>$txn['paid_fee_currency'],
-            'vendor_channel'=>$this->consts['CHANNELS_REV'][$txn['vendor_channel']]??'unknown',
-            'username'=>$txn['username']??'unknown',
+            'exchagne_rate'=>$txn['exchange_rate']??null,
+            'vendor_channel'=>$this->consts['CHANNELS_REV'][$txn['vendor_channel']]??null,
+            'username'=>$txn['username']??null,
         ];
         $txn = $new_txn;
     }
