@@ -29,7 +29,7 @@ class RttServiceTest extends TestCase
     public function testAuthPay($headers)
     {
         $data = [
-            'total_fee_in_cent'=>random_int(1,1000),
+            'total_fee_in_cent'=>random_int(1,1000000),
             'total_fee_currency'=>'CAD',
             'vendor_channel'=>'tc',
             'device_id'=>'FROM_WEB',
@@ -52,7 +52,7 @@ class RttServiceTest extends TestCase
     public function testNativePay($headers)
     {
         $data = [
-            'total_fee_in_cent'=>random_int(1,1000),
+            'total_fee_in_cent'=>random_int(1,1000000),
             'total_fee_currency'=>'CAD',
             'vendor_channel'=>'tc',
             'device_id'=>'FROM_WEB',
@@ -72,9 +72,33 @@ class RttServiceTest extends TestCase
     {
         $resp = $this->json('POST', '/api/v1/merchant/check_order_status',[
             'out_trade_no'=>$out_trade_no,
-            'type'=>'fresh',
+            'type'=>'xxx',
             'vendor_channel'=>'tc',
         ], $headers)->response;
+        $this->assertEquals(200, $resp->status());
+        $this->seeJson(['ev_error'=>0]);
+        $ret_data = (array)json_decode($resp->getContent());
+        $this->assertEquals('SUCCESS', $ret_data['ev_data']->status);
+    }
+    /**
+     * @depends testLogin
+     * @depends testAuthPay
+     */
+    public function testCheckOrderStatusSpeed($headers, $out_trade_no)
+    {
+        $data = [
+            'out_trade_no'=>$out_trade_no,
+            'type'=>'xxx',
+            'vendor_channel'=>'tc',
+        ];
+        $nRepeat = 1000;
+        $timer = -microtime(true); 
+        for ($i=0; $i<$nRepeat; $i++) {
+            $resp = $this->json('POST', '/api/v1/merchant/check_order_status', $data, $headers)->response;
+        }
+        $timer += microtime(true); 
+        print_r("\n".$nRepeat." run time:".$timer."\n");
+        print_r("\nSpeed:".($nRepeat/$timer)."req per sec\n");
         $this->assertEquals(200, $resp->status());
         $this->seeJson(['ev_error'=>0]);
         $ret_data = (array)json_decode($resp->getContent());
