@@ -133,7 +133,25 @@ class TestChannelService{
     }
 
     public function create_order($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update){
-        return $this->create_authpay($la_paras, $account_id, $cb_new_order, $cb_order_update);
+        $ret = [ 'out_trade_no' => $la_paras['_out_trade_no'], ];
+        if (!$cb_new_order($la_paras['_out_trade_no'], $account_id,
+            $this->consts['CHANNEL_NAME'], $la_paras, null))
+            throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
+        try {
+            $response = $this->make_txn($la_paras);
+            $is_success = 'T';
+            $result_code = 'SUCCESS';
+        }
+        catch(\Exception $e) {
+            $ret['status'] = 'FAIL';
+            $cb_order_update($la_paras['_out_trade_no'], 'FAIL', $e->getMessage());
+            return $ret;
+        }
+        $ret['status'] = 'WAIT';
+        $cb_order_update($la_paras['_out_trade_no'], 'WAIT', null);
+        $cb_order_update($la_paras['_out_trade_no'], 'SUCCESS',
+                $this->vendor_txn_to_rtt_txn($response, $account_id, 'DEFAULT', $la_paras));
+        return $ret;
     }
 
     public function create_refund($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update){

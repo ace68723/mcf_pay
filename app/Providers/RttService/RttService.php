@@ -198,9 +198,8 @@ class RttService{
                 if ($status != 'WAIT')
                     break;
             }
-            return $status;
         }
-        if ($la_paras['type'] == 'refresh' && $status != 'SUCCESS' ||
+        elseif ($la_paras['type'] == 'refresh' && $status != 'SUCCESS' ||
             $la_paras['type'] == 'force_remote') {
             $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
             $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
@@ -214,7 +213,13 @@ class RttService{
             }
             $this->sp_oc->cb_order_update($la_paras['out_trade_no'], $status, $txn);
         }
-        return $status;
+        $ret = ['status'=>$status,];
+        if ($status == 'SUCCESS') {
+            $txn = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'resp');
+            $this->txn_to_export($txn);
+            $ret = array_merge($ret, $txn);
+        }
+        return $ret;
     }
 
     public function get_hot_txns($la_paras, $account_id) {
