@@ -280,7 +280,7 @@ class RttService{
             $txn = (array)$txn;
         }
         $username = $txn['username']??null;
-        $mchname = empty($txn['account_id']) ? null : $this->get_merchant_name_by_id($txn['account_id']);
+        $mchinfo = empty($txn['account_id']) ? null : $this->get_merchant_info_by_id($txn['account_id']);
         $exchange_rate = $txn['exchange_rate']??number_format($txn['paid_fee_in_cent']/$txn['txn_fee_in_cent'],7,'.','');
         $new_txn = [
             'time'=>$txn['vendor_txn_time'],
@@ -293,20 +293,22 @@ class RttService{
             'exchange_rate'=>$exchange_rate,
             'vendor_channel'=>$this->consts['CHANNELS_REV'][$txn['vendor_channel']]??null,
             'username'=>$username,
-            'merchant_name'=>$mchname,
+            'merchant_name'=>$mchinfo['display_name']??null,
+            'cell'=>$mchinfo['cell']??null,
+            'address'=>$mchinfo['address']??null,
         ];
         $txn = $new_txn;
     }
 
-    public function get_merchant_name_by_id($account_id) {
+    public function get_merchant_info_by_id($account_id) {
         if (isset($this->data['mchNameMap'][$account_id])) {
             return $this->data['mchNameMap'][$account_id];
         }//TODO use cache but remember to reload it when modified
         Log::DEBUG('query mch name for account:'.$account_id);
-        $value = DB::table('company_info')->select('display_name')->where('account_id',$account_id)->first();
+        $value = DB::table('company_info')->select(['display_name','cell','address'])->where('account_id',$account_id)->first();
         if (empty($value))
             return null;
-        $value = $value->display_name;
+        $value = (array)$value;
         $this->data['mchNameMap'][$account_id] = $value;
         return $value;
     }
