@@ -290,7 +290,7 @@ class RttService{
             'amount_currency'=>$txn['txn_fee_currency'],
             'paid_fee_in_cent'=>$txn['paid_fee_in_cent'],
             'paid_fee_currency'=>$txn['paid_fee_currency'],
-            'exchagne_rate'=>$exchange_rate,
+            'exchange_rate'=>$exchange_rate,
             'vendor_channel'=>$this->consts['CHANNELS_REV'][$txn['vendor_channel']]??null,
             'username'=>$username,
             'merchant_name'=>$mchname,
