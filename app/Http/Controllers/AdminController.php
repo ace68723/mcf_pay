@@ -19,6 +19,11 @@ class AdminController extends Controller
     public function __construct()
     {
         $this->sp_mgt = app()->make('mgt_service');
+        $timezone_checker = function($x) {
+            try{ $tz = new \DateTimeZone($x);}
+            catch(\Exception $e) { return false;}
+            return true;
+        };
 
         $this->consts['DEFAULT_PAGESIZE'] = 20;
         $this->consts['ALLOWED_ROLES'] = [
@@ -94,7 +99,7 @@ class AdminController extends Controller
             'city'=>[ 'checker'=>['is_string', ], ],
             'province'=>[ 'checker'=>['is_string', ], ],
             'postal'=>[ 'checker'=>['is_string', ], ],
-            'timezone'=>[ 'checker'=>['is_string', ], ],
+            'timezone'=>[ 'checker'=>[$timezone_checker, ], ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
         $this->consts['REQUEST_PARAS']['set_merchant_contract'] = [
