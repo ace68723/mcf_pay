@@ -157,6 +157,7 @@ class RttService{
         $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         $status = $this->sp_oc->query_order_cache_field($la_paras['_refund_id'], 'status');
         if (!empty($status) && $status == 'SUCCESS') {
+            //prevent repeating a successful refund
             $txn = $this->sp_oc->query_order_cache_field($la_paras['_refund_id'], 'resp');
             return $txn;
         }
@@ -282,8 +283,16 @@ class RttService{
         $username = $txn['username']??null;
         $mchinfo = empty($txn['account_id']) ? null : $this->get_merchant_info_by_id($txn['account_id']);
         $exchange_rate = $txn['exchange_rate']??number_format($txn['paid_fee_in_cent']/$txn['txn_fee_in_cent'],7,'.','');
+        try{
+            $tz = new \DateTimeZone($mchinfo['timezone']??env('APP_TIMEZONE','Asia/Shanghai'));
+        }
+        catch(\Exception $e) {
+            $tz = new \DateTimeZone('Asia/Shanghai');
+        }
+        $dt = new \DateTime('now', $tz);
+        $dt->setTimestamp($txn['vendor_txn_time']);
         $new_txn = [
-            'time'=>$txn['vendor_txn_time'],
+            'time'=> $dt->format('Y-m-d H:i:s'),
             'ref_id'=>$txn['ref_id'],
             'is_refund'=>$txn['is_refund'],
             'amount_in_cent'=>$txn['txn_fee_in_cent'],
@@ -305,7 +314,7 @@ class RttService{
             return $this->data['mchNameMap'][$account_id];
         }//TODO use cache but remember to reload it when modified
         Log::DEBUG('query mch name for account:'.$account_id);
-        $value = DB::table('company_info')->select(['display_name','cell','address'])->where('account_id',$account_id)->first();
+        $value = DB::table('company_info')->select(['display_name','cell','address','timezone'])->where('account_id',$account_id)->first();
         if (empty($value))
             return null;
         $value = (array)$value;

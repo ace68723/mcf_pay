@@ -341,6 +341,9 @@ class AdminController extends Controller
         if (empty($func))
             throw new RttException('INVALID_PARAMETER', 'category');
         $ret = $func($la_paras);
+        if (empty($ret) && in_array($la_paras['category'],['basic','contract'])) {
+            $ret = ['account_id'=>$la_paras['account_id']];
+        }
         return $this->format_success_ret($ret);
     }
     public function set_merchant_basic(Request $request){
