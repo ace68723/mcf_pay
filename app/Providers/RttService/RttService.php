@@ -10,6 +10,7 @@ use App\Exceptions\RttException;
 class RttService{
 
     public $consts;
+    public $data;
     public function __construct()
     {
         $this->consts = array();
@@ -277,6 +278,8 @@ class RttService{
         if (!is_array($txn)) {
             $txn = (array)$txn;
         }
+        $username = $txn['username']??null;
+        $mchname = empty($txn['account_id']) ? null : $this->get_merchant_name_by_id($txn['account_id']);
         $new_txn = [
             'time'=>$txn['vendor_txn_time'],
             'ref_id'=>$txn['ref_id'],
@@ -287,11 +290,24 @@ class RttService{
             'paid_fee_currency'=>$txn['paid_fee_currency'],
             'exchagne_rate'=>$txn['exchange_rate']??null,
             'vendor_channel'=>$this->consts['CHANNELS_REV'][$txn['vendor_channel']]??null,
-            'username'=>$txn['username']??null,
+            'username'=>$username,
+            'merchant_name'=>$mchname,
         ];
         $txn = $new_txn;
     }
 
+    public function get_merchant_name_by_id($account_id) {
+        if (isset($this->data['mchNameMap'][$account_id])) {
+            return $this->data['mchNameMap'][$account_id];
+        }//TODO use cache but remember to reload it when modified
+        Log::DEBUG('query mch name for account:'.$account_id);
+        $value = DB::table('company_info')->select('display_name')->where('account_id',$account_id)->first();
+        if (empty($value))
+            return null;
+        $value = $value->display_name;
+        $this->data['mchNameMap'][$account_id] = $value;
+        return $value;
+    }
     public function get_company_info($account_id) {
         $ret = DB::table('company_info')
             ->select('company_info.*', 'account_contract.tip_mode')
