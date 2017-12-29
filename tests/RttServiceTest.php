@@ -92,16 +92,26 @@ class RttServiceTest extends TestCase
             'vendor_channel'=>'tc',
         ];
         $nRepeat = 1000;
-        $timer = -microtime(true); 
+        $timer = -microtime(true);
         for ($i=0; $i<$nRepeat; $i++) {
             $resp = $this->json('POST', '/api/v1/merchant/check_order_status', $data, $headers)->response;
         }
-        $timer += microtime(true); 
+        $timer += microtime(true);
         print_r("\n".$nRepeat." run time:".$timer."\n");
-        print_r("\nSpeed:".($nRepeat/$timer)."req per sec\n");
+        print_r("\nSpeed:".($nRepeat/$timer)." req per sec\n");
         $this->assertEquals(200, $resp->status());
         $this->seeJson(['ev_error'=>0]);
         $ret_data = (array)json_decode($resp->getContent());
         $this->assertEquals('SUCCESS', $ret_data['ev_data']->status);
+    }
+    public function getBenchmarkSpeed()
+    {
+        $nRepeat = 1000;
+        $timer = -microtime(true);
+        for ($i=0; $i<$nRepeat; $i++) {
+            $this->get('/');
+        }
+        $timer += microtime(true);
+        return ['nRepeat'=>$nRepeat, 'time'=>$timer];
     }
 }

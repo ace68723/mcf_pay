@@ -40,7 +40,17 @@ class RttService{
         if (empty($this->consts['CHANNELS'][strtoupper($channel)]))
             throw new RttException('INVALID_PARAMETER', 'channel not exists');
         $mask = $this->consts["CHANNELS"][strtoupper($channel)] ?? 0;
-        $sp = app()->make(strtolower($channel).'_vendor_service');
+        $channel = strtolower($channel);
+        $sp = app()->make($channel.'_vendor_service');
+        if ($channel == 'ali') {
+            unset($values['sub_mch_name']);
+            unset($values['sub_mch_id']);
+            $mch_info = $this->get_merchant_info_by_id($account_id);
+            if (!empty($mch_info['merchant_id']) && !empty($mch_info['ref_id'])) {
+                $values['sub_mch_name'] = $mch_info['merchant_id'];
+                $values['sub_mch_id'] = $mch_info['ref_id'];
+            }
+        }
         $sp->set_vendor_channel($account_id, $values);
         $is_deleted = $values['is_deleted'] ?? false;
         $res = $this->get_vendor_channel_info($account_id);
@@ -314,7 +324,11 @@ class RttService{
             return $this->data['mchNameMap'][$account_id];
         }//TODO use cache but remember to reload it when modified
         Log::DEBUG('query mch name for account:'.$account_id);
-        $value = DB::table('company_info')->select(['display_name','cell','address','timezone'])->where('account_id',$account_id)->first();
+        $value = DB::table('account_base')
+            ->select(['display_name','cell','address','timezone','merchant_id','ref_id'])
+            ->leftJoin('company_info', 'account_base.account_id','=','company_info.account_id')
+            ->where('account_base.account_id',$account_id)
+            ->first();
         if (empty($value))
             return null;
         $value = (array)$value;
