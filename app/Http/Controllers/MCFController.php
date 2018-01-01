@@ -46,7 +46,7 @@ class MCFController extends Controller
                 'required'=>true,
             ],
             'total_fee_in_cent'=>[
-                'checker'=>'is_int',
+                'checker'=>['is_int',[1,'inf']],
                 'required'=>true,
                 'description'=> '标价金额，以分为单位的整数',
             ],
@@ -73,7 +73,7 @@ class MCFController extends Controller
                 'required'=>true,
             ],
             'total_fee_in_cent'=>[
-                'checker'=>'is_int',
+                'checker'=>['is_int',[1,'inf']],
                 'required'=>true,
                 'description'=> '标价金额，以分为单位的整数',
             ],
@@ -104,7 +104,7 @@ class MCFController extends Controller
                 'required'=>true,
             ],
             'total_fee_in_cent'=>[
-                'checker'=>'is_int',
+                'checker'=>['is_int',[1,'inf']],
                 'required'=>true,
                 'description'=> '标价金额，以分为单位的整数',
             ],
@@ -235,7 +235,7 @@ class MCFController extends Controller
                 'description'=> '第几笔退款，目前仅支持1笔退款',
             ],
             'refund_fee_in_cent'=>[
-                'checker'=>'is_int',
+                'checker'=>['is_int',[1,'inf']],
                 'required'=>true,
                 'description'=> '退款金额，以分为单位的整数',
             ],
@@ -245,7 +245,7 @@ class MCFController extends Controller
                 'description'=> '退款币种，必须与标价金额的币种一致',
             ],
             'total_fee_in_cent'=>[
-                'checker'=>'is_int',
+                'checker'=>['is_int',[1,'inf']],
                 'required'=>true,
                 'description'=> '标价金额，以分为单位的整数',
             ],
