@@ -24,7 +24,7 @@ class CreateCompanyInfoTable extends Migration
             $table->string('city', 32);
             $table->string('province', 16);
             $table->string('postal', 16);
-            $table->string('timezone', 16);
+            $table->string('timezone', 32);
             $table->unsignedInteger('is_deleted')->default(0);
             $table->timestamp('updated_at')->useCurrent();
 

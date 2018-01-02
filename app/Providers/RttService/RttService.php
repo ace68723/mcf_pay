@@ -169,6 +169,7 @@ class RttService{
         if (!empty($status) && $status == 'SUCCESS') {
             //prevent repeating a successful refund
             $txn = $this->sp_oc->query_order_cache_field($la_paras['_refund_id'], 'resp');
+            $txn['is_repeated'] = 1;
             return $txn;
         }
         $ret = $sp->create_refund($la_paras, $account_id,
@@ -316,6 +317,9 @@ class RttService{
             'cell'=>$mchinfo['cell']??null,
             'address'=>$mchinfo['address']??null,
         ];
+        if (!empty($txn['is_repeated'])) {
+            $new_txn['is_repeated'] = $txn['is_repeated'];
+        }
         $txn = $new_txn;
     }
 

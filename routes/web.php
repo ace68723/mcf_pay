@@ -12,6 +12,12 @@
 */
 
 $router->get('/', function () use ($router) {
+    /*
+    for ($i=0; $i<10000; $i++) {
+        app('redis')->set('test','1234567890');
+    }
+    return app('redis')->get('test');
+     */
     return $router->app->version();
 });
 
