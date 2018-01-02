@@ -34,6 +34,19 @@ class MCFController extends Controller
             'get_company_info'=>[365,666],
             'get_settlements'=>[365,666],
         ];
+        $time_checker = function ($x) {
+            if (is_int($x)) return true;
+            if (is_string($x)) {
+                try{
+                    $dt = new \DateTime($x);
+                    return true;
+                }
+                catch(\Exception $e){
+                    return false;
+                }
+            }
+            return false;
+        };
 
         $this->consts['REQUEST_PARAS']['precreate_authpay'] = [
             'vendor_channel'=>[
@@ -196,14 +209,18 @@ class MCFController extends Controller
 
         $this->consts['REQUEST_PARAS']['query_txns_by_time'] = [
             'start_time'=>[
-                'checker'=>['is_int'],
+                'checker'=>[$time_checker],
                 'required'=>true,
-                'description'=> '开始时间的unix timestamp, inclusive',
+                'description'=> '开始时间的unix timestamp or datetime string, inclusive',
             ],
             'end_time'=>[
-                'checker'=>['is_int'],
+                'checker'=>[$time_checker],
                 'required'=>true,
-                'description'=> '结束时间的unix timestamp, exclusive',
+                'description'=> '结束时间的unix timestamp or datetime string, exclusive',
+            ],
+            'timezone'=>[
+                'checker'=>['is_string'],
+                'required'=>false,
             ],
             'page_num'=>[
                 'checker'=>['is_int', [1,'inf']],
@@ -403,11 +420,34 @@ class MCFController extends Controller
         return $this->format_success_ret($ret);
     }
 
+    private function convert_time($type, $timestr, $tz) {
+        if (is_int($timestr)) return $timestr;
+        try {
+            if ($type == 'end_time') {
+                try {
+                    $dt = new \DateTime($timestr." 23:59:59", new \DateTimeZone($tz));
+                }
+                catch(\Exception $e){
+                }
+            }
+            if (empty($dt)) $dt = new \DateTime($timestr, new \DateTimeZone($tz));
+            return $dt->getTimestamp();
+        }
+        catch(\Exception $e) {
+            throw new RttException('INVALID_PARAMETER', $timestr."T".$tz);
+        }
+    }
     public function query_txns_by_time(Request $request){
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $mch_info = $this->sp_rtt->get_merchant_info_by_id($account_id);
+        $la_paras['start_time'] = $this->convert_time('start_time', $la_paras['start_time'],
+            $la_paras['timezone']??$mch_info['timezone']);
+        $la_paras['end_time'] = $this->convert_time('end_time', $la_paras['end_time'],
+            $la_paras['timezone']??$mch_info['timezone']);
+        Log::DEBUG('start time:'.$la_paras['start_time'].'; end_time:'.$la_paras['end_time']);
         $ret = $this->sp_rtt->query_txns_by_time($la_paras, $account_id);
         array_walk($ret['recs'], [$this->sp_rtt, 'txn_to_export']);
         return $this->format_success_ret($ret);
