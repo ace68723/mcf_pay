@@ -219,16 +219,32 @@ class RttService{
             throw new RttException('NOT_FOUND', ["ORDER",$la_paras['out_trade_no']]);
         $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         if ($la_paras['type'] == 'pending') {
+            for ($i=0; $i<30 && $status == 'WAIT'; $i++) {
+                sleep(1);
+                $status = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'status');
+            }
             for ($j=0; $j<3; $j++) {
-                for ($i=0; $i<30 && $status != 'WAIT'; $i++) {
+                if ($status != 'WAIT') break;
+                try {
+                    $status = $this->check_order_status_remote($la_paras, $account_id, $sp);
+                }catch(RttException $e) {
+                    if ($e->getInnerCode() == RttException::NOT_FOUND_REMOTE) {
+                        $status = 'WAIT';
+                    }
+                    else {
+                        throw $e;
+                    }
+                }
+                for ($i=0; $i<30 && $status == 'WAIT'; $i++) {
                     sleep(1);
                     $status = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'status');
                 }
-                if ($status != 'WAIT') break;
-                $status = $this->check_order_status_remote($la_paras, $account_id, $sp);
             }
         }
-        elseif (($la_paras['type'] == 'refresh' && $status != 'SUCCESS') || $la_paras['type'] == 'remote') {
+        if (($la_paras['type'] == 'pending' && $status == 'WAIT') ||
+            ($la_paras['type'] == 'refresh' && $status != 'SUCCESS') ||
+            $la_paras['type'] == 'remote')
+        {
             $status = $this->check_order_status_remote($la_paras, $account_id, $sp);
         }
         $ret = ['status'=>$status,];
