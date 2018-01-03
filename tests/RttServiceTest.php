@@ -8,6 +8,9 @@ class RttServiceTest extends TestCase
     /**
      * A basic test example.
      *
+     * @group base
+     * @group speed
+     * @group dbSpeed
      * @return array headers
      */
     public function testLogin()
@@ -81,6 +84,8 @@ class RttServiceTest extends TestCase
         $this->assertEquals('SUCCESS', $ret_data['ev_data']->status);
     }
     /**
+     * @group speed
+     * @group redisSpeed
      * @depends testLogin
      * @depends testAuthPay
      */
@@ -112,6 +117,35 @@ class RttServiceTest extends TestCase
             $this->get('/');
         }
         $timer += microtime(true);
+        $this->assertEquals(200, $resp->status());
+        /*
+        print_r("\n".$nRepeat." run time:".$timer."\n");
+        print_r("\nSpeed:".($nRepeat/$timer)." req per sec\n");
+         */
         return ['nRepeat'=>$nRepeat, 'time'=>$timer];
     }
+    /**
+     * @group speed
+     * @group dbSpeed
+     * @depends testLogin
+     */
+    public function testDbQuerySpeed($headers)
+    {
+        $data = [
+            'ref_id'=>'MCFALTESTBO201712140453570839', //make sure that this is not in the cache
+        ];
+        $nRepeat = 1000;
+        $timer = -microtime(true);
+        for ($i=0; $i<$nRepeat; $i++) {
+            $resp = $this->json('POST', '/api/v1/merchant/get_txn_by_id', $data, $headers)->response;
+        }
+        $timer += microtime(true);
+        print_r("\n".$nRepeat." run time:".$timer."\n");
+        print_r("\nSpeed:".($nRepeat/$timer)." req per sec\n");
+        $this->assertEquals(200, $resp->status());
+        $this->seeJson(['ev_error'=>0]);
+        $ret_data = (array)json_decode($resp->getContent());
+        $this->assertEquals('CAD', $ret_data['ev_data']->amount_currency);
+    }
+
 }

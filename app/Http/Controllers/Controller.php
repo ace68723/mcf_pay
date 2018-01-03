@@ -236,7 +236,7 @@ headerStr;
                 $para_count += array_key_exists($ign_para, $la_paras) ? 1:0;
         }
         if (count($la_paras) > $para_count) {
-            throw new RttException('INVALID_PARAMETER', "has undefined parameter. find ".count($la_paras).'parameters while only defined '.$para_count);
+            throw new RttException('INVALID_PARAMETER_NUM', "has undefined parameter. find ".count($la_paras).'parameters while only defined '.$para_count);
         }
         if ($api_name == 'login'){ //TODO
             Log::DEBUG("parsed parameters for login");
@@ -252,7 +252,7 @@ headerStr;
         if (empty($this->consts['ALLOWED_ROLES'][$api_name]))
             throw new RttException('SYSTEM_ERROR', 'EMPTY_ROLE_CHECK_DEFINITION for '.$api_name);
         if (!in_array($role, $this->consts['ALLOWED_ROLES'][$api_name]))
-            throw new RttException('ROLE_CHECK_FAIL', [$role,$api_name]);
+            throw new RttException('PERMISSION_DENIED', [$role,$api_name]);
         return true;
     }
     public function format_success_ret($data) {

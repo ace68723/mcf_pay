@@ -8,22 +8,23 @@ class RttException extends Exception
 {
     protected $inner_code;
     protected $context;
-    const CHANNEL_NOT_ACTIVATED = 400001;
-    const CHANNEL_NOT_SUPPORTED = 400002;
-    const ROLE_CHECK_FAIL       = 400003;
-    const NOT_FOUND             = 400004;
-    const SYSTEM_ERROR          = 400005;
-    const QUERY_LATER           = 400006;
-    const INVALID_PARAMETER     = 400007;
-    const WX_ERROR_VALIDATION   = 400008;
-    const WX_ERROR_RETRY        = 400008;
-    const WX_ERROR_BIZ          = 400008;
-    const WX_ERROR_RAW          = 400008;
-    const AL_ERROR_VALIDATION   = 400009;
-    const AL_ERROR_RETRY        = 400009;
-    const AL_ERROR_BIZ          = 400009;
-    const AL_ERROR_RAW          = 400009;
-    const NOT_FOUND_REMOTE      = 400010;
+    const PERMISSION_DENIED     = 10002;
+    const INVALID_PARAMETER     = 30002;
+    const INVALID_PARAMETER_NUM = 30000;
+    const CHANNEL_NOT_ACTIVATED = 40020;
+    const CHANNEL_NOT_SUPPORTED = 40021;
+    const SYSTEM_ERROR          = 40023;
+    const NOT_FOUND             = 40024;
+    const QUERY_LATER           = 40025;
+    const WX_ERROR_VALIDATION   = 40026;
+    const WX_ERROR_RETRY        = 40026;
+    const WX_ERROR_BIZ          = 40026;
+    const WX_ERROR_RAW          = 40026;
+    const AL_ERROR_VALIDATION   = 40027;
+    const AL_ERROR_RETRY        = 40027;
+    const AL_ERROR_BIZ          = 40027;
+    const AL_ERROR_RAW          = 40027;
+    const NOT_FOUND_REMOTE      = 40040;
 
     public function __construct(string $const_name, $context = null) {
         parent::__construct($const_name, 1);
