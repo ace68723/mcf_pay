@@ -249,15 +249,18 @@ class WxService
         $vendor_wx_info = $this->get_account_info($account_id);
         if (empty($la_paras['out_trade_no']))
             throw new RttException('SYSTEM_ERROR', "Out_trade_no Missing");
-		$input = new \WxPayOrderQuery();
-		$input->SetOut_trade_no($la_paras['out_trade_no']);
+        $input = new \WxPayOrderQuery();
+        $input->SetOut_trade_no($la_paras['out_trade_no']);
         $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
         Log::DEBUG("query_txn_single_wx:sending:" . json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
-		$result = \WxPayApi::orderQuery($input);
-		Log::DEBUG("query_txn_single_wx:received:" . json_encode($result, JSON_UNESCAPED_UNICODE));
+        $result = \WxPayApi::orderQuery($input);
+        Log::DEBUG("query_txn_single_wx:received:" . json_encode($result, JSON_UNESCAPED_UNICODE));
         checkErrToThrow($result);
-		return $result;
-	}
+        if (in_array($result['trade_state'], ['NOTPAY','USERPAYING'])) {
+            throw new RttException('NOT_FOUND_REMOTE', 'OTHER-WX-'.$result['trade_state']);
+        }
+        return $result;
+    }
 
     public function query_refund_single($la_paras, $account_id) {
         $vendor_wx_info = $this->get_account_info($account_id);

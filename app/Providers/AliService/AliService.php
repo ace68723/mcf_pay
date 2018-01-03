@@ -32,9 +32,15 @@ function parse_xml_check_err_throw($xmlstr, $key) {
     $response = $result["response"]["alipay"];
     if (!my_check_sign($response, $result["sign"], $key))
         throw new RttException('AL_ERROR_VALIDATION', "vendor response sign error");
-    if (!isset($response["result_code"]) || ($response["result_code"] != "SUCCESS"))
-        throw new RttException('AL_ERROR_BIZ', $response["detail_error_code"] ??
-                        $response["error"] ?? "Error msg missing!");
+    if (!isset($response["result_code"]))
+        throw new RttException('AL_ERROR_BIZ',
+            $response["detail_error_code"] ?? $response["error"] ?? "Error msg missing!");
+    if ($response["result_code"] != "SUCCESS") {
+        if ($response["detail_error_code"] == "TRADE_NOT_EXIST")
+            throw new RttException('NOT_FOUND_REMOTE', "OTHER-ALI");
+        else throw new RttException('AL_ERROR_BIZ',
+            $response["detail_error_code"] ?? $response["error"] ?? "Error msg missing!");
+    }
     return $response;
 }
 

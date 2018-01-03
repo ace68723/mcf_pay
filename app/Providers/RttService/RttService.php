@@ -200,32 +200,36 @@ class RttService{
         }
         return $status;
     }
+    private function check_order_status_remote($la_paras, $account_id, $sp) {
+        $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
+        //only success query gets here, TODO:we need to make sure this in the implementation of vendor sp
+        $cached_input = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'input');
+        $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id, 'DEFAULT', $cached_input);
+        $status = $txn['status'];//TODO ensure the state map in wx/ali service consists with rtt config
+        if (!$this->is_defined_status($status)) {
+            Log::INFO('regard undefined status '. $status . ' as FAIL');
+            $status = 'FAIL';
+        }
+        $this->sp_oc->cb_order_update($la_paras['out_trade_no'], $status, $txn);
+        return $status;
+    }
     public function check_order_status($la_paras, $account_id){
         $status = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'status');
         if (empty($status))
             throw new RttException('NOT_FOUND', ["ORDER",$la_paras['out_trade_no']]);
+        $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         if ($la_paras['type'] == 'pending') {
-            for ($i=0; $i<60; $i++) {
-                sleep(1);
-                $status = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'status');
-                if ($status != 'WAIT')
-                    break;
+            for ($j=0; $j<3; $j++) {
+                for ($i=0; $i<30 && $status != 'WAIT'; $i++) {
+                    sleep(1);
+                    $status = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'status');
+                }
+                if ($status != 'WAIT') break;
+                $status = $this->check_order_status_remote($la_paras, $account_id, $sp);
             }
         }
-        if ($la_paras['type'] == 'pending' && $status != 'SUCCESS' ||
-            $la_paras['type'] == 'refresh' && $status != 'SUCCESS' ||
-            $la_paras['type'] == 'force_remote') {
-            $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
-            $vendor_txn = $sp->query_charge_single($la_paras, $account_id);
-            //only success query gets here
-            $cached_input = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'input');
-            $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id, 'DEFAULT', $cached_input);
-            $status = $txn['status'];//TODO ensure the state map in wx/ali service consists with rtt config
-            if (!$this->is_defined_status($status)) {
-                Log::INFO('regard undefined status '. $status . ' as FAIL');
-                $status = 'FAIL';
-            }
-            $this->sp_oc->cb_order_update($la_paras['out_trade_no'], $status, $txn);
+        elseif (($la_paras['type'] == 'refresh' && $status != 'SUCCESS') || $la_paras['type'] == 'remote') {
+            $status = $this->check_order_status_remote($la_paras, $account_id, $sp);
         }
         $ret = ['status'=>$status,];
         if ($status == 'SUCCESS') {

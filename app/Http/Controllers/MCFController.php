@@ -143,7 +143,7 @@ class MCFController extends Controller
             'type'=>[
                 'checker'=>['is_string', 16],
                 'required'=>true,
-                'description'=> 'enum("long_pulling","refresh","force_remote","pending"), long_pulling仅查询缓存，refresh当缓存miss或者交易状态非成功时去支付渠道端查询，forece_remote强制去远端查询',
+                'description'=> 'enum("refresh","remote","pending"), refresh当缓存miss或者交易状态非成功时去支付渠道端查询，remote强制去支付渠道端查询',
             ],
             'out_trade_no'=>[
                 'checker'=>['is_string', 64],
@@ -160,7 +160,7 @@ class MCFController extends Controller
             'type'=>[
                 'checker'=>['is_string', 16],
                 'required'=>true,
-                'description'=> 'enum("long_pulling","refresh"), long_pulling仅查询缓存, refresh当缓存miss或者交易状态非成功时去支付渠道端查询',
+                'description'=> 'if type=refresh:当缓存miss或者交易状态非成功时去支付渠道端查询',
             ],
             'refund_id'=>[
                 'checker'=>['is_string', 64],
