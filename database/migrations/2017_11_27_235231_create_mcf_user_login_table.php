@@ -19,7 +19,7 @@ class CreateMcfUserLoginTable extends Migration
             $table->bigInteger('lastlogin');
             $table->string('lat',15);
             $table->string('lng',15);
-            $table->string('merchant_id',45);
+            $table->string('merchant_id',45); //deprecated
 
             $table->primary('uid');
         });

@@ -49,7 +49,23 @@ class LoginController extends Controller
                 'required'=>false,
                 'default_value'=>"0,0",
             ],
-        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+        ];// parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+        $this->consts['REQUEST_PARAS']['token_login'] = [
+            'token'=>[
+                'checker'=>['is_string',],
+                'required'=>true,
+            ],
+            'version'=>[
+                'checker'=>['is_string', 10],
+                'required'=>false,
+                'default_value'=>"",
+            ],
+            'latlng'=>[
+                'checker'=>['is_string', 32],
+                'required'=>false,
+                'default_value'=>"0,0",
+            ],
+        ];// parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
         $this->consts['REQUEST_PARAS']['mgt_login'] = [
             'username'=>[
                 'checker'=>['is_string', 32],
@@ -94,6 +110,21 @@ class LoginController extends Controller
         try {
             $la_paras = $this->parse_parameters($request, __FUNCTION__);
             $userObj = $this->sp_login->login($la_paras);
+            $channels = $this->sp_rtt->get_vendor_channel_info($userObj->account_id, true);
+            $token = $this->sp_login->create_token($userObj);
+        }
+        catch (Exception $e) {
+            Log::DEBUG($e->getFile().$e->getLine().$e->getMessage());
+            return response('Login Failed.', 401);
+        }
+        return ['ev_error'=>0, 'ev_message'=>"",
+            'token'=>$token, 'role'=>$userObj->role, 'channel'=>$channels];
+    }
+    public function token_login(Request $request)
+    {
+        try {
+            $la_paras = $this->parse_parameters($request, __FUNCTION__);
+            $userObj = $this->sp_login->token_login($la_paras);
             $channels = $this->sp_rtt->get_vendor_channel_info($userObj->account_id, true);
             $token = $this->sp_login->create_token($userObj);
         }

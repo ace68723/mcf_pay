@@ -82,8 +82,9 @@ $router->group(['prefix'=>'api/v1/mgt','middleware'=>'auth:custom_mgt_token'], f
 });
 
 
-$router->post('/login/', ['middleware'=>'throttle:5,1', 'uses'=>'LoginController@login']); //5 times /1min
-$router->post('/mgt/login/', ['middleware'=>'throttle:2,1', 'uses'=>'LoginController@mgt_login']); //2 times /1min
+$router->post('/login/', ['middleware'=>'throttle:5,1', 'uses'=>'LoginController@login']);//5 times /1min
+$router->post('/token_login/', ['middleware'=>'throttle:5,1', 'uses'=>'LoginController@token_login']);//5 times /1min
+$router->post('/mgt/login/', ['middleware'=>'throttle:2,1', 'uses'=>'LoginController@mgt_login']);//2 times /1min
 
 
 $router->post('/notify/wx/', ['uses'=>'PubAPIController@handle_notify_wx']);

@@ -131,6 +131,12 @@ class RttServiceTest extends TestCase
      */
     public function testDbQuerySpeed($headers)
     {
+        app()->configureMonologUsing(function (\Monolog\Logger $monolog) {
+            $handler = new \Monolog\Handler\StreamHandler(storage_path('logs/lumen.log'), \Monolog\Logger::INFO);
+            $handler->setFormatter(new \Monolog\Formatter\LineFormatter(null, null, true, true));
+            //$oldhandler=$monolog->popHandler();
+            $monolog->pushHandler($handler);
+        });
         $data = [
             'ref_id'=>'MCFALTESTBO201712140453570839', //make sure that this is not in the cache
         ];

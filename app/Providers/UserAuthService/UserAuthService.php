@@ -88,6 +88,17 @@ class UserAuthService{
         unset($item->password);
         return $item;
     }
+    public function token_login($la_paras) {
+        $item = $this->check_token($la_paras['token'], false);
+        try {
+            $this->update_login($la_paras, $item);
+        }
+        catch (Exception $e) {
+            Log::INFO('Update Login Failed:'.$e->getMessage());
+        }
+        unset($item->password);
+        return $item;
+    }
     public function login($la_paras) {
         $item = DB::table('account_base')
             ->leftJoin('mcf_user_base', 'mcf_user_base.account_id','=','account_base.account_id')
@@ -137,7 +148,7 @@ class UserAuthService{
             'username'=>$userObj->username,
             'account_id'=>$userObj->account_id,
             'expire'=>time()+$this->consts['token_expire_sec'],
-        );
+        );//should not change the attributes' name, as we directly use the return of check_token as UserObj
         $key = 'auth:token:'.$info['uid'];
         Redis::SETEX($key, $info['expire']-time(), $info['expire']);
         return JWT::encode($info, env('APP_KEY'));
@@ -146,7 +157,7 @@ class UserAuthService{
         DB::table('mcf_user_login')
             ->updateOrInsert(['uid'=>$userObj->uid],[
                 'version'=>$la_paras['version'],
-                'merchant_id'=>$la_paras['merchant_id'],
+                'merchant_id'=>$la_paras['merchant_id']??"from_token_login",
                 'lastlogin'=>time(),//new \Datetime(),
                 'lat'=>explode(',',$la_paras['latlng'])[0],
                 'lng'=>explode(',',$la_paras['latlng'])[1],
