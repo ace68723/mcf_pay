@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Auth\GenericUser;
 use Log;
+use App\Exceptions\RttException;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -46,10 +47,12 @@ class AuthServiceProvider extends ServiceProvider
             if (empty($secInfo) || empty($secInfo->account_secret))
                 return null;
 
-            //IMPORTANT TODO comment this *****************
+            //IMPORTANT comment this *****************
+            /*
             if (env('APP_DEBUG', false)) {
                 return new GenericUser(['account_id'=>$secInfo->account_id]);
             }
+             */
             //********************************
 
             $input_paras = $request->json()->all();
@@ -74,15 +77,17 @@ class AuthServiceProvider extends ServiceProvider
             $token_info = $sp->check_token($request->header('Auth-Token'));
             if (empty($token_info->uid)
                 || empty($token_info->role)
-                || $token_info->role < 999
                 || empty($token_info->expire) )
             {
-                Log::DEBUG("empty token_info or insufficient role");
-                return null;
+                Log::DEBUG("empty token_info");
+                throw new RttException('INVALID_TOKEN');
             }
-            if (!env('APP_DEBUG') && time() > $token_info->expire) {
+            if ($token_info->role < 999) {
+                throw new RttException('PERMISSION_DENIED');
+            }
+            if (time() > $token_info->expire) {
                 Log::DEBUG("token expire:".time().">".$token_info->expire);
-                return null;
+                throw new RttException('TOKEN_EXPIRE');
             }
             return new GenericUser([
                 'uid'=>$token_info->uid,
@@ -105,11 +110,11 @@ class AuthServiceProvider extends ServiceProvider
                 || empty($token_info->expire) )
             {
                 Log::DEBUG("empty token_info");
-                return null;
+                throw new RttException('INVALID_TOKEN');
             }
-            if (!env('APP_DEBUG') && time() > $token_info->expire) {
+            if (time() > $token_info->expire) {
                 Log::DEBUG("token expire:".time().">".$token_info->expire);
-                return null;
+                throw new RttException('TOKEN_EXPIRE');
             }
             return new GenericUser([
                 'uid'=>$token_info->uid,

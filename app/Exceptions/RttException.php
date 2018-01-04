@@ -8,7 +8,9 @@ class RttException extends Exception
 {
     protected $inner_code;
     protected $context;
-    const PERMISSION_DENIED     = 10002;
+    const INVALID_TOKEN         = 10001;
+    const PERMISSION_DENIED     = 10004;
+    const TOKEN_EXPIRE          = 10010;
     const INVALID_PARAMETER     = 30002;
     const INVALID_PARAMETER_NUM = 30000;
     const CHANNEL_NOT_ACTIVATED = 40020;

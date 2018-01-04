@@ -11,7 +11,7 @@ class UserAuthService{
 
     public $consts;
     public function __construct() {
-        $this->consts['token_expire_sec'] = 1800;
+        $this->consts['token_expire_sec'] = 180*24*60*60; //TODO change this to 1 week
     }
 
     public function check_token($token) {
