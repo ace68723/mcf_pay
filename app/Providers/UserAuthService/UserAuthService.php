@@ -4,17 +4,59 @@ namespace App\Providers\UserAuthService;
 use Log;
 use \Firebase\JWT\JWT;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 //use Illuminate\Http\Request;
 use Exception;
+use App\Exceptions\RttException;
 
 class UserAuthService{
 
     public $consts;
     public function __construct() {
-        $this->consts['token_expire_sec'] = 180*24*60*60; //TODO change this to 1 week
+        $this->consts['token_expire_sec'] = 7*24*60*60;
     }
 
-    public function check_token($token) {
+    public function check_token($token, $b_for_mgt=false) {
+        /*
+        $a = debug_backtrace();
+        $b = json_encode($a, JSON_PARTIAL_OUTPUT_ON_ERROR, 2);
+        Log::DEBUG($b);
+         */
+        if (empty($token)) {
+            throw new RttException('INVALID_TOKEN');
+        }
+        try {
+            $token_info = JWT::decode($token, env('APP_KEY'), array('HS256'));
+        }
+        catch (Exception $e) {
+            throw new RttException('INVALID_TOKEN');
+        }
+        if (empty($token_info->uid)
+            || empty($token_info->role)
+            || (!$b_for_mgt && empty($token_info->username))
+            || (!$b_for_mgt && empty($token_info->account_id))
+            || empty($token_info->expire)
+        )
+        {
+            throw new RttException('INVALID_TOKEN');
+        }
+        if (time() > $token_info->expire) {
+            Log::DEBUG("token expire:".time().">".$token_info->expire);
+            throw new RttException('TOKEN_EXPIRE');
+        }
+        $key = 'auth:token:'.$token_info->uid;
+        $last_login = Redis::GET($key);
+        if (empty($last_login))
+            throw new RttException('TOKEN_EXPIRE');
+        if ($last_login != $token_info->expire) { //compare int with string do not use !==
+            Log::DEBUG("token kicked: (new)".($last_login)."!=(old)".$token_info->expire);
+            throw new RttException('TOKEN_KICKED');
+        }
+        return $token_info;
+    }
+    /*
+    public function decode_token($token) {
+        //to be deleted
         if (empty($token))
             return false;
         try {
@@ -25,6 +67,7 @@ class UserAuthService{
         }
         return $info;
     }
+     */
     public function mgt_login($la_paras) {
         $item = DB::table('mcf_user_base')
             ->select([ 'is_deleted', 'username', 'uid', 'saltstring', 'password', 'role' ])
@@ -36,7 +79,7 @@ class UserAuthService{
         if (empty($item) || empty($item->saltstring))
             throw new Exception('LOGIN_FAIL');
         $cmp_str = md5($la_paras['password'].$item->saltstring);
-        if (env('APP_DEBUG') && $item->password == 'tobemodified') {
+        if (env('APP_DEBUG', false) && $item->password == 'tobemodified') {
             $this->set_pwd($item->uid, $cmp_str);
             $item->password = $cmp_str;
         }
@@ -58,7 +101,7 @@ class UserAuthService{
         if (empty($item) || empty($item->saltstring))
             throw new Exception('LOGIN_FAIL');
         $cmp_str = md5($la_paras['password'].$item->saltstring);
-        if (env('APP_DEBUG') && $item->password == 'tobemodified') {
+        if (env('APP_DEBUG', false) && $item->password == 'tobemodified') {
             $this->set_pwd($item->uid, $cmp_str);
             $item->password = $cmp_str;
         }
@@ -83,6 +126,8 @@ class UserAuthService{
             'username'=>$userObj->username,
             'expire'=>time()+$this->consts['token_expire_sec'],
         );
+        $key = 'auth:token:'.$info['uid'];
+        Redis::SETEX($key, $info['expire']-time(), $info['expire']);
         return JWT::encode($info, env('APP_KEY'));
     }
     public function create_token($userObj) {
@@ -93,6 +138,8 @@ class UserAuthService{
             'account_id'=>$userObj->account_id,
             'expire'=>time()+$this->consts['token_expire_sec'],
         );
+        $key = 'auth:token:'.$info['uid'];
+        Redis::SETEX($key, $info['expire']-time(), $info['expire']);
         return JWT::encode($info, env('APP_KEY'));
     }
     private function update_login($la_paras, $userObj) {

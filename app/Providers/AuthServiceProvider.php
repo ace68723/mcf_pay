@@ -74,20 +74,10 @@ class AuthServiceProvider extends ServiceProvider
 
         $this->app['auth']->viaRequest('custom_mgt_token', function ($request) {
             $sp = app()->make('user_auth_service');
-            $token_info = $sp->check_token($request->header('Auth-Token'));
-            if (empty($token_info->uid)
-                || empty($token_info->role)
-                || empty($token_info->expire) )
-            {
-                Log::DEBUG("empty token_info");
-                throw new RttException('INVALID_TOKEN');
-            }
+            $token_info = $sp->check_token($request->header('Auth-Token'), true);
+            //$token_info = $sp->decode_token($request->header('Auth-Token'));
             if ($token_info->role < 999) {
                 throw new RttException('PERMISSION_DENIED');
-            }
-            if (time() > $token_info->expire) {
-                Log::DEBUG("token expire:".time().">".$token_info->expire);
-                throw new RttException('TOKEN_EXPIRE');
             }
             return new GenericUser([
                 'uid'=>$token_info->uid,
@@ -96,26 +86,9 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         $this->app['auth']->viaRequest('custom_token', function ($request) {
-            /*
-            $a = debug_backtrace();
-            $b = json_encode($a, JSON_PARTIAL_OUTPUT_ON_ERROR, 2);
-            Log::DEBUG($b);
-             */
             $sp = app()->make('user_auth_service');
-            $token_info = $sp->check_token($request->header('Auth-Token'));
-            if (empty($token_info->uid)
-                || empty($token_info->role)
-                || empty($token_info->username)
-                || empty($token_info->account_id)
-                || empty($token_info->expire) )
-            {
-                Log::DEBUG("empty token_info");
-                throw new RttException('INVALID_TOKEN');
-            }
-            if (time() > $token_info->expire) {
-                Log::DEBUG("token expire:".time().">".$token_info->expire);
-                throw new RttException('TOKEN_EXPIRE');
-            }
+            $token_info = $sp->check_token($request->header('Auth-Token'), false);
+            //$token_info = $sp->decode_token($request->header('Auth-Token'));
             return new GenericUser([
                 'uid'=>$token_info->uid,
                 'role'=>$token_info->role,

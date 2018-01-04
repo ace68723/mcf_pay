@@ -94,8 +94,8 @@ class LoginController extends Controller
         try {
             $la_paras = $this->parse_parameters($request, __FUNCTION__);
             $userObj = $this->sp_login->login($la_paras);
-            $token = $this->sp_login->create_token($userObj);
             $channels = $this->sp_rtt->get_vendor_channel_info($userObj->account_id, true);
+            $token = $this->sp_login->create_token($userObj);
         }
         catch (Exception $e) {
             Log::DEBUG($e->getFile().$e->getLine().$e->getMessage());
