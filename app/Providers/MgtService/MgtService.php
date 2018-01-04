@@ -54,6 +54,16 @@ class MgtService{
     }
     public function set_merchant_contract($la_paras) {
         $where = ['account_id'=>$la_paras['account_id']];
+        try {
+            foreach(['start_date','end_date'] as $timePara) {
+                if (isset($la_paras[$timePara])) {
+                    $dt = new \DateTime($la_paras[$timePara]);
+                    $la_paras[$timePara] = $dt->format('Y-m-d');
+                }
+            }
+        }
+        catch(\Exception $e) {
+        }
         $is_success = DB::table('account_contract')->updateOrInsert($where,$la_paras);
         return $is_success;
     }
