@@ -156,11 +156,14 @@ class TestChannelService{
 
     public function create_refund($la_paras, $account_id, callable $cb_new_order, callable $cb_order_update){
         if (!$cb_new_order($la_paras['_refund_id'], $account_id,
-            $this->consts['CHANNEL_NAME'], $la_paras, $input))
-            throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
+            $this->consts['CHANNEL_NAME'], $la_paras, null))
+        {
+            //throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
+            Log::INFO("Allowing repeating refund. refund_id:".$la_paras['_refund_id']);
+        }
         try {
             $ret = DB::table('txn_base')->where('ref_id',$la_paras['out_trade_no'])->first();
-            if (empty($ret) || $ret->total_fee_in_cent < $la_paras['refund_fee_in_cent'] || $la_paras['refund_no']!=1)
+            if (empty($ret) || $ret->txn_fee_in_cent < $la_paras['refund_fee_in_cent'] || $la_paras['refund_no']!=1)
                 throw new RttException('SYSTEM_ERROR', 'order not exists');
         }
         catch (\Exception $e) {
@@ -169,7 +172,9 @@ class TestChannelService{
         }
         $cb_order_update($la_paras['_refund_id'], 'SUCCESS',
             $this->vendor_txn_to_rtt_txn($ret, $account_id, 'FROM_REFUND', $la_paras));
-        return 'SUCCESS';
+        $txn->is_refund = true;
+        $txn->ref_id = $la_paras['_refund_id'];
+        return $txn;
     }
 
     public function query_charge_single($la_paras, $account_id){

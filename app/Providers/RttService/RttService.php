@@ -133,10 +133,6 @@ class RttService{
         $la_paras = $this->sp_oc->query_order_cache_field($new_la_paras['out_trade_no'], 'input');
         if (empty($la_paras))
             throw new RttException("INVALID_PARAMETER", "out_trade_no");
-        //TODO remember to unset APP_DEBUG in production env, which will prevent outputing exception context message
-        //to frontend, since the above message may be used to verify if an order exists.
-        //Although timing attack may still work, it shouldn't be a problem,
-        //considering its hardness and the limited order expire time...
         if (($la_paras['_out_trade_no']??null) != $new_la_paras['out_trade_no'])
             throw new RttException("INVALID_PARAMETER", "out_trade_no"); //note that $la_paras['_out_trade_no'] is the real effecting parameter
         foreach (['scenario', 'total_fee_in_cent', 'total_fee_currency', 'vendor_channel'] as $pa_name) {
@@ -164,6 +160,10 @@ class RttService{
 
     public function create_refund($la_paras, $account_id){
         $la_paras['_refund_id'] = $this->generate_txn_ref_id($la_paras, null, 'REFUND');
+        $old_account_id = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'account_id');
+        if ($old_account_id != $account_id) {
+            throw new RttException('PERMISSION_DENIED');
+        }
         $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         $status = $this->sp_oc->query_order_cache_field($la_paras['_refund_id'], 'status');
         if (!empty($status) && $status == 'SUCCESS') {
@@ -277,6 +277,9 @@ class RttService{
             if (empty($txn))
                 throw new RttException('NOT_FOUND','TRANSACTION NOT EXIST');
             $txn = (array) $txn;
+        }
+        if ($txn['account_id'] != $account_id) {
+            throw new RttException('PERMISSION_DENIED');
         }
         return $txn;
     }

@@ -229,7 +229,7 @@ class WxService
         $input->SetSub_mch_id($vendor_wx_info->sub_mch_id);
         if (!$cb_new_order($la_paras['_refund_id'], $account_id,
             $this->consts['CHANNEL_NAME'], $la_paras, $input->GetValues())) {
-            throw  new RttException('SYSTEM_ERROR', "duplicate order according to out_trade_no");
+            Log::INFO("Allowing repeating refund. refund_id:".$la_paras['_refund_id']);
         }
         try {
             Log::info(__FUNCTION__.":wx:sending:". json_encode($input->GetValues(), JSON_UNESCAPED_UNICODE));
