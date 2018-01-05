@@ -13,6 +13,7 @@ class RttException extends Exception
     const TOKEN_EXPIRE          = 10010;
     const TOKEN_KICKED          = 10011;
     const LOGIN_FAIL            = 10012;
+    const TOO_MANY_ATTEMPTS     = 10013;
     const INVALID_PARAMETER     = 30002;
     const INVALID_PARAMETER_NUM = 30000;
     const CHANNEL_NOT_ACTIVATED = 40020;

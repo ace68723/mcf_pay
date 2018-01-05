@@ -10,6 +10,7 @@ use Illuminate\Cache\RateLimiter;
 use Illuminate\Support\InteractsWithTime;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use App\Exceptions\RttException;
 
 class ThrottleRequests
 {
@@ -46,7 +47,8 @@ class ThrottleRequests
         $maxAttempts = $this->resolveMaxAttempts($request, $maxAttempts);
         if ($this->limiter->tooManyAttempts($key, $maxAttempts, $decayMinutes)) {
             $retryAfter = $this->getTimeUntilNextRetry($key);
-            return $this->addHeaders(response('Too Many Attempts', 429), $maxAttempts,
+            $payload = ['ev_error'=>RttException::TOO_MANY_ATTEMPTS, 'ev_message'=>'TOO_MANY_ATTEMPTS'];
+            return $this->addHeaders(response($payload, 429), $maxAttempts,
                 $this->calculateRemainingAttempts($key, $maxAttempts, $retryAfter),
                 $retryAfter
             );
