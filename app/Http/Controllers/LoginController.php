@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Exceptions\RttException;
 use Exception;
 
 
@@ -100,7 +101,7 @@ class LoginController extends Controller
         }
         catch (Exception $e) {
             Log::DEBUG($e->getMessage());
-            return response('Login Failed.', 401);
+            throw new RttException('LOGIN_FAIL');
         }
         return ['ev_error'=>0, 'ev_message'=>"",
             'token'=>$token, 'role'=>$userObj->role];
@@ -115,7 +116,7 @@ class LoginController extends Controller
         }
         catch (Exception $e) {
             Log::DEBUG($e->getFile().$e->getLine().$e->getMessage());
-            return response('Login Failed.', 401);
+            throw new RttException('LOGIN_FAIL');
         }
         return ['ev_error'=>0, 'ev_message'=>"",
             'token'=>$token, 'role'=>$userObj->role, 'channel'=>$channels];
@@ -130,7 +131,8 @@ class LoginController extends Controller
         }
         catch (Exception $e) {
             Log::DEBUG($e->getFile().$e->getLine().$e->getMessage());
-            return response('Login Failed.', 401);
+            throw new RttException('LOGIN_FAIL');
+            //return response('Login Failed.', 401);
         }
         return ['ev_error'=>0, 'ev_message'=>"",
             'token'=>$token, 'role'=>$userObj->role, 'channel'=>$channels];

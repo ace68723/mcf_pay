@@ -59,12 +59,14 @@ class Handler extends ExceptionHandler
         if ($e instanceof RttException) {
             $ls_result = array();
             //$ls_result['ev_error_phase'] = $e->getCode();
-            $ls_result['ev_error'] = $e->getInnerCode();
+            $errcode = $e->getInnerCode();
+            $ls_result['ev_error'] = $errcode;
             $ls_result['ev_message'] = $e->getMessage();
             if (env('APP_DEBUG', false)) {
                 $ls_result['ev_context'] = $e->getContext();
             }
-            return $ls_result;
+            $st_code = ($errcode < 20000 && $errcode >= 10000) ? 401:500;
+            return response($ls_result, $st_code);
         }
         return parent::render($request, $e);
     }
