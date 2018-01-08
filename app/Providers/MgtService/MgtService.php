@@ -172,10 +172,10 @@ class MgtService{
             $is_success = DB::table('mcf_user_base')->where($where)->update($values);
         }
         catch(\Exception $e) {
-            throw new RttException('INVALID_PARAMETER', 'possibly duplicated username.');
+            throw new RttException('SYSTEM_ERROR', 'update failed. possibly user not found');
         }
         if (!$is_success)
-            throw new RttException('SYSTEM_ERROR', 'update failed. possibly user not found');
+            throw new RttException('SYSTEM_ERROR', 'not updated. should NOT happen as we use random saltstring');
         return $password;
     }
     public function add_merchant_user($la_paras) {

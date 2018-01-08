@@ -163,15 +163,36 @@ headerStr;
         return response($output)->header('Content-Type', 'text/markdown; charset=utf-8');
     }
 
-    public function parse_parameters(Request $request, $api_name) {
+    private function format_caller_str($request, $caller) {
+        $ret = $request->method().'|'.$request->server('SERVER_NAME').'|'.$request->path().'|'.$request->ip();
+        if (!empty($caller)) {
+            if (!empty($caller->account_id)) {
+                $ret .= '|A_ID:'.$caller->account_id.'|';
+            }
+            if (!empty($caller->uid)) {
+                $ret .= '|U_ID:'.$caller->uid.'|';
+            }
+            if (!empty($caller->username)) {
+                $ret .= '|USER:'.$caller->username.'|';
+            }
+        }
+        return $ret;
+    }
+    public function parse_parameters(Request $request, $api_name, $callerInfoObj = null) {
         $api_paras_def =  empty($api_name) ? $this->consts['REQUEST_PARAS'] : 
             $this->consts['REQUEST_PARAS'][$api_name];
         if (empty($api_paras_def))
             throw new RttException('SYSTEM_ERROR', 'EMPTY_API_DEFINITION for '.$api_name);
         $ret = array();
         $la_paras = $request->json()->all();
-        if ($api_name != 'login'){ //TODO
-            Log::DEBUG("called ".$api_name." received:".json_encode($la_paras));
+        try {
+            //$payload = ($api_name != 'login') ? json_encode($la_paras) : "hide for login";
+            $payload = json_encode(array_except($la_paras,['password','pwd']));
+            $caller_str = $this->format_caller_str($request, $callerInfoObj);
+            Log::DEBUG($caller_str . " called ".$api_name." payload_noPWD:". $payload);
+        }
+        catch (\Exception $e) {
+            Log::DEBUG("Exception in logging parse_parameters:". $e->getMessage());
         }
         $para_count = 0;
         $resolve_func_and_call = function ($func_spec, $value) {
@@ -238,14 +259,16 @@ headerStr;
         if (count($la_paras) > $para_count) {
             throw new RttException('INVALID_PARAMETER_NUM', "has undefined parameter. find ".count($la_paras).'parameters while only defined '.$para_count);
         }
-        if ($api_name == 'login'){ //TODO
-            Log::DEBUG("parsed parameters for login");
-            //Log::DEBUG("parsed:".json_encode($ret));
+        //Log::DEBUG("parsed(no pwd):".json_encode(array_except($ret,['password','pwd'])));
+        /*
+        if (in_array($api_name, ['login','mgt_login','token_login'])){//change to endWith?
+            //Log::DEBUG("parsed parameters for login");
         }
         //elseif (!in_array($api_name, ['check_order_status','check_refund_status'])) { 
-        else { 
-            Log::DEBUG("called ".$api_name." parsed:".json_encode($ret));
+        else {
+            //Log::DEBUG("called ".$api_name." parsed:".json_encode($ret));
         }
+         */
         return $ret;
     }
     public function check_role($role, $api_name) {

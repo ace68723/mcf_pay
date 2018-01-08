@@ -334,14 +334,14 @@ class AdminController extends Controller
     public function get_merchants(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = $this->sp_mgt->get_merchants($la_paras);
         return $this->format_success_ret($ret);
     }
     public function get_merchant_info(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $func = $this->consts['GET_FUNC_CATEGORY_MAP'][$la_paras['category']] ?? null;
         if (empty($func))
             throw new RttException('INVALID_PARAMETER', 'category');
@@ -354,70 +354,70 @@ class AdminController extends Controller
     public function set_merchant_basic(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = $this->sp_mgt->set_merchant_basic($la_paras);
         return $this->format_success_ret($ret);
     }
     public function set_merchant_contract(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = $this->sp_mgt->set_merchant_contract($la_paras);
         return $this->format_success_ret($ret);
     }
     public function set_merchant_device(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = $this->sp_mgt->set_merchant_device($la_paras);
         return $this->format_success_ret($ret);
     }
     public function set_merchant_user(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = $this->sp_mgt->set_merchant_user($la_paras);
         return $this->format_success_ret($ret);
     }
     public function set_merchant_channel(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = $this->sp_mgt->set_merchant_channel($la_paras);
         return $this->format_success_ret($ret);
     }
     public function add_merchant_user(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = $this->sp_mgt->add_merchant_user($la_paras);
         return $this->format_success_ret($ret);
     }
     public function get_merchant_settlement(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = app()->make('settle_service')->get_settlements($la_paras, $la_paras['account_id']??null);
         return $this->format_success_ret($ret);
     }
     public function get_candidate_settle(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = app()->make('settle_service')->get_candidate_settle($la_paras);
         return $this->format_success_ret($ret);
     }
     public function add_settle(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = app()->make('settle_service')->settle($la_paras);
         return $this->format_success_ret($ret);
     }
     public function set_settlement(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = app()->make('settle_service')->set_settlement($la_paras);
         return $this->format_success_ret($ret);
     }
@@ -425,7 +425,7 @@ class AdminController extends Controller
     public function get_hot_txns(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $account_id = $la_paras['account_id'];
         $sp_rtt = app()->make('rtt_service');
         $ret = $sp_rtt->get_hot_txns($la_paras, $account_id);
@@ -436,7 +436,7 @@ class AdminController extends Controller
     public function query_txns_by_time(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $account_id = $la_paras['account_id'];
         $sp_rtt = app()->make('rtt_service');
         $ret = $sp_rtt->query_txns_by_time($la_paras, $account_id);
@@ -446,14 +446,14 @@ class AdminController extends Controller
     public function create_new_account(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = $this->sp_mgt->create_new_account($la_paras);
         return $this->format_success_ret($ret);
     }
     public function set_account(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = $this->sp_mgt->set_account($la_paras);
         return $this->format_success_ret($ret);
     }

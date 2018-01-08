@@ -327,7 +327,7 @@ class MCFController extends Controller
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $this->sp_rtt->check_device_id($account_id, $la_paras['device_id']);
         $la_paras['scenario'] = 'AUTHPAY';
         $la_paras['_uid'] = $userObj->uid;
@@ -340,7 +340,7 @@ class MCFController extends Controller
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $this->sp_rtt->check_device_id($account_id, $la_paras['device_id']);
         $la_paras['scenario'] = 'AUTHPAY'; 
         $la_paras['_uid'] = $userObj->uid;
@@ -356,7 +356,7 @@ class MCFController extends Controller
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $this->sp_rtt->check_device_id($account_id, $la_paras['device_id']);
         $la_paras['scenario'] = 'NATIVE';
         $la_paras['_uid'] = $userObj->uid;
@@ -372,7 +372,7 @@ class MCFController extends Controller
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $this->sp_rtt->check_device_id($account_id, $la_paras['device_id']);
         $la_paras['_uid'] = $userObj->uid;
         $la_paras['_username'] = $userObj->username;
@@ -386,7 +386,7 @@ class MCFController extends Controller
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $status = $this->sp_rtt->check_order_status($la_paras, $account_id);
         return $this->format_success_ret($status);
     }
@@ -396,7 +396,7 @@ class MCFController extends Controller
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $status = $this->sp_rtt->check_refund_status($la_paras, $account_id);
         return $this->format_success_ret($status);
     }
@@ -405,7 +405,7 @@ class MCFController extends Controller
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = $this->sp_rtt->get_hot_txns($la_paras, $account_id);
         array_walk($ret['recs'], [$this->sp_rtt, 'txn_to_export']);
         return $this->format_success_ret($ret);
@@ -414,7 +414,7 @@ class MCFController extends Controller
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = $this->sp_rtt->get_txn_by_id($la_paras, $account_id);
         $this->sp_rtt->txn_to_export($ret);
         return $this->format_success_ret($ret);
@@ -441,7 +441,7 @@ class MCFController extends Controller
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $mch_info = $this->sp_rtt->get_merchant_info_by_id($account_id);
         $la_paras['start_time'] = $this->convert_time('start_time', $la_paras['start_time'],
             $la_paras['timezone']??$mch_info['timezone']);
@@ -457,7 +457,7 @@ class MCFController extends Controller
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $ret = app()->make('settle_service')->get_settlements($la_paras, $account_id);
         return $this->format_success_ret($ret);
     }
@@ -481,7 +481,7 @@ class MCFController extends Controller
         $userObj = $request->user('custom_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
-        $la_paras = $this->parse_parameters($request, __FUNCTION__);
+        $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $sp = $this->sp_rtt->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         $ret = $sp->get_exchange_rate($account_id,$la_paras['currency_type']);
         return $this->format_success_ret($ret);
