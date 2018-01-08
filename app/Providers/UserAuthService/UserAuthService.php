@@ -129,7 +129,7 @@ class UserAuthService{
     }
     private function set_pwd($uid, $pwd) {
         $saltstring=bin2hex(random_bytes(32)); 
-        $pwdHash = md5($la_paras['password'].$saltstring);
+        $pwdHash = md5($pwd.$saltstring);
         DB::table('mcf_user_base')->where('uid',$uid)->update(['password' => $pwdHash, 'saltstring'=>$saltstring]);
     }
     public function mgt_create_token($userObj) {
