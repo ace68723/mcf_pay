@@ -279,7 +279,8 @@ headerStr;
         return true;
     }
     public function format_success_ret($data) {
-        Log::DEBUG("SUCCESS return:".json_encode($data));
+        if (env('APP_DEBUG',false))
+            Log::DEBUG("SUCCESS return:".json_encode($data));
         return [
             'ev_error'=>0,
             'ev_message'=>"",

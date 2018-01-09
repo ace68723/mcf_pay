@@ -71,6 +71,7 @@ class UserAuthService{
     public function mgt_login($la_paras) {
         $item = DB::table('mcf_user_base')
             ->select([ 'is_deleted', 'username', 'uid', 'saltstring', 'password', 'role' ])
+            ->whereNull('account_id')
             ->where([
                 'username'=>$la_paras['username'],
                 'is_deleted'=> 0,
