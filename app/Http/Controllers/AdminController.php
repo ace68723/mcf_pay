@@ -418,7 +418,7 @@ class AdminController extends Controller
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
-        $ret = app()->make('settle_service')->set_settlement($la_paras);
+        $ret = app()->make('settle_service')->set_settlement($la_paras, $userObj);
         return $this->format_success_ret($ret);
     }
 

@@ -81,10 +81,15 @@ rawstrsec;
             'recs'=>$ret,
         ];
     }
-    public function set_settlement($la_paras) {
+    public function set_settlement($la_paras, $userObj) {
         $settle_id = $la_paras['settle_id'];
         $cols = ['is_remitted', 'notes'];
         $values = array_intersect_key($la_paras, array_flip($cols));
+        $old = DB::table('settlement')->where('settle_id','=',$settle_id)->first();
+        if ($old->is_remitted == 0 && $values['is_remitted'] == 1) {
+            $values['remitted_by'] = $userObj->uid;
+            $values['remitted_at'] = time();
+        }
         return DB::table('settlement')->where('settle_id','=',$settle_id)->update($values);
     }
     public function settle($la_paras) {
