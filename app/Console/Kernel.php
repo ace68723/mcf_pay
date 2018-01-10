@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         //
+        Commands\TestCommand::class,
     ];
 
     /**
@@ -24,9 +25,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        //
-        //$sp = app()->make('wx_vendor_service');
-        //$sp->sync_bill();
+        // note that this function will be executed every time artisan is called, independent of which command
             /*
         $schedule->call(function () {
             $sp = app()->make('wx_service');

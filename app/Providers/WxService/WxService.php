@@ -369,7 +369,7 @@ class WxService
     private function calc_bill_sync_start() {
         $last_bill_time = DB::table('wx_raw_bills')->max('transaction_time');
         if (empty($last_bill_time)){
-            return new \DateTime("2018-01-09", new \DateTimeZone($this->consts['VENDOR_TZ']));
+            return new \DateTime("2017-09-01", new \DateTimeZone($this->consts['VENDOR_TZ']));
         }
         $dt = new \DateTime("now", new \DateTimeZone($this->consts['VENDOR_TZ']));
         $dt->setTimestamp($last_bill_time);
