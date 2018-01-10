@@ -15,7 +15,7 @@ class CreateWxRawBillsTable extends Migration
     {
         Schema::create('wx_raw_bills', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->dateTime('transaction_time')->comment('Transaction Time');
+            $table->bigInteger('transaction_time')->comment('Transaction Time');
             $table->string('appid', 32)->comment('Official account ID');
             $table->string('mch_id', 32)->comment('Vendor ID');
             $table->string('sub_mch_id', 32)->comment('Sub vendor ID');

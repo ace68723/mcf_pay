@@ -49,8 +49,8 @@ class UserAuthService{
         if (empty($last_login))
             throw new RttException('TOKEN_EXPIRE');
         if ($last_login != $token_info->expire) { //compare int with string do not use !==
-            Log::DEBUG("token kicked: (new)".($last_login)."!=(old)".$token_info->expire);
-            throw new RttException('TOKEN_KICKED');
+            Log::DEBUG("token kicked, uid:".$token_info->uid.": (new)".($last_login)."!=(old)".$token_info->expire);
+            throw new RttException('TOKEN_KICKED', $token_info->uid);
         }
         return $token_info;
     }

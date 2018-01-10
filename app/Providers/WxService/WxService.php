@@ -19,6 +19,19 @@ function checkErrToThrow($result)
     if (!isset($result["result_code"]) || ($result["result_code"] != "SUCCESS"))
         throw new RttException('WX_ERROR_BIZ', $result["err_code"]??"Error msg missing!");
 }
+function delInvisibleChars($str){
+    $length = mb_strlen($str,'utf-8');
+    $return = "";
+    for ($i=0; $i < $length; $i++) {
+        $_tmpStr = mb_substr($str,$i,1,'utf-8');
+        $ascii = ord($_tmpStr);
+        if($ascii < 32 || $ascii > 126){
+            continue;
+        }
+        $return .= $_tmpStr;
+    }
+    return $return;
+}
 
 class WxService
 {
@@ -345,7 +358,89 @@ class WxService
         }
         return [];
     }
-
+    private function download_bill(\DateTime $dt) {
+        $input = new \WxPayDownloadBill();
+        $input->SetBill_date($dt->format("Ymd"));
+        $input->SetBill_type('ALL');
+        $file = \WxPayApi::downloadBill($input);
+        $ret = \WxPayApi::parseBill($file);
+        return $ret;
+    }
+    private function calc_bill_sync_start() {
+        $last_bill_time = DB::table('wx_raw_bills')->max('transaction_time');
+        if (empty($last_bill_time)){
+            return new \DateTime("2018-01-09", new \DateTimeZone($this->consts['VENDOR_TZ']));
+        }
+        $dt = new \DateTime("now", new \DateTimeZone($this->consts['VENDOR_TZ']));
+        $dt->setTimestamp($last_bill_time);
+        echo "last_bill_time:".$last_bill_time." str:".$dt->format('Y-m-d H:i:s')."\n";
+        return $dt;
+    }
+    private function save_bill_to_db($recs) {
+        $nException = 0;
+        $duplicateAttr = [];
+        array_walk($recs, function (&$bill) use($duplicateAttr) {
+            $raw_bill = [];
+            foreach($bill as $key=>$value) {
+                $pos1 = strpos($key,"(");
+                $pos2 = strrpos($key,")");
+                if ($pos1 && $pos2 && $pos2>$pos1+1) {
+                    $attr = substr($key, $pos1+1, $pos2-$pos1-1);
+                }
+                else {
+                    $attr = str_replace(" ","_",$key);
+                }
+                $attr = delInvisibleChars(strtolower(trim($attr)));
+                $attr = str_replace("'","",$attr);
+                $attr = str_replace("\$","",$attr);
+                if (isset($raw_bill[$attr])) {
+                    $duplicateAttr[$attr] = 1;
+                }
+                else {
+                    if ($attr == 'transaction_time') {
+                        $dt = new \DateTime($value, new \DateTimeZone($this->consts['VENDOR_TZ'])); 
+                        $value = $dt->getTimestamp();
+                    }
+                    $raw_bill[$attr] = $value;
+                }
+            }
+            $bill = $raw_bill;
+        });
+        if (!empty($duplicateAttr))
+            Log::DEBUG('found duplicate attrs:'.(implode(",",array_keys($duplicateAttr))));
+        try {
+            DB::table('wx_raw_bills')->insert($recs);
+        }
+        catch(\PDOException $e) {
+            if (23000 != $e->getCode()) throw $e;
+            Log::DEBUG('found duplicate existing recs');
+            foreach($recs as $rec) {
+                DB::table('wx_raw_bills')
+                    ->updateOrInsert(array_only($rec,['transaction_id','refund_id']), $rec);
+            }
+        }
+        $str = count($recs) ." records saved/updated.";
+        Log::DEBUG('save wx bill:'.$str);
+    }
+    public function sync_bill() {
+        $curDt = new \DateTime("today", new \DateTimeZone($this->consts['VENDOR_TZ']));
+        $iDate = $this->calc_bill_sync_start();
+        $first = true;
+        while($iDate < $curDt || $first) {
+            $first = false;
+            Log::DEBUG("downloading wx bills for ".$iDate->format("Ymd"));
+            list($recs, $sumData, $errors) = $this->download_bill($iDate);
+            if ($errors && $errors['return_msg'] != "No Bill Exist") {
+                Log::DEBUG("error:".$errors['return_msg']);
+            }
+            Log::DEBUG("Got ". count($recs). " bills from wx");
+            if ($recs) {
+                $this->save_bill_to_db($recs);
+            }
+            $iDate->modify("+1 day");
+            if ($iDate < $curDt) sleep(1);
+        }
+    }
     public function handle_notify($request, $needSignOutput) {
         $notifyObj = new Notify($this);
         $notifyObj->Handle($needSignOutput);
@@ -373,7 +468,6 @@ class Notify extends \WxPayNotify
 		}
 		return false;
 	}
-
 	public function NotifyProcess($data, &$msg)
     {
 		Log::DEBUG("call back:" . json_encode($data, JSON_UNESCAPED_UNICODE));
