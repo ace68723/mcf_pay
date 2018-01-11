@@ -37,6 +37,7 @@ class WxService
 {
 
     public $consts;
+    public $data;
     public function __construct(){
         $this->consts = array();
         $this->consts['GATEWAY_ADDR'] = "";
@@ -96,7 +97,7 @@ class WxService
         $this->consts['TO_RTT_TXN']['FROM_NOTIFY'] = $this->consts['TO_RTT_TXN']['DEFAULT'];
         $this->consts['TO_RTT_TXN']['FROM_REFUND'] = [
             ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
-            ['ref_id', 'out_refund_no'], 
+            ['ref_id', 'out_refund_no'],
             ['vendor_txn_id', 'refund_id'],
             ['vendor_txn_time', null, function () { return time(); }],
             ['txn_scenario', null, 'REFUND'],
@@ -110,9 +111,48 @@ class WxService
                 if (is_null($rate)) return null;
                 return bcdiv($rate, 10**8, 8);
             }],
-            ['txn_link_id', 'out_trade_no'], 
+            ['txn_link_id', 'out_trade_no'],
             ['device_id', 'device_id'],
             ['user_id', '_uid'],
+        ];
+        $this->consts['TO_RTT_TXN']['FROM_DB_RAW_CHARGE'] = [
+            ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
+            ['ref_id', 'out_transaction_id'],
+            ['vendor_txn_id', 'transaction_id'],
+            ['vendor_txn_time', 'transaction_time', ],
+            ['txn_scenario', null, 'OTHER-C'],
+            ['txn_fee_in_cent', 'total_fee'],
+            ['txn_fee_currency', 'fee_type'],
+            ['paid_fee_in_cent', 'cash_fee'],
+            ['paid_fee_currency', 'cash_fee_type'],
+            ['customer_id', 'openid'],
+            ['status', null, 'SUCCESS' ],
+            ['exchange_rate','exchange_rate', function ($rate) {
+                if (is_null($rate)) return null;
+                return bcdiv($rate, 10**8, 8);
+            }],
+            ['device_id', null, null],
+            ['user_id', null, null],
+        ];
+        $this->consts['TO_RTT_TXN']['FROM_DB_RAW_REFUND'] = [
+            ['vendor_channel', null, $this->consts['CHANNEL_FLAG']],
+            ['ref_id', 'out_refund_no'],
+            ['vendor_txn_id', 'refund_id'],
+            ['vendor_txn_time', 'transaction_time', ],
+            ['txn_scenario', null, 'OTHER-R'],
+            ['txn_fee_in_cent', 'refund_fee'],
+            ['txn_fee_currency', 'refund_currency_type'],
+            ['paid_fee_in_cent', 'payers_refund_amount'],
+            ['paid_fee_currency', 'payers_refund_currency_type'],
+            ['customer_id', 'openid'],
+            ['status', null, 'SUCCESS' ],
+            ['exchange_rate','refund_exchange_rate', function ($rate) {
+                if (is_null($rate)) return null;
+                return bcdiv($rate, 10**8, 8);
+            }],
+            ['txn_link_id', 'out_transaction_id'],
+            ['device_id', null, null],
+            ['user_id', null, null],
         ];
     }
     private function get_account_info($account_id, $b_emptyAsException = true){
@@ -289,11 +329,14 @@ class WxService
 		return $result;
 	}
 
-    public function vendor_txn_to_rtt_txn($vendor_txn, $account_id, $sc_selector='DEFAULT', $moreInfo=null) {
-        $is_refund = $sc_selector == 'FROM_REFUND';
+    public function vendor_txn_to_rtt_txn($vendor_txn, $account_id, $sc_selector='DEFAULT', $moreInfo=null,
+        $is_refund=null)
+    {
+        if (is_null($is_refund))
+            $is_refund = $sc_selector == 'FROM_REFUND';
         $ret = [
             'is_refund' => $is_refund,
-            'account_id' => $account_id, //TODO check this with sub_mch_id
+            'account_id' => $account_id, //TODO check this with sub_mch_id ?
         ];
         $attr_map = $this->consts['TO_RTT_TXN'][$sc_selector];
         foreach($attr_map as $item) {
@@ -363,10 +406,12 @@ class WxService
         $input->SetBill_date($dt->format("Ymd"));
         $input->SetBill_type('ALL');
         $file = \WxPayApi::downloadBill($input);
+        //echo $file;
         $ret = \WxPayApi::parseBill($file);
         return $ret;
     }
     private function calc_bill_sync_start() {
+        //return new \DateTime("2018-01-09", new \DateTimeZone($this->consts['VENDOR_TZ']));
         $last_bill_time = DB::table('wx_raw_bills')->max('transaction_time');
         if (empty($last_bill_time)){
             return new \DateTime("2017-09-01", new \DateTimeZone($this->consts['VENDOR_TZ']));
@@ -401,6 +446,15 @@ class WxService
                         $dt = new \DateTime($value, new \DateTimeZone($this->consts['VENDOR_TZ'])); 
                         $value = $dt->getTimestamp();
                     }
+                    elseif (in_array($attr, [
+        'total_fee', 'coupon_amount', 'refund_fee', 'coupon_refund_amount', 'rate', 'cash_fee',
+        'settlement_currency_amount', 'payers_refund_amount', 'refund_settlement_amount',]))
+                    {
+                        $value = round(floatval($value)*100);
+                    }
+                    elseif ($attr == 'fee') {
+                        $value = round(floatval($value)*100000);
+                    }
                     $raw_bill[$attr] = $value;
                 }
             }
@@ -425,9 +479,7 @@ class WxService
     public function sync_bill() {
         $curDt = new \DateTime("today", new \DateTimeZone($this->consts['VENDOR_TZ']));
         $iDate = $this->calc_bill_sync_start();
-        $first = true;
-        while($iDate < $curDt || $first) {
-            $first = false;
+         do {
             Log::DEBUG("downloading wx bills for ".$iDate->format("Ymd"));
             list($recs, $sumData, $errors) = $this->download_bill($iDate);
             if ($errors && $errors['return_msg'] != "No Bill Exist") {
@@ -439,7 +491,65 @@ class WxService
             }
             $iDate->modify("+1 day");
             if ($iDate < $curDt) sleep(1);
+        }while($iDate < $curDt);
+    }
+    public function compare(int $start_time, int $end_time, $our_recs) {
+        $whereConditions = [
+            ['transaction_time','>=', $start_time],
+            ['transaction_time','<',$end_time],
+        ];
+        /*
+        if (!empty($id_contains))
+            $whereConditions[] =['out_transaction_id','like', '%'.$id_contains.'%'];
+         */
+        $recs = DB::table('wx_raw_bills')->where($whereConditions)->get();
+        Log::Debug("wx comparing ".count($recs)." (wx) <-> ".count($our_recs)." (our).time window:".
+            $start_time."-".$end_time);
+        $our_dict = [];
+        foreach($our_recs as $our_rec) {
+            $our_dict[$our_rec['ref_id']] = $our_rec;
         }
+        $new_recs = [];
+        foreach($recs as $rec) {
+            $id = empty($rec->out_refund_no)? $rec->out_transaction_id : $rec->out_refund_no;
+            if (empty($our_dict[$id])) {
+                $new_recs[]= (array)$rec;
+            }
+            else {
+                unset($our_dict[$id]);
+            }
+        }
+        $not_found_recs = array_values($our_dict);
+        Log::Debug("wx compare result:len(new)=".count($new_recs).".len(not_found)=".count($not_found_recs));
+        $map = $this->get_mchid_aid_map();
+        $unknown_mch_ids = [];
+        $nDrop = 0;
+        foreach($new_recs as $key=>$rec) {
+            if (array_key_exists($rec['sub_mch_id'], $map)) {
+                $is_refund = !empty($rec['out_refund_no']);
+                $new_recs[$key] = $this->vendor_txn_to_rtt_txn($rec, $map[$rec['sub_mch_id']],
+                    'FROM_DB_RAW_'.($is_refund?'REFUND':'CHARGE'), null, $is_refund);
+            }
+            else {
+                $nDrop += 1;
+                $unknown_mch_ids[$rec['sub_mch_id']] = 1;
+                unset($new_recs[$key]);
+            }
+        }
+        Log::Debug('drop '.$nDrop.' records of unknown sub_mch_id:'.json_encode(array_keys($unknown_mch_ids)));
+        return [$new_recs, $not_found_recs];
+    }
+    public function get_mchid_aid_map() {
+        if (isset($this->data['mchid_aid_map']))
+            return $this->data['mchid_aid_map'];
+        $res = DB::table('vendor_wx')->select('account_id','sub_mch_id')->get();
+        $map = [];
+        foreach($res as $pair) {
+            if (!empty($pair->sub_mch_id))
+                $map[$pair->sub_mch_id] = $pair->account_id;
+        }
+        $this->data['mchid_aid_map'] = $map;
+        return $map;
     }
     public function handle_notify($request, $needSignOutput) {
         $notifyObj = new Notify($this);

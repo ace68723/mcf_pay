@@ -257,6 +257,8 @@ class WxPayApi
             return array($data, $sumData, $errors);
         }
         $attrs = explode(",", $lines[0]);
+        //array_walk($attrs, function (&$str) { $str = preg_replace('/\x{feff}/u', '', $str);}); //remove BOM
+        //comment this because we have delInvisibleChars in the subsequent process
         $nAttrs = count($attrs);
         for($idx=1; $idx<$nLines-2; $idx++) {
             $items = explode(",", $lines[$idx]);

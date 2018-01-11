@@ -34,5 +34,10 @@ class TestCommand extends Command
     {
         $sp = app()->make('wx_vendor_service');
         $sp->sync_bill();
+        return;
+        //$map = $sp->get_mchid_aid_map();
+        //echo json_encode($map);
+        $sp = app()->make('rtt_service');
+        $sp->compare("wx",1515436276,1515450444);
     }
 }
