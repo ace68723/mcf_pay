@@ -551,7 +551,7 @@ class WxService
         $res = DB::table('account_base')
             ->leftJoin('vendor_wx', 'vendor_wx.account_id','=','account_base.account_id')
             ->select('account_base.account_id AS account_id','sub_mch_id')
-            ->where(['account_base.is_deleted'=>0])
+            ->where(['account_base.is_deleted'=>0,'vendor_wx.is_deleted'=>0])
             ->get();
         $map = [];
         foreach($res as $pair) {
