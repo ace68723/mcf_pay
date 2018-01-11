@@ -131,6 +131,7 @@ class WxService
                 if (is_null($rate)) return null;
                 return bcdiv($rate, 10**8, 8);
             }],
+            ['txn_link_id', null, null ],
             ['device_id', null, null],
             ['user_id', null, null],
         ];
@@ -507,7 +508,7 @@ class WxService
             $start_time."-".$end_time);
         $our_dict = [];
         foreach($our_recs as $our_rec) {
-            $our_dict[$our_rec['ref_id']] = $our_rec;
+            $our_dict[$our_rec->ref_id] = 1;
         }
         $new_recs = [];
         foreach($recs as $rec) {
@@ -533,6 +534,11 @@ class WxService
             else {
                 $nDrop += 1;
                 $unknown_mch_ids[$rec['sub_mch_id']] = 1;
+                /*
+                $is_refund = !empty($rec['out_refund_no']);
+                $new_recs[$key] = $this->vendor_txn_to_rtt_txn($rec, -1,
+                    'FROM_DB_RAW_'.($is_refund?'REFUND':'CHARGE'), null, $is_refund);
+                 */
                 unset($new_recs[$key]);
             }
         }
@@ -542,11 +548,19 @@ class WxService
     public function get_mchid_aid_map() {
         if (isset($this->data['mchid_aid_map']))
             return $this->data['mchid_aid_map'];
-        $res = DB::table('vendor_wx')->select('account_id','sub_mch_id')->get();
+        $res = DB::table('account_base')
+            ->leftJoin('vendor_wx', 'vendor_wx.account_id','=','account_base.account_id')
+            ->select('account_base.account_id AS account_id','sub_mch_id')
+            ->where(['account_base.is_deleted'=>0])
+            ->get();
         $map = [];
         foreach($res as $pair) {
-            if (!empty($pair->sub_mch_id))
+            if (!empty($pair->sub_mch_id)) {
+                if (array_key_exists($pair->sub_mch_id, $map))
+                    throw new RttException('SYSTEM_ERROR',
+                        'multiple account share one wx sub_mch_id:'.$pair->sub_mch_id);
                 $map[$pair->sub_mch_id] = $pair->account_id;
+            }
         }
         $this->data['mchid_aid_map'] = $map;
         return $map;

@@ -11,7 +11,7 @@ class TestCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'customtest';
+    protected $signature = 'customtest {start} {end}';
 
     /**
      * The console command description.
@@ -32,12 +32,19 @@ class TestCommand extends Command
      */
     public function handle()
     {
+        /*
         $sp = app()->make('wx_vendor_service');
         $sp->sync_bill();
         return;
-        //$map = $sp->get_mchid_aid_map();
-        //echo json_encode($map);
+         */
+        $sp = app()->make('wx_vendor_service');
+        $map = $sp->get_mchid_aid_map();
+        echo json_encode($map);
+        /*
         $sp = app()->make('rtt_service');
-        $sp->compare("wx",1515436276,1515450444);
+        $start = new \DateTime($this->argument('start'));
+        $end = new \DateTime($this->argument('end'));
+        $sp->compare("wx",$start->getTimestamp(),$end->getTimestamp());
+         */
     }
 }

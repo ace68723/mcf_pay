@@ -399,6 +399,30 @@ class RttService{
         if (!empty($devices))
             Redis::SADD($key, ...(array_map(function($x){return $x->device_id;},$devices)));
     }
+    public function compare($channel, int $start_time, int $end_time) {
+        if ($end_time - $start_time > 180*24*60*60)
+            throw new RttException('SYSTEM_ERROR', "TimeWindow Too Long:".$start_time."-".$end_time);
+        $sp = app()->make($channel.'_vendor_service');
+        $whereConditions = [
+            ['vendor_txn_time','>=', $start_time],
+            ['vendor_txn_time','<',$end_time],
+            ['vendor_channel','=', $this->consts['CHANNELS'][strtoupper($channel)]],
+        ];
+        $recs = DB::table('txn_base')->where($whereConditions)->get();
+        list($new_recs,$not_found_recs) = $sp->compare($start_time, $end_time, $recs->toArray());
+        Log::DEBUG('compare result: new:'.json_encode($new_recs));
+        if (count($not_found_recs)>0)
+            Log::ALERT('compare result: not found:'.json_encode($not_found_recs));
+        try {
+            DB::table('txn_base')->insert($new_recs);
+        }
+        catch (\PDOException $e) {
+            if (23000 != $e->getCode()) throw $e;
+            throw new RttException('SYSTEM_ERROR',
+                'insert violate unique constraint. Maybe caused by refund txn time diff. Try another TimeWindow');
+        }
+        Log::DEBUG("compare result: inserted ".count($new_recs)." records");
+    }
 
     public function notify($sp, $out_trade_no, $vendor_txn) {
         Log::DEBUG(__FUNCTION__. ":".$out_trade_no);
@@ -409,10 +433,6 @@ class RttService{
         $cached_input = $this->sp_oc->query_order_cache_field($out_trade_no, 'input');
         $txn = $sp->vendor_txn_to_rtt_txn($vendor_txn, $account_id, 'FROM_NOTIFY', $cached_input);
         $this->sp_oc->cb_order_update($out_trade_no, 'SUCCESS', $txn);
-    }
-
-    public function download_bills($start_date, $end_date) {
-        Log::DEBUG("in ".__FUNCTION__);
     }
 
 }
