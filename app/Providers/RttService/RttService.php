@@ -410,9 +410,10 @@ class RttService{
         ];
         $recs = DB::table('txn_base')->where($whereConditions)->get();
         list($new_recs,$not_found_recs) = $sp->compare($start_time, $end_time, $recs->toArray());
-        Log::DEBUG('compare result: new:'.json_encode($new_recs));
         if (count($not_found_recs)>0)
             Log::ALERT('compare result: not found:'.json_encode($not_found_recs));
+        if (count($new_recs) == 0) return;
+        Log::DEBUG('compare result: new:'.json_encode(array_pluck($new_recs,'ref_id')));
         try {
             DB::table('txn_base')->insert($new_recs);
         }

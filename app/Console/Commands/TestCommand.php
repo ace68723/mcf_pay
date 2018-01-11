@@ -39,12 +39,10 @@ class TestCommand extends Command
          */
         $sp = app()->make('wx_vendor_service');
         $map = $sp->get_mchid_aid_map();
-        echo json_encode($map);
-        /*
+        echo json_encode($map)."\n";
         $sp = app()->make('rtt_service');
         $start = new \DateTime($this->argument('start'));
         $end = new \DateTime($this->argument('end'));
         $sp->compare("wx",$start->getTimestamp(),$end->getTimestamp());
-         */
     }
 }
