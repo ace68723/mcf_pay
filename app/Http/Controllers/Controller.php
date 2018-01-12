@@ -99,8 +99,13 @@ class Controller extends BaseController
     }
      */
 
-    public function api_doc_md($prefix='api/v1/merchant') {
+    public function api_doc_md(Request $request) {
         $output = "";
+        $prefix = $request->path();
+        $rpos = strrpos($prefix,'/');
+        if ($rpos !== false) {
+            $prefix = substr($prefix, 0, $rpos);
+        }
         foreach($this->consts['REQUEST_PARAS'] as $api_spec_name=>$api_spec) {
             $output .= "\n * [".$api_spec_name."](#".$api_spec_name.")";
         }

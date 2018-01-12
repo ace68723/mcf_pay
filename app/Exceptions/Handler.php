@@ -62,7 +62,8 @@ class Handler extends ExceptionHandler
             $errcode = $e->getInnerCode();
             $ls_result['ev_error'] = $errcode;
             $ls_result['ev_message'] = $e->getMessage();
-            if (env('APP_DEBUG', false)) {
+            if (env('APP_DEBUG', false) || ($errcode < 40000 && $errcode >= 30000)) {
+                //always expose detail for INVALID_PARAMETER
                 $ls_result['ev_context'] = $e->getContext();
             }
             $st_code = ($errcode < 20000 && $errcode >= 10000) ? 401:500;

@@ -175,7 +175,7 @@ class RttService{
         $ret = $sp->create_refund($la_paras, $account_id,
             [$this->sp_oc,'cb_new_order'], [$this->sp_oc,'cb_order_update']);
         $ret = $sp->vendor_txn_to_rtt_txn($ret, $account_id, 'FROM_REFUND', $la_paras);
-        $ret['username'] = $la_paras['_username'] ?? "unknown";
+        $ret['username'] = $la_paras['_username'] ?? null;
         return $ret;
     }
 

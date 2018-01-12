@@ -77,7 +77,7 @@ trait ByRedisFacade{
                 if (!empty($newResp)){
                     $txn = $newResp;
                     $input = $this->query_order_cache_field($order_id, 'input');
-                    $txn['username'] = $input['_username'] ?? "unknown";
+                    $txn['username'] = $input['_username'] ?? null;
                     $account_id = $txn['account_id'] ?? null;
                     if (!empty($account_id)) {
                         $idx_id = "index:".$account_id;

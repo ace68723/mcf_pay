@@ -36,7 +36,7 @@ function parse_xml_check_err_throw($xmlstr, $key) {
         throw new RttException('AL_ERROR_BIZ',
             $response["detail_error_code"] ?? $response["error"] ?? "Error msg missing!");
     if ($response["result_code"] != "SUCCESS") {
-        if ($response["detail_error_code"] == "TRADE_NOT_EXIST")
+        if (($response["detail_error_code"]??null) == "TRADE_NOT_EXIST")
             throw new RttException('NOT_FOUND_REMOTE', "OTHER-ALI");
         else throw new RttException('AL_ERROR_BIZ',
             $response["detail_error_code"] ?? $response["error"] ?? "Error msg missing!");

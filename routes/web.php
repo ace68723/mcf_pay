@@ -21,13 +21,6 @@ $router->get('/', function () use ($router) {
     return $router->app->version();
 });
 
-$router->group(['middleware'=>'auth:custom_api'], function ($router)
-{
-    $router->post('/create_order/', ['uses'=>'PubAPIController@create_order']);
-    $router->post('/create_refund/', ['uses'=>'PubAPIController@create_refund']);
-    $router->post('/query_txn_single/', ['uses'=>'PubAPIController@query_txn_single']);
-});
-//$router->get('/api_doc/', ['uses'=>'PubAPIController@api_doc_md']);
 $router->get('/login_api_doc/', ['uses'=>'LoginController@api_doc_md']);
 
 $router->get('/test/', ['uses'=>'PubAPIController@test']);
@@ -54,6 +47,26 @@ $router->group(['prefix'=>'api/v1/merchant','middleware'=>'auth:custom_token'], 
     $router->get('/api_doc/', ['uses'=>'MCFController@api_doc_md']);
 });
 
+$router->group(['prefix'=>'api/v1/web','middleware'=>'auth:custom_api'], function ($router)
+{
+    $api_names = [
+        'create_authpay',
+        'precreate_authpay',
+        'create_order',
+        'create_refund',
+        'check_order_status',
+        'get_exchange_rate',
+        'query_txns_by_time',
+        'get_hot_txns',
+        'get_txn_by_id',
+        'get_settlements',
+        'get_company_info',
+    ];
+    foreach($api_names as $api_name) {
+        $router->post('/'.$api_name.'/', ['uses'=>'PubAPIController@'.$api_name]);
+    }
+});
+$router->get('api/v1/web/api_doc/', ['uses'=>'PubAPIController@api_doc_md']);
 
 $router->group(['prefix'=>'api/v1/mgt','middleware'=>'auth:custom_mgt_token'], function ($router)
 {
@@ -80,7 +93,6 @@ $router->group(['prefix'=>'api/v1/mgt','middleware'=>'auth:custom_mgt_token'], f
     }
     $router->get('/api_doc/', ['uses'=>'AdminController@api_doc_md']);
 });
-
 
 $router->post('/login/', ['middleware'=>'throttle:10,1', 'uses'=>'LoginController@login']);//10 times /1min
 $router->post('/token_login/', ['middleware'=>'throttle:10,1', 'uses'=>'LoginController@token_login']);//10 times /1min

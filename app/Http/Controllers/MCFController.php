@@ -293,32 +293,6 @@ class MCFController extends Controller
         $this->consts['REQUEST_PARAS']['get_company_info'] = [
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
-        // ------------------------------------------------------
-        $this->consts['RETURN_PARAS']['query_txns_by_time'] = [
-            'total_page'=>[
-                'type'=>'int',
-                'description'=> '满足查询条件的记录页数',
-            ],
-            'txns'=>[
-                'type'=>'array',
-                'description'=> '交易记录',
-                'child'=>[
-                    'type'=>'object',
-                    'child'=>[
-                    ],
-                ],
-            ],
-        ];
-        $this->consts['RETURN_PARAS']['get_exchange_rate'] = [
-            'exchange_rate'=>[
-                'type'=>'string',
-                'description'=> '汇率',
-            ],
-            'release_time'=>[
-                'type'=>'int',
-                'description'=> '发布时间',
-            ],
-        ];
         if (!$this->check_api_def())
             throw new RttException('SYSTEM_ERROR', "ERROR SETTING IN API SCHEMA");
     }

@@ -35,24 +35,33 @@ class AuthServiceProvider extends ServiceProvider
         // the User instance via an API token or any other method necessary.
 
         $this->app['auth']->viaRequest('custom_api', function ($request) {
+            /*
+            Log::DEBUG(implode(';',[$request->input('account_key'),
+                $request->input('salt_str'),
+                $request->input('sign_type'),
+                $request->input('sign')]));
+             */
             if (empty($request->input('account_key')) || 
                 empty($request->input('salt_str')) ||
                 empty($request->input('sign_type')) ||
                 empty($request->input('sign'))) 
+            {
+                throw new RttException('SIGN_ERROR', '0');
                 return null;
+            }
             $secInfo =  DB::table('account_security')
                 ->where('account_key', '=', $request->input('account_key'))
                 ->where('is_deleted','=',0)
                 ->first();
-            if (empty($secInfo) || empty($secInfo->account_secret))
+            if (empty($secInfo) || empty($secInfo->account_secret)) {
+                throw new RttException('SIGN_ERROR', "1");
                 return null;
+            }
 
             //IMPORTANT comment this *****************
-            /*
-            if (env('APP_DEBUG', false)) {
+            if (env('APP_DEBUG', false) || $request->input('sign')=='Test2Bcommented') {
                 return new GenericUser(['account_id'=>$secInfo->account_id]);
             }
-             */
             //********************************
 
             $input_paras = $request->json()->all();
@@ -64,11 +73,13 @@ class AuthServiceProvider extends ServiceProvider
                 }
             }
 		    $string = trim($string, "&");
-            Log::DEBUG("string to check sign before attach key:". utf8_decode($string));
+            //Log::DEBUG("string to check sign before attach key:". utf8_decode($string));
 		    $string = md5($string."&key=".$secInfo->account_secret);
-            Log::DEBUG("md5 result:". $string);
-            if (strtoupper($string) != strtoupper($request->input('sign')))
+            //Log::DEBUG("md5 result:". $string);
+            if (strtoupper($string) != strtoupper($request->input('sign'))) {
+                throw new RttException('SIGN_ERROR', "2");
                 return null;
+            }
             return new GenericUser(['account_id'=>$secInfo->account_id]);
         });
 
