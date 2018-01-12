@@ -110,6 +110,7 @@ class AdminController extends Controller
             'contract_price'=>[ 'checker'=>['is_string', ], ],
             'tip_mode'=>[ 'checker'=>['is_string', ], ],
             'remit_min_in_cent'=>[ 'checker'=>['is_int', ], ],
+            'device_amount'=>[ 'checker'=>['is_int', ], ],
             'start_date'=>[ 'checker'=>['is_string', ], ],
             'end_date'=>[ 'checker'=>['is_string', ], ],
             'note'=>[ 'checker'=>['is_string', ], ],
