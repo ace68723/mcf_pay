@@ -49,9 +49,15 @@ class AuthServiceProvider extends ServiceProvider
                 throw new RttException('SIGN_ERROR', '0');
                 return null;
             }
-            $secInfo =  DB::table('account_security')
-                ->where('account_key', '=', $request->input('account_key'))
-                ->where('is_deleted','=',0)
+            $secInfo =  DB::table('account_base')
+                ->leftJoin('account_security', 'account_security.account_id','=','account_base.account_id')
+                ->select('account_base.account_id AS account_id',
+                    'account_security.account_secret AS account_secret')
+                ->where([
+                    'account_security.account_key'=>$request->input('account_key'),
+                    'account_base.is_deleted'=>0,
+                    'account_security.is_deleted'=>0
+                ])
                 ->first();
             if (empty($secInfo) || empty($secInfo->account_secret)) {
                 throw new RttException('SIGN_ERROR', "1");
