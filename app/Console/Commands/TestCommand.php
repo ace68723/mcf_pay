@@ -32,17 +32,13 @@ class TestCommand extends Command
      */
     public function handle()
     {
-        /*
         $sp = app()->make('wx_vendor_service');
         $sp->sync_bill();
-        return;
-         */
-        $sp = app()->make('wx_vendor_service');
         $map = $sp->get_mchid_aid_map();
         echo json_encode($map)."\n";
-        $sp = app()->make('rtt_service');
+        $rtt_sp = app()->make('rtt_service');
         $start = new \DateTime($this->argument('start'));
         $end = new \DateTime($this->argument('end'));
-        $sp->compare("wx",$start->getTimestamp(),$end->getTimestamp());
+        $rtt_sp->compare("wx",$start->getTimestamp(),$end->getTimestamp());
     }
 }

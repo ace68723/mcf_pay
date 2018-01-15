@@ -214,6 +214,13 @@ class RttService{
         return $status;
     }
     public function check_order_status($la_paras, $account_id){
+        /*
+        if ($la_paras['type'] == 'remote') {
+            $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
+            $status = $this->check_order_status_remote($la_paras, $account_id, $sp);
+            return $status;
+        }
+         */
         $status = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'status');
         if (empty($status))
             throw new RttException('NOT_FOUND', ["ORDER",$la_paras['out_trade_no']]);
