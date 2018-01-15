@@ -103,6 +103,7 @@ class LoginController extends Controller
             Log::DEBUG($e->getMessage());
             throw new RttException('LOGIN_FAIL');
         }
+        Log::DEBUG('Success Login Uid:'.$userObj->uid);
         return ['ev_error'=>0, 'ev_message'=>"",
             'token'=>$token, 'role'=>$userObj->role];
     }
@@ -118,6 +119,7 @@ class LoginController extends Controller
             Log::DEBUG($e->getFile().$e->getLine().$e->getMessage());
             throw new RttException('LOGIN_FAIL');
         }
+        Log::DEBUG('Success Login Uid:'.$userObj->uid);
         return ['ev_error'=>0, 'ev_message'=>"",
             'token'=>$token, 'role'=>$userObj->role, 'channel'=>$channels];
     }
