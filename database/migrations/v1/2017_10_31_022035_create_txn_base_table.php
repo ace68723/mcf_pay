@@ -32,7 +32,7 @@ class CreateTxnBaseTable extends Migration
             $table->string('txn_link_id',32)->nullable(true);
             $table->string('status', 16);
             $table->string('device_id', 64)->nullable(true);
-            $table->integer('user_id');
+            $table->integer('user_id')->nullable(true);
 
             $table->unique(['ref_id']);
             $table->index('account_id');

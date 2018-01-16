@@ -138,7 +138,7 @@ rawstrsec;
                 $settle['txn_num'] += $rec->txn_num;
                 $details[] = [
                     'vendor_channel'=>$rec->vendor_channel,
-                    'amount_in_cent'=>$rec->amount_in_cent,
+                    'amount_in_cent'=>intval($rec->amount_in_cent),
                     'comm_in_cent'=>$rec->comm_in_cent,
                     'currency'=>$currency,
                     'txn_num'=>$rec->txn_num,
