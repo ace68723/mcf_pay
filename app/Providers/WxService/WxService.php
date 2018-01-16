@@ -131,7 +131,7 @@ class WxService
                 if (is_null($rate)) return null;
                 return bcdiv($rate, 10**8, 8);
             }],
-            ['txn_link_id', null, null ],
+            ['txn_link_id', null, "" ],
             ['device_id', null, null],
             ['user_id', null, null],
         ];
