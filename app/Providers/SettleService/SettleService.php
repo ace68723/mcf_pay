@@ -71,8 +71,13 @@ rawstrsec;
             ->offset(($page_num-1)*$page_size)->limit($page_size)
             ->get();
         $ret = $results->toArray();
-        array_walk($ret, function(&$x){
+        $sp_rtt = app()->make('rtt_service');
+        array_walk($ret, function(&$x) use($sp_rtt){
             $x->pay_in_cent=$x->amount_in_cent-$x->comm_in_cent;
+            $mchinfo = $sp_rtt->get_merchant_info_by_id($x->account_id);
+            if (!empty($mchinfo['merchant_id'])) {
+                $x->merchant_id = $mchinfo['merchant_id'];
+            }
         });
         return ['total_page'=>ceil($count/$page_size),
             'total_count'=>$count,
