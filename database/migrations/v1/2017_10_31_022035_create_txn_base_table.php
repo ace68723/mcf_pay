@@ -29,9 +29,9 @@ class CreateTxnBaseTable extends Migration
             $table->string('exchange_rate',16)->nullable(true);
             $table->string('customer_id', 128)->nullable(true);
             //$table->integer('refund_no');
-            $table->string('txn_link_id',32);
+            $table->string('txn_link_id',32)->nullable(true);
             $table->string('status', 16);
-            $table->string('device_id', 64);
+            $table->string('device_id', 64)->nullable(true);
             $table->integer('user_id');
 
             $table->unique(['ref_id']);

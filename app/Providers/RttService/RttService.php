@@ -422,16 +422,7 @@ class RttService{
         if (count($new_recs) == 0) return;
         Log::DEBUG('compare result: new:'.json_encode(array_pluck($new_recs,'ref_id')));
         try {
-            if (count($new_recs) == 1) {
-                foreach($new_recs as $k=>$v) {
-                    if (is_null($v))
-                        unset($new_recs[$k]);
-                }
-                DB::table('txn_base')->insert($new_recs[0]);
-            }
-            else {
-                DB::table('txn_base')->insert($new_recs);
-            }
+            DB::table('txn_base')->insert($new_recs);
         }
         catch (\PDOException $e) {
             if (23000 != $e->getCode()) throw $e;
