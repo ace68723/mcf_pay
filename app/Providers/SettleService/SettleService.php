@@ -11,7 +11,7 @@ class SettleService{
     public $consts;
     public function __construct() {
         $this->consts = array();
-        $this->consts['COOLING_TIME_SEC'] = 1*24*60*60;
+        $this->consts['COOLING_TIME_SEC'] = 2*24*60*60;
     }
 
     private function calc_stop_time() {
