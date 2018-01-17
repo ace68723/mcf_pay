@@ -469,13 +469,13 @@ class AdminController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $account_id = $la_paras['account_id'];
-        $mch_info = $this->sp_rtt->get_merchant_info_by_id($account_id);
+        $sp_rtt = app()->make('rtt_service');
+        $mch_info = $sp_rtt->get_merchant_info_by_id($account_id);
         $la_paras['start_time'] = $this->convert_time('start_time', $la_paras['start_time'],
             $la_paras['timezone']??$mch_info['timezone']);
         $la_paras['end_time'] = $this->convert_time('end_time', $la_paras['end_time'],
             $la_paras['timezone']??$mch_info['timezone']);
         Log::DEBUG('start time:'.$la_paras['start_time'].'; end_time:'.$la_paras['end_time']);
-        $sp_rtt = app()->make('rtt_service');
         $ret = $sp_rtt->query_txns_by_time($la_paras, $account_id);
         array_walk($ret['recs'], [$sp_rtt, 'txn_to_export']);
         return $this->format_success_ret($ret);
