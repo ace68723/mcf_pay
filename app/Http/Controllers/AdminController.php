@@ -24,6 +24,19 @@ class AdminController extends Controller
             catch(\Exception $e) { return false;}
             return true;
         };
+        $time_checker = function ($x) {
+            if (is_int($x)) return true;
+            if (is_string($x)) {
+                try{
+                    $dt = new \DateTime($x);
+                    return true;
+                }
+                catch(\Exception $e){
+                    return false;
+                }
+            }
+            return false;
+        };
 
         $this->consts['DEFAULT_PAGESIZE'] = 20;
         $this->consts['ALLOWED_ROLES'] = [
@@ -262,14 +275,14 @@ class AdminController extends Controller
                 'required'=>true,
             ],
             'start_time'=>[
-                'checker'=>['is_int'],
+                'checker'=>[$time_checker],
                 'required'=>true,
-                'description'=> '开始时间的unix timestamp, inclusive',
+                'description'=> '开始时间的unix timestamp or datetime string, inclusive',
             ],
             'end_time'=>[
-                'checker'=>['is_int'],
+                'checker'=>[$time_checker],
                 'required'=>true,
-                'description'=> '结束时间的unix timestamp, exclusive',
+                'description'=> '结束时间的unix timestamp or datetime string, exclusive',
             ],
             'page_num'=>[
                 'checker'=>['is_int', [1,'inf']],
@@ -434,11 +447,34 @@ class AdminController extends Controller
         return $this->format_success_ret($ret);
     }
 
+    private function convert_time($type, $timestr, $tz) {
+        if (is_int($timestr)) return $timestr;
+        try {
+            if ($type == 'end_time') {
+                try {
+                    $dt = new \DateTime($timestr." 23:59:59", new \DateTimeZone($tz));
+                }
+                catch(\Exception $e){
+                }
+            }
+            if (empty($dt)) $dt = new \DateTime($timestr, new \DateTimeZone($tz));
+            return $dt->getTimestamp();
+        }
+        catch(\Exception $e) {
+            throw new RttException('INVALID_PARAMETER', $timestr."T".$tz);
+        }
+    }
     public function query_txns_by_time(Request $request){
         $userObj = $request->user('custom_mgt_token');
         $this->check_role($userObj->role, __FUNCTION__);
         $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $account_id = $la_paras['account_id'];
+        $mch_info = $this->sp_rtt->get_merchant_info_by_id($account_id);
+        $la_paras['start_time'] = $this->convert_time('start_time', $la_paras['start_time'],
+            $la_paras['timezone']??$mch_info['timezone']);
+        $la_paras['end_time'] = $this->convert_time('end_time', $la_paras['end_time'],
+            $la_paras['timezone']??$mch_info['timezone']);
+        Log::DEBUG('start time:'.$la_paras['start_time'].'; end_time:'.$la_paras['end_time']);
         $sp_rtt = app()->make('rtt_service');
         $ret = $sp_rtt->query_txns_by_time($la_paras, $account_id);
         array_walk($ret['recs'], [$sp_rtt, 'txn_to_export']);
