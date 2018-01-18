@@ -19,8 +19,10 @@ class MgtService{
     public function get_merchants($la_paras) {
         $page_num = $la_paras['page_num'];
         $page_size = $la_paras['page_size'];
-        $where = ['account_base.is_deleted'=>0];
-        $count = DB::table('account_base')->where($where)->count();
+        $where = [['account_base.is_deleted','=',0]];
+        if (!empty($la_paras['keyword'])) {
+            $where[] = [DB::raw("concat_ws(',',merchant_id,display_name,legal_name)"),'like','%'.$la_paras['keyword'].'%'];
+        }
         $merchants = DB::table('account_base')
             ->where($where)
             ->leftJoin('company_info', 'account_base.account_id','=','company_info.account_id')
@@ -28,6 +30,9 @@ class MgtService{
                     'legal_name', 'cell'])
             ->offset(($page_num-1)*$page_size)->limit($page_size)
             ->get();
+        $count = DB::table('account_base')
+            ->leftJoin('company_info', 'account_base.account_id','=','company_info.account_id')
+            ->where($where)->count();
         return ['total_page'=>ceil($count/$page_size),
             'total_count'=>$count,
             'page_num'=>$page_num,

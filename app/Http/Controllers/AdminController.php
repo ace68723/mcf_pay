@@ -74,6 +74,11 @@ class AdminController extends Controller
                 'default_value'=>1,
                 'description'=> 'starts from 1',
             ],
+            'keyword'=>[
+                'checker'=>['is_string',[0,32]],
+                'required'=>false,
+                'description'=> 'keyword in merchant_id,display_name,legal_name',
+            ],
         ];
         $this->consts['REQUEST_PARAS']['get_merchant_info'] = [
             'account_id'=>[
