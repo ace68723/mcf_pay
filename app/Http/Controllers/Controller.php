@@ -285,8 +285,17 @@ headerStr;
     }
     public function format_success_ret($data) {
         //if (env('APP_DEBUG',false))
-        if (true || env('APP_DEBUG',false))
-            Log::DEBUG("SUCCESS return:".json_encode($data));
+        if (true || env('APP_DEBUG',false)) {
+            if (is_string($data)) {
+            }
+            elseif (is_array($data) && (isset($data[0]) || isset($data['recs']))) {
+                Log::DEBUG("SUCCESS return: array(".count($data['recs']??$data).
+                    "), first item:".json_encode($data['recs']??$data[0]));
+            }
+            else {
+                Log::DEBUG("SUCCESS return:".json_encode($data));
+            }
+        }
         return [
             'ev_error'=>0,
             'ev_message'=>"",

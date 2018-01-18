@@ -520,7 +520,7 @@ class WxService
                 unset($our_dict[$id]);
             }
         }
-        $not_found_recs = array_values($our_dict);
+        $not_found_recs = array_keys($our_dict);
         Log::Debug("wx compare result:len(new)=".count($new_recs).".len(not_found)=".count($not_found_recs));
         $map = $this->get_mchid_aid_map();
         $unknown_mch_ids = [];
