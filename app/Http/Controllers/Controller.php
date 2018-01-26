@@ -289,8 +289,8 @@ headerStr;
             if (is_string($data)) {
             }
             elseif (is_array($data) && (isset($data[0]) || isset($data['recs']))) {
-                Log::DEBUG("SUCCESS return: array(".count($data['recs']??$data).
-                    "), first item:".json_encode($data['recs']??$data[0]));
+                Log::DEBUG("SUCCESS return: array(".count($data['recs'] ?? $data).
+                    "), first item:".json_encode($data['recs'][0] ?? $data[0] ?? "null"));
             }
             else {
                 Log::DEBUG("SUCCESS return:".json_encode($data));

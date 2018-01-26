@@ -333,6 +333,7 @@ class RttService{
         $dt = new \DateTime('now', $tz);
         $dt->setTimestamp($txn['vendor_txn_time']);
         $new_txn = [
+            //'time'=> $dt->format('Y-m-d H:i:sP'),
             'time'=> $dt->format('Y-m-d H:i:s'),
             'ref_id'=>$txn['ref_id'],
             'is_refund'=>$txn['is_refund'],
