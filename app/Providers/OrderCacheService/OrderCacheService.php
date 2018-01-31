@@ -131,7 +131,7 @@ trait ByRedisFacade{
     }
     public function query_txns_by_time($account_id, $start_time, $end_time, $page_num, $page_size) {
         $idx_id = "index:".$account_id;
-        if (!Redis::EXSITS($idx_id))
+        if (!Redis::EXISTS($idx_id))
             return ['total_page'=>0,
             'total_count'=>0,
             'page_num'=>1,
@@ -142,7 +142,9 @@ trait ByRedisFacade{
         if ($page_size<=0)
             $page_size = $count+1;
         $offset = ($page_num-1)*$page_size;
-        $txns = Redis::ZREVRANGEBYSCORE($idx_id, $end_time, $start_time, 'LIMIT '.$offset . ' '. $page_size);
+        //$txns = Redis::ZREVRANGEBYSCORE($idx_id, $end_time, $start_time, 'LIMIT '.$offset . ' '. $page_size);
+        $txns = Redis::ZREVRANGEBYSCORE($idx_id, $end_time, $start_time,
+            ['limit'=>['offset'=>$offset, 'count'=>$page_size]]);
         array_walk($txns, function(&$x) {$x = unserialize($x);});
         return ['total_page'=>ceil($count/$page_size),
             'total_count'=>$count,

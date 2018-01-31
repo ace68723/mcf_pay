@@ -40,6 +40,7 @@ $router->group(['prefix'=>'api/v1/merchant','middleware'=>'auth:custom_token'], 
         'get_txn_by_id',
         'get_settlements',
         'get_company_info',
+        'get_today_summary',
     ];
     foreach($api_names as $api_name) {
         $router->post('/'.$api_name.'/', ['uses'=>'MCFController@'.$api_name]);

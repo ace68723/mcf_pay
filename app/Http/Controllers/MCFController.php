@@ -33,6 +33,7 @@ class MCFController extends Controller
             'get_txn_by_id'=>[101,365, 666],
             'get_company_info'=>[365,666],
             'get_settlements'=>[365,666],
+            'get_today_summary'=>[365,666],
         ];
         $time_checker = function ($x) {
             if (is_int($x)) return true;
@@ -303,6 +304,9 @@ class MCFController extends Controller
         $this->consts['REQUEST_PARAS']['get_company_info'] = [
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
+        $this->consts['REQUEST_PARAS']['get_today_summary'] = [
+        ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
+
         if (!$this->check_api_def())
             throw new RttException('SYSTEM_ERROR', "ERROR SETTING IN API SCHEMA");
     }
@@ -458,6 +462,13 @@ class MCFController extends Controller
             'timezone'=>$ret->timezone,
             'tip_mode'=>$ret->tip_mode ?? null,
         ]);
+    }
+    public function get_today_summary(Request $request){
+        $userObj = $request->user('custom_token');
+        $this->check_role($userObj->role, __FUNCTION__);
+        $account_id = $userObj->account_id;
+        $ret = $this->sp_rtt->get_today_summary($account_id);
+        return $this->format_success_ret($ret);
     }
 
     public function get_exchange_rate(Request $request)
