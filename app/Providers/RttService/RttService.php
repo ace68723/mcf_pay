@@ -164,10 +164,6 @@ class RttService{
         if ($old_account_id != $account_id) {
             throw new RttException('PERMISSION_DENIED');
         }
-        // TODO: uncomment this and test
-        //$old_input = $this->sp_oc->query_order_cache_field($la_paras['out_trade_no'], 'input');
-        //if (!empty($old_input[]) && $old_input[]!=$la_paras[])
-        //    throw new RttException('PARTIAL_REFUND_NOT_ALLOWED');
         $sp = $this->resolve_channel_sp($account_id, $la_paras['vendor_channel']);
         $status = $this->sp_oc->query_order_cache_field($la_paras['_refund_id'], 'status');
         if (!empty($status) && $status == 'SUCCESS') {
@@ -450,9 +446,11 @@ class RttService{
         $dt->setTimestamp($start_time);
         $data = $this->sp_oc->query_txns_by_time($account_id, $start_time, $now, 1, -1);
         $dict = [];
-        $total = $refund = $tips = 0;
         foreach($data['recs'] as $txn) {
             $dict[$txn['ref_id']] = $txn;
+        }
+        $total = $refund = $tips = 0;
+        foreach($data['recs'] as $txn) {
             if (!$txn['is_refund']) {
                 $total += $txn['txn_fee_in_cent'];
                 $tips += $txn['tips'] ?? 0;

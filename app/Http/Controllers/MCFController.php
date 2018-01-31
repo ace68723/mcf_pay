@@ -361,6 +361,11 @@ class MCFController extends Controller
         $this->check_role($userObj->role, __FUNCTION__);
         $account_id = $userObj->account_id;
         $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
+        //TODO: check refund total matches cached info?
+        if ($la_paras['refund_fee_in_cent'] != $la_paras['total_fee_in_cent'])
+            throw new RttException('INVALID_PARAMETER', 'refund_fee_in_cent: partial refund not allowed');
+        if ($la_paras['refund_fee_currency'] != $la_paras['total_fee_currency'])
+            throw new RttException('INVALID_PARAMETER', 'refund_fee_currency: must match charge currency');
         $this->sp_rtt->check_device_id($account_id, $la_paras['device_id']);
         $la_paras['_uid'] = $userObj->uid;
         $la_paras['_username'] = $userObj->username;
