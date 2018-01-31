@@ -76,19 +76,22 @@ trait ByRedisFacade{
                 }
                 if (!empty($newResp)){
                     $txn = $newResp;
-                    $input = $this->query_order_cache_field($order_id, 'input');
-                    $txn['username'] = $input['_username'] ?? null;
                     $account_id = $txn['account_id'] ?? null;
                     if (!empty($account_id)) {
                         $idx_id = "index:".$account_id;
+                        $input = $this->query_order_cache_field($order_id, 'input');
+                        //we could use a temporary array for the populated $txn, but that may cause additional mem copy
+                        $txn['username'] = $input['_username'] ?? null;
+                        $txn['tips'] = $input['tips'] ?? null;
                         Redis::zadd($idx_id, $txn['vendor_txn_time'], serialize($txn));
+                        unset($txn['username']);
+                        unset($txn['tips']);
                         $now = time();
                         Redis::zremrangebyscore($idx_id, '-inf', $now-(60*$this->consts['ORDER_CACHE_MINS'][$status]));
                     }
                     else {
                         Log::INFO(__FUNCTION__.": cannot get the account_id of txn ".$key);
                     }
-                    unset($txn['username']);
                     DB::table('txn_base')->updateOrInsert(['ref_id'=>$txn['ref_id']], $txn);
                 }
             }
@@ -127,7 +130,6 @@ trait ByRedisFacade{
             'recs'=>$txns];
     }
     public function query_txns_by_time($account_id, $start_time, $end_time, $page_num, $page_size) {
-        $offset = ($page_num-1)*$page_size;
         $idx_id = "index:".$account_id;
         if (!Redis::EXSITS($idx_id))
             return ['total_page'=>0,
@@ -136,9 +138,12 @@ trait ByRedisFacade{
             'page_size'=>$page_size,
             'recs'=>[]];
         $end_time = '('.$end_time;
+        $count = Redis::ZCOUNT($idx_id, $start_time, $end_time);
+        if ($page_size<=0)
+            $page_size = $count+1;
+        $offset = ($page_num-1)*$page_size;
         $txns = Redis::ZREVRANGEBYSCORE($idx_id, $end_time, $start_time, 'LIMIT '.$offset . ' '. $page_size);
         array_walk($txns, function(&$x) {$x = unserialize($x);});
-        $count = Redis::ZREVRANGEBYSCORE($idx_id, $start_time, $end_time);
         return ['total_page'=>ceil($count/$page_size),
             'total_count'=>$count,
             'page_num'=>$page_num,

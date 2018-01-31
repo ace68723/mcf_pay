@@ -68,6 +68,11 @@ class MCFController extends Controller
                 'required'=>true,
                 'description'=> '标价金额的币种',
             ],
+            'tips'=>[
+                'checker'=>['is_int', [0,'inf']],
+                'required'=>false,
+                'description'=> 'total_fee中所含的小费，单位是分',
+            ],
             'description'=>[
                 'checker'=>['is_string', 32],
                 'required'=>false,
@@ -131,6 +136,11 @@ class MCFController extends Controller
                 'required'=>false,
                 'default_value'=>" Supported by ". $this->sp_rtt->consts['OUR_NAME'],
                 'description'=> '商品标题，将显示在顾客端',
+            ],
+            'tips'=>[
+                'checker'=>['is_int', [0,'inf']],
+                'required'=>false,
+                'description'=> 'total_fee中所含的小费，单位是分',
             ],
         ]; // parameter's name MUST NOT start with "_", which are reserved for internal populated parameters
 
