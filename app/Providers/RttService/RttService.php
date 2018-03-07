@@ -468,7 +468,7 @@ class RttService{
         }
         $amount_due = $total - $refund;
         return [
-            'start_time'=>$dt->format('Y-m-d H:i:sP'),
+            'start_time'=>$dt->format('Y-m-d H:i:s'),
             'total'=>$total/100,
             'count'=>count($data['recs']),
             'refund'=>$refund/100,

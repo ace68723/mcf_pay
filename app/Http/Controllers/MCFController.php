@@ -48,6 +48,15 @@ class MCFController extends Controller
             }
             return false;
         };
+        $tip_format_checker = function ($x) {
+            if (is_null($x)) return true;
+            if (is_int($x) && $x>=0) return true;
+            return false;
+        };
+        $tip_format_converter = function ($x) {
+            if (is_null($x)) return 0;
+            return $x;
+        };
 
         $this->consts['REQUEST_PARAS']['precreate_authpay'] = [
             'vendor_channel'=>[
@@ -70,7 +79,8 @@ class MCFController extends Controller
                 'description'=> '标价金额的币种',
             ],
             'tips'=>[
-                'checker'=>['is_int', [0,'inf']],
+                'checker'=>[$tip_format_checker],
+                'converter'=>[$tip_format_converter],
                 'required'=>false,
                 'description'=> 'total_fee中所含的小费，单位是分',
             ],
@@ -139,7 +149,8 @@ class MCFController extends Controller
                 'description'=> '商品标题，将显示在顾客端',
             ],
             'tips'=>[
-                'checker'=>['is_int', [0,'inf']],
+                'checker'=>[$tip_format_checker],
+                'converter'=>[$tip_format_converter],
                 'required'=>false,
                 'description'=> 'total_fee中所含的小费，单位是分',
             ],
