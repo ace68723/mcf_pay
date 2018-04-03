@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 use Log;
+use Queue;
 
 class NotifyJob extends Job
 {

@@ -2,6 +2,7 @@
 namespace App\Providers\OrderCacheService;
 
 use Log;
+use Queue;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
@@ -28,7 +29,8 @@ trait ByRedisFacade{
         try {
             if (!filter_var($url, FILTER_VALIDATE_URL) === false) {
                 $job = new NotifyJob($url,$txn,0);
-                dispatch($job);
+                //dispatch($job);
+                Queue::push($job);
             }
             else {
                 Log::INFO(__FUNCTION__.": exit because of wrong url:".$url);
