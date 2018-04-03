@@ -450,6 +450,8 @@ class PubAPIController extends Controller
 
     public function test(Request $request)
     {
+        $job = new NotifyJob("test");
+        dispatch($job);
         return "OK";
     }
 }
