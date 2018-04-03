@@ -31,7 +31,7 @@ class NotifyJob extends Job
         Log::debug($this->url.":".json_encode($this->txn).":".$this->idx);
         if ($this->idx == 0) {
             $job = new NotifyJob($this->url,$this->txn,1);
-            dispatch($job)->delay($notify_intervals[$this->idx]);
+            Queue::later($notify_intervals[$this->idx], $job);
         }
     }
 }

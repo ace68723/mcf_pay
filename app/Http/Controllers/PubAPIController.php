@@ -174,7 +174,7 @@ class PubAPIController extends Controller
 
     public function test(Request $request)
     {
-        dispatch(new \App\Jobs\NotifyJob("http://xxx",'{"name":"testtxn"}',0));
+        dispatch(new \App\Jobs\NotifyJob("http://xxx",'{}',0));
         return "OK";
     }
 }
