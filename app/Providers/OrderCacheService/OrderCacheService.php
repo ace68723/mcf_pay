@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Http\Request;
+use App\Jobs\NotifyJob;
 
 class OrderCacheService{
 
@@ -23,6 +24,20 @@ class OrderCacheService{
 }
 
 trait ByRedisFacade{
+    private function add_notify_job($url, $txn) {
+        try {
+            if (!filter_var($url, FILTER_VALIDATE_URL) === false) {
+                $job = new NotifyJob($url,$txn,0);
+                dispatch($job);
+            }
+            else {
+                Log::INFO(__FUNCTION__.": exit because of wrong url:".$url);
+            }
+        }
+        catch (\Exception $e) {
+            Log::INFO(__FUNCTION__.": exception adding NotifyJob:".$e->getMessage());
+        }
+    }
     public function cb_new_order($order_id, $account_id, $channel_name, $input, $req=null, $resp=null) {
         $key = "order:".$order_id;
         $status = 'INIT';
@@ -30,7 +45,6 @@ trait ByRedisFacade{
             'account_id'=>$account_id,
             //'channel_name'=>$channel_name,
             'input'=>$input,
-            //'req'=>$req, //seems not used. remove this for efficiency
             'resp'=>$resp,
             'status'=>$status,
         ];
@@ -88,6 +102,9 @@ trait ByRedisFacade{
                         unset($txn['tips']);
                         $now = time();
                         Redis::zremrangebyscore($idx_id, '-inf', $now-(60*$this->consts['ORDER_CACHE_MINS'][$status]));
+                        if (isset($input['notify_url'])) {
+                            $this->add_notify_job($input['notify_url'], $txn);
+                        }
                     }
                     else {
                         Log::INFO(__FUNCTION__.": cannot get the account_id of txn ".$key);
