@@ -5,6 +5,7 @@ use Log;
 
 class NotifyJob extends Job
 {
+    protected $info;
     /**
      * Create a new job instance.
      *

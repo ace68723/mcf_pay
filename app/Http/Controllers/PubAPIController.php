@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 //use Illuminate\Support\Facades\Redis;
 use App\Exceptions\RttException;
+use App\Jobs\NotifyJob;
 
 
 /** should be dispatch controller
