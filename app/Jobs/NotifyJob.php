@@ -30,7 +30,7 @@ class NotifyJob extends Job
         $notify_intervals = [5, 15, 30, 60];
         Log::debug($this->url.":".json_encode($this->txn).":".$this->idx);
         if ($this->idx == 0) {
-            $job = new NotifyJob($url,$txn,1);
+            $job = new NotifyJob($this->url,$this->txn,1);
             dispatch($job)->delay($notify_intervals[$this->idx]);
         }
     }
