@@ -24,7 +24,7 @@ $router->get('/', function () use ($router) {
 $router->get('/login_api_doc/', ['uses'=>'LoginController@api_doc_md']);
 
 $router->get('/test/', ['uses'=>'PubAPIController@test']);
-$router->post('/test/', ['uses'=>'PubAPIController@test']);
+$router->post('/test/echo', ['uses'=>'PubAPIController@test_echo']);
 
 $router->group(['prefix'=>'api/v1/merchant','middleware'=>'auth:custom_token'], function ($router)
 {

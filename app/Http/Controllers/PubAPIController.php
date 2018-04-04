@@ -178,4 +178,8 @@ class PubAPIController extends Controller
         \Queue::push($job);
         return "OK";
     }
+    public function test_echo(Request $request)
+    {
+        return $request->json()->all();
+    }
 }
