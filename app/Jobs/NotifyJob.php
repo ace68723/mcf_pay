@@ -54,7 +54,7 @@ class NotifyJob extends Job
                             'account_security.is_deleted'=>0
                         ])
                         ->first();
-                $this->secret = $secInfo['account_secret'];
+                $this->secret = $secInfo->account_secret;
             }
             $payload = array_only($txn, ['ref_id', 'txn_fee_in_cent', 'txn_fee_currency']);
             $payload['sign_type']='MD5';
