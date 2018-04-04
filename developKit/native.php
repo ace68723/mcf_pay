@@ -11,9 +11,9 @@ require_once 'lib/libmcfcurl.php';
  */
 $input = [];
 $input['notify_url'] = "https://mcfpayapi.ca/test/echo";
-$input['total_fee_in_cent'] = $request->input('cent') ?? 1;
+$input['total_fee_in_cent'] = $_GET['cent'] ?? 1;
 $input['total_fee_currency'] = 'CAD';
-$input['vendor_channel'] = $request->input('channel') ?? 'wx';
+$input['vendor_channel'] = $_GET['channel'] ?? 'wx';
 auth_append_sign($input);
 $result = do_post_curl("https://mcfpayapi.ca/api/v1/web/create_order",$input);
 var_dump($result);
