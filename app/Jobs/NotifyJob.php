@@ -60,7 +60,7 @@ class NotifyJob extends Job
             ksort($payload);
             $string = "";
             foreach ($payload as $k => $v) {
-                if($v != "" && !is_array($v)){
+                if($k != "sign" && $v != "" && !is_array($v)){
                     $string .= $k . "=" . $v . "&";
                 }
             }

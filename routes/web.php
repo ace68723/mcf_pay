@@ -48,20 +48,13 @@ $router->group(['prefix'=>'api/v1/merchant','middleware'=>'auth:custom_token'], 
     $router->get('/api_doc/', ['uses'=>'MCFController@api_doc_md']);
 });
 
-$router->group(['prefix'=>'api/v1/web','middleware'=>'auth:custom_api'], function ($router)
+$router->group(['prefix'=>'api/v1/web','middleware'=>['throttle:60,1','auth:custom_api']], function ($router)
 {
     $api_names = [
-        'create_authpay',
-        'precreate_authpay',
         'create_order',
-        'create_refund',
         'check_order_status',
         'get_exchange_rate',
-        'query_txns_by_time',
-        'get_hot_txns',
         'get_txn_by_id',
-        'get_settlements',
-        'get_company_info',
     ];
     foreach($api_names as $api_name) {
         $router->post('/'.$api_name.'/', ['uses'=>'PubAPIController@'.$api_name]);
