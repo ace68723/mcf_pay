@@ -3,6 +3,7 @@
 namespace App\Jobs;
 use Log;
 use Queue;
+use Illuminate\Support\Facades\DB;
 
 class NotifyJob extends Job
 {
@@ -32,8 +33,8 @@ class NotifyJob extends Job
     {
         $notify_intervals = [30, 60, 120];
         Log::debug("notify_job:".$this->url.":".($this->txn['ref_id']??"").":".$this->idx);
-        $ret = $this->do_notify();
-        if (!$ret && $this->idx < count($notify_intervals)) {
+        $should_retry = $this->do_notify();
+        if ($should_retry && $this->idx < count($notify_intervals)) {
             $job = new NotifyJob($this->url,$this->txn,$this->idx+1,$this->secret);
             Queue::later($notify_intervals[$this->idx], $job);
         }
@@ -43,7 +44,7 @@ class NotifyJob extends Job
         $txn = $this->txn;
         try{
             if (is_null($this->secret)) {
-                $secInfo =  DB::table('account_base')
+                $secInfo = DB::table('account_base')
                     ->leftJoin('account_security', 'account_security.account_id','=','account_base.account_id')
                     ->select('account_base.account_id AS account_id',
                         'account_security.account_secret AS account_secret')
@@ -68,13 +69,13 @@ class NotifyJob extends Job
             //Log::DEBUG("string to check sign before attach key:". utf8_decode($string));
             $string = md5($string."&key=".$this->secret);
             $payload['sign'] = $string;
-            $rets = $this->do_post_curl($this->url, $payload, $timeout);
+            $confirmed_success = $this->do_post_curl($this->url, $payload, $timeout);
         }
         catch (\Exception $e) {
             Log::debug('notify_job: failed:'.$e->getMessage());
-            return false;
+            return false; //should not retry
         }
-        return true;
+        return !$confirmed_success;
     }
     private function do_post_curl($url, $payload, $timeout) {
         $ch = curl_init();
