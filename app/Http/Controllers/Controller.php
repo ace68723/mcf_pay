@@ -31,7 +31,6 @@ class Controller extends BaseController
                     if (in_array($key, ['checker','converter'])) {
                         $tocheck = is_array($value) ? ($value[0]??null) : $value;
                         if (!is_callable($tocheck)) {
-                            //throw new RttException('SYSTEM_ERROR', "invalid setting:".$api_name.":".$para_key);
                             return false;
                         }
                     }
