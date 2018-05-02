@@ -180,7 +180,8 @@ class AliService{
         $sub_mch_info["SECONDARY_MERCHANT_NAME"] = $vendor_ali_info->sub_mch_name;
         $sub_mch_info["SECONDARY_MERCHANT_INDUSTRY"] = $vendor_ali_info->sub_mch_industry;
         $sub_mch_info["store_name"] = $vendor_ali_info->sub_mch_name;
-        $sub_mch_info["store_id"] = $vendor_ali_info->sub_mch_id;
+        //$sub_mch_info["store_id"] = $vendor_ali_info->sub_mch_id;
+        $sub_mch_info["store_id"] = (string) $account_id;
         $input['extend_info'] = json_encode($sub_mch_info);
         $signString = getSignString($input);
         $input['sign'] = md5Sign($signString, $this->consts['KEY']);
@@ -252,6 +253,8 @@ class AliService{
         $sub_mch_info["SECONDARY_MERCHANT_ID"] = $vendor_ali_info->sub_mch_id;
         $sub_mch_info["SECONDARY_MERCHANT_NAME"] = $vendor_ali_info->sub_mch_name;
         $sub_mch_info["SECONDARY_MERCHANT_INDUSTRY"] = $vendor_ali_info->sub_mch_industry;
+        $sub_mch_info["store_name"] = $vendor_ali_info->sub_mch_name;
+        $sub_mch_info["store_id"] = (string) $account_id;
         $input['extend_params'] = json_encode($sub_mch_info);
         //'{"STORE_ID":"BJ_ZZ_001","STORE_NAME":"Muku in the Dreieichstrabe","SECONDARY_MERCHANT_ID":"A80001","SECONDARY_MERCHANT_NAME":"Muku","SECONDARY_MERCHANT_INDUSTRY":"7011"}'; 
         $input['it_b_pay'] = sec_to_short_str($la_paras['expire_time_sec'] ?? $this->consts['DEFAULT_EXPIRE_SEC']);
