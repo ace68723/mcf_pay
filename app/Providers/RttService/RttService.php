@@ -440,10 +440,13 @@ class RttService{
 
     public function get_today_summary($account_id) {
         $mchinfo = $this->get_merchant_info_by_id($account_id);
-        $dt = new \DateTime('now', $this->create_datetimezone($mchinfo['timezone']??null));
+        $dt = new \DateTime('today 3:00', $this->create_datetimezone($mchinfo['timezone']??null));
         $now = time();
-        $start_time = $now - 24*3600;
-        $dt->setTimestamp($start_time);
+        $start_time = $dt->getTimestamp();
+        if ($now < $start_time) {
+            $dt = new \DateTime('yesterday 3:00', $this->create_datetimezone($mchinfo['timezone']??null));
+            $start_time = $dt->getTimestamp();
+        }
         $data = $this->sp_oc->query_txns_by_time($account_id, $start_time, $now, 1, -1);
         $dict = [];
         foreach($data['recs'] as $txn) {
