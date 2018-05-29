@@ -448,9 +448,9 @@ class MCFController extends Controller
         $la_paras = $this->parse_parameters($request, __FUNCTION__, $userObj);
         $mch_info = $this->sp_rtt->get_merchant_info_by_id($account_id);
         $la_paras['start_time'] = $this->convert_time('start_time', $la_paras['start_time'],
-            $la_paras['timezone']??$mch_info['timezone']);
+            $mch_info['timezone']??$la_paras['timezone']);
         $la_paras['end_time'] = $this->convert_time('end_time', $la_paras['end_time'],
-            $la_paras['timezone']??$mch_info['timezone']);
+            $mch_info['timezone']??$la_paras['timezone']);
         Log::DEBUG('start time:'.$la_paras['start_time'].'; end_time:'.$la_paras['end_time']);
         $ret = $this->sp_rtt->query_txns_by_time($la_paras, $account_id);
         array_walk($ret['recs'], [$this->sp_rtt, 'txn_to_export']);
